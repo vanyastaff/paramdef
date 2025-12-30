@@ -18,7 +18,7 @@ let schema = Schema::new()
         .min_length(1)
         .build())
     
-    .with(Number::builder("opacity")
+    .with(Number::builder::<f64>("opacity")
         .label("Opacity")
         .subtype(NumberSubtype::Factor)
         .range(0.0, 1.0)
@@ -116,7 +116,7 @@ if context.validate_all().await.is_ok() {
 // Type-safe builders
 let schema = Schema::builder()
     .add(Text::builder("username").required().build())
-    .add(Number::builder("age").range(0, 150).build())
+    .add(Number::builder::<i64>("age").range(0, 150).build())
     .build();
 
 // Type-safe getters
@@ -147,7 +147,7 @@ let age: i64 = context.get_int("age")?;
 ### Subtype + Unit Pattern
 
 ```rust
-Number::builder("height")
+Number::builder::<f64>("height")
     .subtype(NumberSubtype::Distance)  // WHAT it is
     .unit(NumberUnit::Length)          // HOW to measure
     .build()
@@ -174,7 +174,7 @@ Mode::builder("auth")
 ### Transformers
 
 ```rust
-Number::builder("angle")
+Number::builder::<f64>("angle")
     .transformer(RoundTransformer { step: 15.0 })
     .transformer(ModuloTransformer { modulo: 360.0 })
     .build()

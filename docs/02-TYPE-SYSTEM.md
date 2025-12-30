@@ -237,7 +237,7 @@ pub struct Panel {
 Panel::builder("database")
     .label("Database Settings")
     .child(Text::builder("host").required().build())
-    .child(Number::builder("port").default(5432).build())
+    .child(Number::builder::<i64>("port").default(5432).build())
     .child(Text::builder("database").required().build())
     .build()
 ```
@@ -820,7 +820,7 @@ pub type Key = SmartString<LazyCompact>;
 // Type-safe builders
 let schema = Schema::builder()
     .add(Text::builder("username").required().build())
-    .add(Number::builder("age").range(0, 150).build())
+    .add(Number::builder::<i64>("age").range(0, 150).build())
     .build();
 
 // Type-safe getters
@@ -1207,7 +1207,7 @@ Text::builder("api_key")
     .build()
 
 // Number: show custom port only when protocol is "custom"
-Number::builder("custom_port")
+Number::builder::<i64>("custom_port")
     .display(DisplayConfig::new()
         .show_when_equals("protocol", Value::text("custom")))
     .build()
@@ -1290,7 +1290,7 @@ Text::builder("email")
     .build()
 
 // Number with range validation
-Number::builder("port")
+Number::builder::<i64>("port")
     .validation(ValidationConfig::new()
         .required()
         .range(1, 65535))
@@ -1448,7 +1448,7 @@ Text::builder("email")
     .validate(email())
     .build()
 
-Number::builder("port")
+Number::builder::<i64>("port")
     .validate(range(1, 65535))
     .build()
 

@@ -871,6 +871,74 @@ Text::builder("username")
 
 ---
 
+### ✅ DECISION: Number with Generic Builder
+
+**Question:** How to handle Number type safety (i64 vs f64)?
+
+**Decision:** Generic builder with `Numeric` trait.
+
+```rust
+pub trait Numeric: Copy + PartialOrd + Send + Sync + 'static {
+    fn kind() -> NumberKind;
+}
+
+pub enum NumberKind {
+    Integer,
+    Float,
+}
+
+// Macro for all numeric types
+macro_rules! impl_numeric {
+    (integer: $($int:ty),*) => {
+        $(impl Numeric for $int {
+            fn kind() -> NumberKind { NumberKind::Integer }
+        })*
+    };
+    (float: $($float:ty),*) => {
+        $(impl Numeric for $float {
+            fn kind() -> NumberKind { NumberKind::Float }
+        })*
+    };
+}
+
+impl_numeric!(integer: i8, i16, i32, i64, i128, u8, u16, u32, u64, u128);
+impl_numeric!(float: f32, f64);
+
+// Schema type (stored in Schema)
+pub struct Number {
+    metadata: Metadata,
+    kind: NumberKind,
+    subtype: NumberSubtype,
+}
+
+// Generic builder (compile-time type safety)
+pub struct NumberBuilder<T: Numeric> { ... }
+
+impl<T: Numeric> NumberBuilder<T> {
+    pub fn default(mut self, value: T) -> Self { ... }
+    pub fn range(mut self, min: T, max: T) -> Self { ... }
+    pub fn build(self) -> Number { ... }
+}
+
+// Usage
+let port = Number::builder::<i64>("port")
+    .range(1, 65535)
+    .default(8080)
+    .build();
+
+let opacity = Number::builder::<f64>("opacity")
+    .range(0.0, 1.0)
+    .default(1.0)
+    .build();
+```
+
+**Benefits:**
+- Type-safe at construction time
+- All Rust numeric types supported via macro
+- Uniform storage in Schema
+
+---
+
 ### ✅ DECISION: Vector with Generic Builder
 
 **Question:** How to handle Vector type safety with runtime storage?
