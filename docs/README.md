@@ -1,6 +1,6 @@
-# Nebula Parameter System
+# paramdef
 
-Type-safe, production-ready parameter system for workflow automation and node-based editors.
+Type-safe, production-ready parameter definition system for workflow automation and node-based editors.
 
 ---
 
@@ -9,7 +9,7 @@ Type-safe, production-ready parameter system for workflow automation and node-ba
 ### Define Parameters
 
 ```rust
-use nebula_parameter::prelude::*;
+use paramdef::prelude::*;
 
 let schema = Schema::new()
     .with(TextParameter::builder("name")
@@ -299,8 +299,8 @@ i18n = ["ui"]     # Localization
 
 ## Industry Comparison
 
-| Feature | Blender | Unreal | n8n | Qt | Houdini | Nebula |
-|---------|---------|--------|-----|----|---------| -------|
+| Feature | Blender | Unreal | n8n | Qt | Houdini | paramdef |
+|---------|---------|--------|-----|----|---------| ---------|
 | Type Safety | - | ~ | - | ~ | - | **Yes** |
 | Subtype+Unit | Yes | Yes | - | - | ~ | **Yes** |
 | Soft/Hard | Yes | Yes | - | - | Yes | **Yes** |
@@ -312,7 +312,7 @@ i18n = ["ui"]     # Localization
 | Schema/Context | ~ | Yes | - | ~ | ~ | **Yes** |
 | Zero-Cost | - | ~ | - | ~ | - | **Yes** |
 
-Nebula combines the best features from across the industry with Rust's type safety and zero-cost abstractions.
+paramdef combines the best features from across the industry with Rust's type safety and zero-cost abstractions.
 
 ---
 

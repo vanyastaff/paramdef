@@ -174,7 +174,7 @@ This approach:
 
 ```
 ┌──────────────────────────────────────┐
-│  LIBRARY (nebula-parameters)         │
+│  LIBRARY (paramdef)                  │
 │  - Provides fluent_id for params     │
 │  - Provides helper methods           │
 │  - NO embedded translations          │
@@ -319,7 +319,7 @@ impl Metadata {
 
 ```rust
 use i18n_embed_fl::fl;
-use nebula_parameter::Metadata;
+use paramdef::Metadata;
 
 pub fn get_localized_label(meta: &Metadata) -> String {
     if let Some(key) = meta.fluent_label_key() {

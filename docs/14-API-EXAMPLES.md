@@ -1,4 +1,4 @@
-# Nebula Parameters - API Examples
+# paramdef - API Examples
 
 **Real-world usage patterns and code examples**
 
@@ -22,7 +22,7 @@
 ### Example 1: Simple Contact Form
 
 ```rust
-use nebula_parameter::prelude::*;
+use paramdef::prelude::*;
 
 fn create_contact_form() -> Schema {
     Schema::new()
@@ -103,7 +103,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Example 2: User Registration with Password Confirmation
 
 ```rust
-use nebula_parameter::prelude::*;
+use paramdef::prelude::*;
 
 fn create_registration_form() -> Schema {
     Schema::new()
@@ -230,7 +230,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Example 3: n8n-style Workflow Node
 
 ```rust
-use nebula_parameter::prelude::*;
+use paramdef::prelude::*;
 
 fn create_http_request_node() -> Schema {
     Schema::new()
@@ -354,7 +354,7 @@ async fn execute_workflow_node(context: &Context) -> Result<(), Box<dyn std::err
 ### Example 4: 3D Object Transform Editor
 
 ```rust
-use nebula_parameter::prelude::*;
+use paramdef::prelude::*;
 
 fn create_transform_editor() -> Schema {
     Schema::new()
@@ -475,7 +475,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Example 5: Game Graphics Settings
 
 ```rust
-use nebula_parameter::prelude::*;
+use paramdef::prelude::*;
 
 fn create_graphics_settings() -> Schema {
     Schema::new()
@@ -602,7 +602,7 @@ fn apply_preset(context: &mut Context, preset: &str) -> Result<(), Box<dyn std::
 ### Example 6: CLI Configuration Generator
 
 ```rust
-use nebula_parameter::prelude::*;
+use paramdef::prelude::*;
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
@@ -723,7 +723,7 @@ fn interactive_cli() -> Result<(), Box<dyn std::error::Error>> {
 ### Example 7: CSV Import Configuration
 
 ```rust
-use nebula_parameter::prelude::*;
+use paramdef::prelude::*;
 
 fn create_csv_import_config() -> Schema {
     Schema::new()
@@ -812,7 +812,7 @@ fn import_csv(context: &Context) -> Result<(), Box<dyn std::error::Error>> {
 ### Example 8: API Client Builder
 
 ```rust
-use nebula_parameter::prelude::*;
+use paramdef::prelude::*;
 
 fn create_api_client_config() -> Schema {
     Schema::new()
@@ -896,7 +896,7 @@ fn create_api_client_config() -> Schema {
         .with_parameter(
             TextParameter::builder("user_agent")
                 .label("User Agent")
-                .default_value("NebulaCli/1.0")
+                .default_value("ParamdefCli/1.0")
                 .build()
         )
         .end_group()

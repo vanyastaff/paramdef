@@ -1,4 +1,4 @@
-# Nebula Parameters - Quick Reference Guide
+# paramdef - Quick Reference Guide
 
 **Fast lookup for common tasks and patterns**
 

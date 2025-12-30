@@ -638,7 +638,7 @@ pub struct ValidationConfig {
 }
 
 impl ValidationConfig {
-    /// Create from any nebula-validator validator
+    /// Create from any custom validator
     pub fn from<V, T>(validator: V) -> Self
     where
         V: Validator<Input = T> + Send + Sync + 'static,
@@ -667,14 +667,14 @@ User Input
          │
          ▼
 ┌─────────────────┐
-│ ValidationConfig│  ← Custom validators from nebula-validator
+│ ValidationConfig│  ← Custom validators
 └────────┬────────┘
          │
          ▼
     Result<(), Error>
 ```
 
-### Built-in Validators (from nebula-validator)
+### Common Validators
 
 | Category | Validators |
 |----------|------------|
@@ -686,8 +686,8 @@ User Input
 ### Example Usage
 
 ```rust
-use nebula_validator::validators::string::{min_length, email};
-use nebula_validator::combinators::{and, with_message};
+use paramdef::validators::{min_length, email};
+use paramdef::validators::combinators::{and, with_message};
 
 // Text with email validation
 Text::builder("email")
@@ -759,10 +759,10 @@ where
 }
 ```
 
-### With nebula-validator
+### With Built-in Validators
 
 ```rust
-use nebula_validator::validators::{email, range, min_length};
+use paramdef::validators::{email, range, min_length};
 
 // Direct usage - blanket impl makes it seamless
 Text::builder("email")

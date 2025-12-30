@@ -1,4 +1,4 @@
-# Nebula Parameters - Final Design Decisions
+# paramdef - Final Design Decisions
 
 **Key architectural decisions with rationale**
 

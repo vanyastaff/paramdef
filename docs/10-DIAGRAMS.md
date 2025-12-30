@@ -1,6 +1,6 @@
 # Architecture Diagrams
 
-Visual representation of the Nebula Parameter System architecture.
+Visual representation of the paramdef architecture.
 
 ---
 
@@ -10,7 +10,7 @@ Visual representation of the Nebula Parameter System architecture.
 +----------------------------------------------------------+
 |                    USER APPLICATION                       |
 |                                                           |
-|  use nebula_parameter::prelude::*;                       |
+|  use paramdef::prelude::*;                               |
 |                                                           |
 |  let mut context = Context::new(schema);                 |
 |  context.set_value("email", "test@example.com".into())?; |
@@ -595,7 +595,7 @@ Schema::new()
 
 ```
 +------------+-------+-------+-----+----+--------+--------+
-|  Feature   |Blender|Unreal | n8n | Qt |Houdini | Nebula |
+|  Feature   |Blender|Unreal | n8n | Qt |Houdini |paramdef|
 +------------+-------+-------+-----+----+--------+--------+
 |Type Safety |   -   |   ~   |  -  | ~  |   -    |   YES  |
 +------------+-------+-------+-----+----+--------+--------+
@@ -614,7 +614,7 @@ Schema::new()
 |Zero-Cost   |   -   |   ~   |  -  | ~  |   -    |   YES  |
 +------------+-------+-------+-----+----+--------+--------+
 
-Nebula combines ALL patterns from across the industry!
+paramdef combines ALL patterns from across the industry!
 ```
 
 ---

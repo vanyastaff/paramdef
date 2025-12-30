@@ -671,7 +671,7 @@ The `ParameterValues` struct provides low-level snapshot and diff functionality 
 ### Snapshot and Restore
 
 ```rust
-use nebula_parameter::ParameterValues;
+use paramdef::ParameterValues;
 
 let mut values = ParameterValues::new();
 values.set(key("name"), Value::text("Alice"));

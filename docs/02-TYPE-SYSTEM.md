@@ -856,7 +856,7 @@ let wrong: i64 = context.get(USERNAME)?;    // Compile error!
 
 ## Specializations via Base Types
 
-Instead of creating many specialized node types, Nebula uses **10 core types** combined with **subtypes** and **flags** to cover all use cases. This keeps the API simple while providing rich functionality.
+Instead of creating many specialized node types, paramdef uses **10 core types** combined with **subtypes** and **flags** to cover all use cases. This keeps the API simple while providing rich functionality.
 
 ### Text-Based Specializations
 
@@ -1439,8 +1439,8 @@ where
 ### Usage Examples
 
 ```rust
-// With nebula-validator
-use nebula_validator::validators::{email, range, min_length};
+// With built-in validators
+use paramdef::validators::{email, range, min_length};
 
 Text::builder("email")
     .validate(email())

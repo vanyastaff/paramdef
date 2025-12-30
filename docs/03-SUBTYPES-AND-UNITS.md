@@ -6,7 +6,7 @@ Complete reference for node subtypes and the unit system.
 
 ## Subtype + Unit Pattern
 
-Inspired by Blender, Nebula separates **semantic meaning** (subtype) from **measurement system** (unit):
+Inspired by Blender, paramdef separates **semantic meaning** (subtype) from **measurement system** (unit):
 
 ```rust
 Number {

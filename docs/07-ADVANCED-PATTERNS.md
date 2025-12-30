@@ -696,8 +696,8 @@ fn database_connection_schema() -> Schema {
 
 ## Industry Comparison
 
-| Pattern | Qt | Houdini | WPF | Airflow | Node-RED | Nebula |
-|---------|-----|---------|-----|---------|----------|--------|
+| Pattern | Qt | Houdini | WPF | Airflow | Node-RED | paramdef |
+|---------|-----|---------|-----|---------|----------|----------|
 | Reset | Yes | Yes | - | - | - | **Yes** |
 | Notifications | Yes | Yes | Yes | - | - | **Yes** |
 | Visibility | - | Yes | - | - | - | **Yes** |
@@ -710,4 +710,4 @@ fn database_connection_schema() -> Schema {
 | Expressions | - | Yes | Yes | Yes | Yes | **Yes** |
 | Undo/Redo | - | Yes | - | - | - | **Yes** |
 
-Nebula combines ALL patterns from across the industry!
+paramdef combines ALL patterns from across the industry!

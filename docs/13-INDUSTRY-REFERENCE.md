@@ -6,7 +6,7 @@ Comprehensive analysis of property/parameter systems across 18 professional plat
 
 ## Overview
 
-This reference documents how major platforms implement parameter/property systems for automatic UI generation. Each system has unique strengths that informed Nebula's design.
+This reference documents how major platforms implement parameter/property systems for automatic UI generation. Each system has unique strengths that informed paramdef's design.
 
 ---
 
@@ -32,7 +32,7 @@ bpy.props.FloatProperty(
 )
 ```
 
-**Nebula Adoption:** Subtype + Unit pattern, Soft/Hard constraints
+**paramdef Adoption:** Subtype + Unit pattern, Soft/Hard constraints
 
 ---
 
@@ -57,7 +57,7 @@ UPROPERTY(
 float Speed;
 ```
 
-**Nebula Adoption:** Metadata flags, Display conditions
+**paramdef Adoption:** Metadata flags, Display conditions
 
 ---
 
@@ -80,7 +80,7 @@ private float speed = 10f;
 public string computedValue;
 ```
 
-**Nebula Adoption:** Attribute-based flags, Conditional visibility
+**paramdef Adoption:** Attribute-based flags, Conditional visibility
 
 ---
 
@@ -99,7 +99,7 @@ public string computedValue;
 @export var internal_value: int
 ```
 
-**Nebula Adoption:** Range hints, Group organization
+**paramdef Adoption:** Range hints, Group organization
 
 ---
 
@@ -126,7 +126,7 @@ hou.FloatParmTemplate(
 )
 ```
 
-**Nebula Adoption:** Pages/groups, Display conditions, Vector parameters
+**paramdef Adoption:** Pages/groups, Display conditions, Vector parameters
 
 ---
 
@@ -146,7 +146,7 @@ par[0].mode = ParMode.EXPRESSION
 par[0].expr = 'me.time.seconds'
 ```
 
-**Nebula Adoption:** Action parameters, Expression support
+**paramdef Adoption:** Action parameters, Expression support
 
 ---
 
@@ -171,7 +171,7 @@ def INPUT_TYPES(cls):
     }
 ```
 
-**Nebula Adoption:** Required/optional separation
+**paramdef Adoption:** Required/optional separation
 
 ---
 
@@ -200,7 +200,7 @@ def INPUT_TYPES(cls):
 }
 ```
 
-**Nebula Adoption:** Display conditions, Resource pattern
+**paramdef Adoption:** Display conditions, Resource pattern
 
 ---
 
@@ -221,7 +221,7 @@ class MyOperator(BaseOperator):
         self.params = params
 ```
 
-**Nebula Adoption:** Expression/template support
+**paramdef Adoption:** Expression/template support
 
 ---
 
@@ -241,7 +241,7 @@ class MyConfig(Config):
     batch_size: int = Field(default=100, ge=1, le=10000)
 ```
 
-**Nebula Adoption:** Pydantic-style validation
+**paramdef Adoption:** Pydantic-style validation
 
 ---
 
@@ -264,7 +264,7 @@ PropertyDescriptor.Builder()
     .build()
 ```
 
-**Nebula Adoption:** Sensitive flags, Standard validators
+**paramdef Adoption:** Sensitive flags, Standard validators
 
 ---
 
@@ -288,7 +288,7 @@ class DataWorkflow:
         return result
 ```
 
-**Nebula Adoption:** Schema/Context separation (similar to Activity/Workflow)
+**paramdef Adoption:** Schema/Context separation (similar to Activity/Workflow)
 
 ---
 
@@ -309,7 +309,7 @@ def my_op(context: OpExecutionContext, config: MyOpConfig):
     pass
 ```
 
-**Nebula Adoption:** Config class pattern
+**paramdef Adoption:** Config class pattern
 
 ---
 
@@ -334,7 +334,7 @@ Q_PROPERTY(int count
 )
 ```
 
-**Nebula Adoption:** Reset functionality, Storage flags, Change notifications
+**paramdef Adoption:** Reset functionality, Storage flags, Change notifications
 
 ---
 
@@ -360,7 +360,7 @@ public static readonly DependencyProperty ValueProperty =
     );
 ```
 
-**Nebula Adoption:** Value transformers (coercion), Validation callbacks
+**paramdef Adoption:** Value transformers (coercion), Validation callbacks
 
 ---
 
@@ -387,7 +387,7 @@ RED.nodes.registerType('my-node', {
 });
 ```
 
-**Nebula Adoption:** Config references, Built-in validators
+**paramdef Adoption:** Config references, Built-in validators
 
 ---
 
@@ -395,8 +395,8 @@ RED.nodes.registerType('my-node', {
 
 ### Universal Patterns (Found in 10+ Systems)
 
-| Pattern | Systems | Nebula |
-|---------|---------|--------|
+| Pattern | Systems | paramdef |
+|---------|---------|----------|
 | Required/Optional | All | ✅ `REQUIRED` flag |
 | Default values | All | ✅ `.default()` |
 | Min/Max constraints | All | ✅ `.range()` |
@@ -407,8 +407,8 @@ RED.nodes.registerType('my-node', {
 
 ### Advanced Patterns (Found in 5-9 Systems)
 
-| Pattern | Systems | Nebula |
-|---------|---------|--------|
+| Pattern | Systems | paramdef |
+|---------|---------|----------|
 | Subtype semantics | Blender, Unreal, Houdini | ✅ Subtypes |
 | Unit conversion | Blender, Unreal | ✅ Units |
 | Soft/Hard limits | Blender, Houdini | ✅ Soft/Hard |
@@ -418,8 +418,8 @@ RED.nodes.registerType('my-node', {
 
 ### Specialized Patterns (Found in 2-4 Systems)
 
-| Pattern | Systems | Nebula |
-|---------|---------|--------|
+| Pattern | Systems | paramdef |
+|---------|---------|----------|
 | Value coercion | WPF, Qt | ✅ Transformers |
 | Action triggers | TouchDesigner, Houdini | ✅ ActionParameter |
 | Discriminated unions | n8n (resources) | ✅ ModeParameter |
@@ -428,7 +428,7 @@ RED.nodes.registerType('my-node', {
 
 ---
 
-## Nebula's Unique Contributions
+## paramdef's Unique Contributions
 
 ### 1. Compile-Time Type Safety
 
@@ -458,7 +458,7 @@ No other system provides compile-time type checking for property access.
 
 ### 4. Unified Best Practices
 
-Nebula combines patterns from 18 different systems into a cohesive API:
+paramdef combines patterns from 18 different systems into a cohesive API:
 
 - Blender's Subtype + Unit
 - Qt's Reset + Notifications
@@ -472,7 +472,7 @@ Nebula combines patterns from 18 different systems into a cohesive API:
 
 ## Feature Matrix
 
-| Feature | Blender | Unreal | Unity | Godot | Qt | WPF | n8n | Airflow | NiFi | Houdini | **Nebula** |
+| Feature | Blender | Unreal | Unity | Godot | Qt | WPF | n8n | Airflow | NiFi | Houdini | **paramdef** |
 |---------|---------|--------|-------|-------|----|----|-----|---------|------|---------|------------|
 | Type Safety | - | ~ | ~ | - | ~ | ✓ | - | - | - | - | **✓** |
 | Compile-Time | - | ~ | - | - | ~ | ~ | - | - | - | - | **✓** |

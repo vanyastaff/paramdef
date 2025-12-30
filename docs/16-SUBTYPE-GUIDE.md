@@ -1,4 +1,4 @@
-# Nebula Parameters - Subtype Selection Guide
+# paramdef - Subtype Selection Guide
 
 **How to choose the right subtype for your use case**
 

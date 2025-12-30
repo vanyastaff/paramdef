@@ -1,6 +1,6 @@
 # Event System and Reactive Patterns
 
-Comprehensive guide to the Nebula parameter event system, observer patterns, and reactive updates.
+Comprehensive guide to the paramdef event system, observer patterns, and reactive updates.
 
 ---
 

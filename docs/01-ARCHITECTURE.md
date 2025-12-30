@@ -560,8 +560,8 @@ where
 ### Integration Examples
 
 ```rust
-// 1. With nebula-validator (blanket impl)
-use nebula_validator::validators::{email, range};
+// 1. With built-in validators
+use paramdef::validators::{email, range};
 
 Text::builder("email")
     .validate(email())
@@ -591,7 +591,7 @@ Text::builder("custom")
 | No built-in deps | No version conflicts |
 | Trait-based | Works with any library |
 | Closure support | Quick one-off validation |
-| Blanket impl | Seamless nebula-validator integration |
+| Blanket impl | Seamless integration with custom validators |
 
 ---
 
@@ -942,8 +942,8 @@ pub enum ParameterEvent {
 
 ## Comparison with Industry Systems
 
-| Feature | Blender | Unreal | n8n | Qt | Houdini | Nebula |
-|---------|---------|--------|-----|----|---------| -------|
+| Feature | Blender | Unreal | n8n | Qt | Houdini | paramdef |
+|---------|---------|--------|-----|----|---------| ---------|
 | Type Safety | - | ~ | - | ~ | - | **Yes** |
 | Compile-Time | - | ~ | - | ~ | - | **Yes** |
 | Subtype+Unit | Yes | Yes | - | - | ~ | **Yes** |

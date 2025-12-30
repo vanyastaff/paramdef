@@ -1,4 +1,4 @@
-# Nebula Parameters - Implementation Roadmap
+# paramdef - Implementation Roadmap
 
 **Step-by-step guide to implementation**
 
@@ -9,7 +9,7 @@ Status: Ready for Implementation ✅
 
 ## Overview
 
-This roadmap provides a structured approach to implementing the Nebula Parameter System, organized into phases with clear deliverables and dependencies.
+This roadmap provides a structured approach to implementing paramdef, organized into phases with clear deliverables and dependencies.
 
 **Total Estimated Effort:** 8-12 weeks  
 **Team Size:** 1-2 developers  
@@ -24,20 +24,19 @@ This roadmap provides a structured approach to implementing the Nebula Parameter
 ### 1.1 Project Setup
 
 **Tasks:**
-- [ ] Create workspace structure (`nebula-key`, `nebula-parameter`, `nebula-validator`)
+- [ ] Create project structure (`paramdef` with optional `paramdef-validator`)
 - [ ] Set up Cargo.toml with dependencies
 - [ ] Configure CI/CD (GitHub Actions)
 - [ ] Set up documentation structure
 
 **Files:**
 ```
-nebula/
-├── Cargo.toml (workspace)
-├── crates/
-│   ├── nebula-key/
-│   │   └── Cargo.toml
-│   └── nebula-parameter/
-│       └── Cargo.toml
+paramdef/
+├── Cargo.toml
+├── src/
+│   ├── lib.rs
+│   ├── key.rs
+│   └── ...
 ```
 
 **Dependencies:**
@@ -61,8 +60,11 @@ crossbeam = "0.8"
 
 **Implementation Order:**
 
-#### Step 1: Key (nebula-key)
-Already exists! ✅
+#### Step 1: Key
+```rust
+// src/key.rs
+pub struct Key { ... }
+```
 
 #### Step 2: Metadata
 ```rust
