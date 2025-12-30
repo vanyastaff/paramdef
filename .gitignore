@@ -1,7 +1,55 @@
+# Build artifacts
 /target
 Cargo.lock
-*.swp
-*.swo
+
+# IDE
 .idea/
 .vscode/
+*.iml
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Profiling
+*.profraw
+*.profdata
+*.gcda
+*.gcno
+
+# Temp files
+tmp/
+temp/
+*.tmp
+*.bak
 *.orig
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Coverage
+/coverage/
+lcov.info
+tarpaulin-report.html
+
+# Documentation build
+/book/
+
+# Benchmarks
+/target/criterion/
+
+# Fuzzing
+/fuzz/artifacts/
+/fuzz/corpus/
+
+# Secrets
+*.key
+*.pem
