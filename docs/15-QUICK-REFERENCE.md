@@ -19,16 +19,31 @@
 
 ## Core Types
 
-### Parameter Types
+### Node Types (13 total)
 
 ```rust
-ParameterType::Text      // String values
-ParameterType::Number    // Numeric (int/float)
-ParameterType::Boolean   // True/false
-ParameterType::Choice    // Enum/select
-ParameterType::Vector    // Fixed-size numeric arrays
-ParameterType::Array     // Dynamic arrays
-ParameterType::Object    // Nested objects
+// Group (root aggregator)
+NodeKind::Group
+
+// Layout (UI organization)
+NodeKind::Panel
+
+// Decoration (display-only)
+NodeKind::Notice
+
+// Container (with children)
+NodeKind::Object     // Named fields
+NodeKind::List       // Dynamic arrays
+NodeKind::Mode       // Discriminated union
+NodeKind::Routing    // Connection wrapper
+NodeKind::Expirable  // TTL wrapper
+
+// Leaf (terminal values)
+NodeKind::Text       // String values
+NodeKind::Number     // Numeric (int/float)
+NodeKind::Boolean    // True/false
+NodeKind::Vector     // Fixed-size numeric arrays
+NodeKind::Select     // Single/multi selection
 ```
 
 ### Value Enum

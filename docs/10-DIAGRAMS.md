@@ -169,7 +169,7 @@ User calls:
                        |
                        v
 +----------------------------------------------+
-| RuntimeParameter::set_value()                |
+| Context::set_value()                         |
 |  1. Emit BeforeChange event                  |
 |  2. Apply transformers (clamp, round, etc.)  |
 |  3. Validate value (sync validators)         |

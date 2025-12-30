@@ -146,7 +146,7 @@ par[0].mode = ParMode.EXPRESSION
 par[0].expr = 'me.time.seconds'
 ```
 
-**paramdef Adoption:** Action parameters, Expression support
+**paramdef Adoption:** Expression support
 
 ---
 
@@ -421,7 +421,6 @@ RED.nodes.registerType('my-node', {
 | Pattern | Systems | paramdef |
 |---------|---------|----------|
 | Value coercion | WPF, Qt | ✅ Transformers |
-| Action triggers | TouchDesigner, Houdini | ✅ ActionParameter |
 | Discriminated unions | n8n (resources) | ✅ Mode |
 | Storage control | Qt (STORED) | ✅ SKIP_SAVE flag |
 | Animation support | Blender, Unreal | ✅ ANIMATABLE flag |

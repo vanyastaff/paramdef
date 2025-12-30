@@ -349,40 +349,7 @@ impl Context {
 
 ---
 
-## 6. Action Parameters (TouchDesigner Pattern)
-
-Trigger actions without storing values.
-
-```rust
-pub struct ActionParameter {
-    pub metadata: Metadata,
-    pub display: Option<DisplayRule>,
-}
-
-// Quick constructors
-impl ActionParameter {
-    pub fn reset(key: &str) -> Self { ... }
-    pub fn reload(key: &str) -> Self { ... }
-    
-    pub fn builder(key: &str) -> ActionParameterBuilder { ... }
-}
-
-// Usage
-Schema::new()
-    .with(ActionParameter::reset("reset_all"))
-    .with(ActionParameter::reload("reload_config"))
-    .with(ActionParameter::builder("export")
-        .label("Export Data")
-        .description("Export configuration to file")
-        .build())
-
-// Trigger action
-context.trigger("reset_all")?;
-```
-
----
-
-## 7. Template Support (Airflow Pattern)
+## 6. Template Support (Airflow Pattern)
 
 Enable template expressions in parameter values.
 
@@ -414,83 +381,36 @@ let rendered = context.get_rendered("message", &template_ctx)?;
 
 ---
 
-## 8. Union Parameters (Node-RED TypedInput Pattern)
+## 7. Typed Input Pattern (Node-RED Style)
 
-Parameter value can be one of multiple types.
+Use `Mode` for values that can be one of multiple types (discriminated union).
 
 ```rust
-pub struct UnionParameter {
-    pub metadata: Metadata,
-    pub variants: Vec<UnionVariant>,
-    pub default_variant: String,
-}
-
-pub struct UnionVariant {
-    pub id: String,
-    pub label: String,
-    pub parameter: Box<dyn ParameterAny>,
-}
-
-// Usage: value can be literal OR expression OR reference
-UnionParameter::builder("value")
+// Value can be literal OR expression OR reference
+Mode::builder("value")
     .label("Value")
-    .variant("literal", "Literal", Box::new(
-        Text::builder("literal").build()
-    ))
-    .variant("expression", "Expression", Box::new(
-        Text::builder("expression")
+    .variant("literal", "Literal", Schema::new()
+        .with(Text::builder("value").build()))
+    .variant("expression", "Expression", Schema::new()
+        .with(Text::builder("value")
             .subtype(TextSubtype::Expression)
-            .build()
-    ))
-    .variant("reference", "Reference", Box::new(
-        Text::builder("reference")
+            .build()))
+    .variant("reference", "Reference", Schema::new()
+        .with(Text::builder("value")
             .subtype(TextSubtype::JsonPath)
-            .build()
-    ))
+            .build()))
+    .default_variant("literal")
     .build()
 
 // Serialized as:
-// { "type": "expression", "value": "{{$json.data}}" }
+// { "mode": "expression", "value": { "value": "{{$json.data}}" } }
 ```
+
+This is a common pattern in workflow tools where a field can accept different input types.
 
 ---
 
-## 9. Dynamic Sources (Argo ValueFrom Pattern)
-
-Load values from external sources.
-
-```rust
-pub enum ValueSource {
-    Static(Value),
-    FilePath(String),
-    Expression(String),
-    ParameterRef(String),
-    Environment(String),
-    Provider(Arc<dyn ValueProvider>),
-}
-
-pub struct DynamicParameter {
-    pub metadata: Metadata,
-    pub source: ValueSource,
-    pub fallback: Option<Value>,
-}
-
-// Value from file
-DynamicParameter::from_file("config", "/etc/app/config.json")
-
-// Value from expression
-DynamicParameter::from_expression("doubled", "{{count}} * 2")
-
-// Value from other parameter
-DynamicParameter::from_parameter("total", "subtotal")
-
-// Value from environment
-DynamicParameter::from_env("api_url", "API_URL")
-```
-
----
-
-## 10. Expression Engine
+## 8. Expression Engine
 
 First-class expression support with dependency tracking.
 
@@ -528,7 +448,7 @@ impl ExpressionEngine {
 
 ---
 
-## 11. Snapshot/Restore (Undo/Redo)
+## 9. Snapshot/Restore (Undo/Redo)
 
 Support undo/redo operations.
 
@@ -570,7 +490,7 @@ context.restore(&before);
 
 ---
 
-## 12. Complete Example: Database Connection
+## 10. Complete Example: Database Connection
 
 ```rust
 fn database_connection_schema() -> Schema {
@@ -678,17 +598,6 @@ fn database_connection_schema() -> Schema {
             .range(1, 100)
             .default(10)
             .build())
-        
-        // Actions
-        .with(ActionParameter::builder("test_connection")
-            .label("Test Connection")
-            .page("Actions")
-            .build())
-        
-        .with(ActionParameter::builder("clear_pool")
-            .label("Clear Pool")
-            .page("Actions")
-            .build())
 }
 ```
 
@@ -703,11 +612,9 @@ fn database_connection_schema() -> Schema {
 | Visibility | - | Yes | - | - | - | **Yes** |
 | Pages/Groups | - | Yes | - | - | - | **Yes** |
 | Storage Flags | Yes | - | - | - | - | **Yes** |
-| Actions | - | Yes | - | - | - | **Yes** |
 | Templates | - | - | - | Yes | - | **Yes** |
-| Union Types | - | - | - | - | Yes | **Yes** |
-| Dynamic Sources | - | - | - | - | - | **Yes** |
+| Typed Input | - | - | - | - | Yes | **Yes** (Mode) |
 | Expressions | - | Yes | Yes | Yes | Yes | **Yes** |
 | Undo/Redo | - | Yes | - | - | - | **Yes** |
 
-paramdef combines ALL patterns from across the industry!
+paramdef combines best patterns from across the industry!

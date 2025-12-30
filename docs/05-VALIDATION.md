@@ -249,8 +249,12 @@ impl CrossValidator for DateRangeValidator {
 
 // Register with schema
 Schema::new()
-    .with(DateParameter::builder("start_date").build())
-    .with(DateParameter::builder("end_date").build())
+    .with(Text::builder("start_date")
+        .subtype(TextSubtype::Date)
+        .build())
+    .with(Text::builder("end_date")
+        .subtype(TextSubtype::Date)
+        .build())
     .cross_validator(Arc::new(DateRangeValidator))
 ```
 
