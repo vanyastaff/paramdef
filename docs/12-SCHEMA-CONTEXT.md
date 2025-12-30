@@ -656,3 +656,10 @@ let schema = Schema::new()
 3. **Schema can be shared** via Arc
 4. **Each instance gets its own Context**
 5. **Never put runtime state in Schema**
+
+---
+
+## See Also
+
+- [19-SERIALIZATION-FORMAT](19-SERIALIZATION-FORMAT.md) - JSON serialization for Schema and Context
+- [20-THREADING-SAFETY](20-THREADING-SAFETY.md) - Thread-safety guarantees for Schema and Context

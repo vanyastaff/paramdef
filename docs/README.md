@@ -99,6 +99,13 @@ if context.validate_all().await.is_ok() {
 | [17-DESIGN-DECISIONS](17-DESIGN-DECISIONS.md) | Key architectural decisions with rationale |
 | [18-ROADMAP](18-ROADMAP.md) | Implementation roadmap and milestones |
 
+### Technical Reference
+
+| Document | Description |
+|----------|-------------|
+| [19-SERIALIZATION-FORMAT](19-SERIALIZATION-FORMAT.md) | JSON serialization schema and format |
+| [20-THREADING-SAFETY](20-THREADING-SAFETY.md) | Thread-safety guarantees and patterns |
+
 ---
 
 ## Key Features
@@ -267,6 +274,8 @@ i18n = ["ui"]     # Localization
 16. [16-SUBTYPE-GUIDE](16-SUBTYPE-GUIDE.md)
 17. [17-DESIGN-DECISIONS](17-DESIGN-DECISIONS.md)
 18. [18-ROADMAP](18-ROADMAP.md)
+19. [19-SERIALIZATION-FORMAT](19-SERIALIZATION-FORMAT.md)
+20. [20-THREADING-SAFETY](20-THREADING-SAFETY.md)
 
 ### By Topic
 
@@ -298,6 +307,10 @@ i18n = ["ui"]     # Localization
 - [14-API-EXAMPLES](14-API-EXAMPLES.md)
 - [15-QUICK-REFERENCE](15-QUICK-REFERENCE.md)
 - [16-SUBTYPE-GUIDE](16-SUBTYPE-GUIDE.md)
+
+**Technical Reference:**
+- [19-SERIALIZATION-FORMAT](19-SERIALIZATION-FORMAT.md)
+- [20-THREADING-SAFETY](20-THREADING-SAFETY.md)
 
 **Meta:**
 - [17-DESIGN-DECISIONS](17-DESIGN-DECISIONS.md)

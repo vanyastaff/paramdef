@@ -795,4 +795,4 @@ if !context.is_visible("api_key") {
 - ✅ Performance tips
 - ✅ Debugging helpers
 
-**For full details, see FINAL_ARCHITECTURE.md** 📚
+**For full details, see [01-ARCHITECTURE.md](01-ARCHITECTURE.md)**

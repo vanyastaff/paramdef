@@ -649,3 +649,9 @@ token.cancel();
 | `DisplayObserver` | Reactive visibility updates |
 | Batching | Coalesce multiple changes |
 | Debouncing | Rate-limit expensive handlers |
+
+---
+
+## See Also
+
+- [20-THREADING-SAFETY](20-THREADING-SAFETY.md) - Thread-safety for event handling and async patterns
