@@ -282,27 +282,27 @@ impl Context {
 
 ---
 
-## DisplayObserver - Reactive Visibility
+## VisibilityObserver - Reactive Visibility
 
-Automatically update visibility based on display rules:
+Automatically update visibility based on `Expr` expressions:
 
 ```rust
-pub struct DisplayObserver {
+pub struct VisibilityObserver {
     context: Arc<RwLock<Context>>,
-    display_rules: HashMap<String, DisplayRule>,
+    expressions: HashMap<Key, Expr>,
 }
 
-impl DisplayObserver {
+impl VisibilityObserver {
     pub fn new(context: Arc<RwLock<Context>>) -> Self {
         Self {
             context,
-            display_rules: HashMap::new(),
+            expressions: HashMap::new(),
         }
     }
     
-    /// Register display rule for parameter
-    pub fn register(&mut self, key: &str, rule: DisplayRule) {
-        self.display_rules.insert(key.to_string(), rule);
+    /// Register visibility expression for parameter
+    pub fn register(&mut self, key: Key, expr: Expr) {
+        self.expressions.insert(key, expr);
     }
     
     /// Start observing changes
@@ -312,114 +312,81 @@ impl DisplayObserver {
         drop(context);
         
         while let Ok(event) = events.recv().await {
-            if let Event::AfterChange { key, new_value, .. } = event {
-                self.evaluate_dependent_rules(&key, &new_value).await;
+            if let Event::AfterChange { key, .. } = event {
+                self.evaluate_dependent_expressions(&key).await;
             }
         }
     }
     
-    /// Evaluate rules that depend on changed parameter
-    async fn evaluate_dependent_rules(&self, changed_key: &str, new_value: &Value) {
+    /// Evaluate expressions that depend on changed parameter
+    async fn evaluate_dependent_expressions(&self, changed_key: &Key) {
         let context = self.context.read().await;
         
-        for (param_key, rule) in &self.display_rules {
-            if rule.depends_on(changed_key) {
-                let visible = rule.evaluate(&context);
-                let enabled = rule.evaluate_enabled(&context);
+        for (param_key, expr) in &self.expressions {
+            if expr.depends_on(changed_key) {
+                let visible = expr.eval(&context);
                 
-                // Emit visibility/enabled changes
-                if rule.visibility_changed(visible) {
-                    context.bus.emit(Event::VisibilityChanged {
-                        key: param_key.clone(),
-                        visible,
-                    });
-                }
-                
-                if rule.enabled_changed(enabled) {
-                    context.bus.emit(Event::EnabledChanged {
-                        key: param_key.clone(),
-                        enabled,
-                    });
-                }
+                context.bus.emit(Event::VisibilityChanged {
+                    key: param_key.clone(),
+                    visible,
+                });
             }
         }
     }
 }
 ```
 
-### Display Rule Definition
+### Expr - Visibility Expression
 
 ```rust
-pub struct DisplayRule {
-    pub visibility: VisibilityCondition,
-    pub enabled: Option<EnabledCondition>,
-    dependencies: Vec<String>,  // Tracked for reactive updates
+use Expr::*;
+
+/// Visibility expression - evaluates to bool
+pub enum Expr {
+    Eq(Key, Value),           // key == value
+    Ne(Key, Value),           // key != value
+    IsSet(Key),               // key is not null
+    IsEmpty(Key),             // "", [], {}
+    IsTrue(Key),              // key == true
+    Lt(Key, f64),             // key < value
+    Gt(Key, f64),             // key > value
+    OneOf(Key, Arc<[Value]>), // key in [...]
+    IsValid(Key),             // key passed validation
+    And(Arc<[Expr]>),         // all must be true
+    Or(Arc<[Expr]>),          // any must be true
+    Not(Box<Expr>),           // invert
 }
 
-pub enum VisibilityCondition {
-    Always,
-    Never,
-    When(Condition),
-    Unless(Condition),
-}
-
-pub enum Condition {
-    Equals { key: String, value: Value },
-    NotEquals { key: String, value: Value },
-    IsEmpty { key: String },
-    IsNotEmpty { key: String },
-    GreaterThan { key: String, value: Value },
-    LessThan { key: String, value: Value },
-    And(Vec<Condition>),
-    Or(Vec<Condition>),
-    Not(Box<Condition>),
-}
-
-impl DisplayRule {
-    /// Check if rule depends on given parameter
-    pub fn depends_on(&self, key: &str) -> bool {
-        self.dependencies.contains(&key.to_string())
+impl Expr {
+    /// Get all keys this expression depends on
+    pub fn dependencies(&self) -> Vec<Key> { ... }
+    
+    /// Check if expression depends on given key
+    pub fn depends_on(&self, key: &Key) -> bool {
+        self.dependencies().contains(key)
     }
     
-    /// Evaluate visibility condition
-    pub fn evaluate(&self, context: &Context) -> bool {
-        match &self.visibility {
-            VisibilityCondition::Always => true,
-            VisibilityCondition::Never => false,
-            VisibilityCondition::When(cond) => cond.evaluate(context),
-            VisibilityCondition::Unless(cond) => !cond.evaluate(context),
-        }
-    }
+    /// Evaluate expression against context
+    pub fn eval(&self, context: &Context) -> bool { ... }
 }
 ```
 
 ### Usage Example
 
 ```rust
-// Parameter shows only when mode == "advanced"
-let rule = DisplayRule::show_when(
-    Condition::Equals {
-        key: "mode".into(),
-        value: Value::Text("advanced".into()),
-    }
-);
+use Expr::*;
 
-// Complex condition: show when (mode == "custom" AND count > 0)
-let rule = DisplayRule::show_when(
-    Condition::And(vec![
-        Condition::Equals {
-            key: "mode".into(),
-            value: Value::Text("custom".into()),
-        },
-        Condition::GreaterThan {
-            key: "count".into(),
-            value: Value::Int(0),
-        },
-    ])
-);
+// Show when mode == "advanced"
+let expr = Eq("mode".into(), Value::text("advanced"));
+
+// Complex: show when (mode == "custom" AND count > 0)
+let expr = And(Arc::from([
+    Eq("mode".into(), Value::text("custom")),
+    Gt("count".into(), 0.0),
+]));
 
 // Register with observer
-observer.register("advanced_setting", rule);
+observer.register("advanced_setting".into(), expr);
 ```
 
 ---

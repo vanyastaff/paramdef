@@ -482,60 +482,62 @@ impl Observer for MyObserver {
 
 ---
 
-## Display Conditions
+## Visibility Expressions
 
-### Basic Conditions
+### Basic Expressions
 
 ```rust
+use Expr::*;
+
 // Show when field equals value
-.show_when_equals("auth_type", Value::text("api_key"))
+.visible_when(Eq("auth_type".into(), Value::text("api_key")))
 
 // Show when field is true
-.show_when_true("advanced_mode")
+.visible_when(IsTrue("advanced_mode".into()))
 
 // Show when field is set (not null)
-.show_when(DisplayRule::when("field", DisplayCondition::IsSet))
+.visible_when(IsSet("field".into()))
 
-// Hide when field equals value
-.hide_when_equals("status", Value::text("disabled"))
+// Hide when field equals value (= show when NOT equals)
+.visible_when(Ne("status".into(), Value::text("disabled")))
 ```
 
-### Complex Conditions
+### Complex Expressions
 
 ```rust
+use Expr::*;
+
 // AND: All conditions must be true
-.show_when(DisplayRuleSet::all([
-    DisplayRule::when("enabled", DisplayCondition::IsTrue),
-    DisplayRule::when("level", DisplayCondition::GreaterThan(10.0)),
-]))
+.visible_when(And(Arc::from([
+    IsTrue("enabled".into()),
+    Gt("level".into(), 10.0),
+])))
 
 // OR: Any condition must be true
-.show_when(DisplayRuleSet::any([
-    DisplayRule::when("role", DisplayCondition::Equals(Value::text("admin"))),
-    DisplayRule::when("superuser", DisplayCondition::IsTrue),
-]))
+.visible_when(Or(Arc::from([
+    Eq("role".into(), Value::text("admin")),
+    IsTrue("superuser".into()),
+])))
 
 // NOT: Condition must be false
-.show_when(DisplayRuleSet::not(
-    DisplayRule::when("disabled", DisplayCondition::IsTrue)
-))
+.visible_when(Not(Box::new(IsTrue("disabled".into()))))
 ```
 
-### Validation-Based Display
+### Validation-Based Visibility
 
 ```rust
+use Expr::*;
+
 // Show when field is valid
-.show_when_valid("password")
+.visible_when(IsValid("password".into()))
 
 // Show error hint when field is invalid
-.show_when_invalid("email")
+.visible_when(Not(Box::new(IsValid("email".into()))))
 
 // Show confirm password only when password is valid
 Text::password("confirm_password")
-    .with_display(
-        ParameterDisplay::new()
-            .show_when_valid("password")
-    )
+    .visible_when(IsValid("password".into()))
+    .build()
 ```
 
 ---
@@ -597,19 +599,13 @@ let schema = Schema::new()
         Text::builder("api_key")
             .subtype(TextSubtype::Secret)
             .label("API Key")
-            .with_display(
-                ParameterDisplay::new()
-                    .show_when_equals("auth_type", Value::text("api_key"))
-            )
+            .visible_when(Expr::Eq("auth_type".into(), Value::text("api_key")))
             .build()
     )
     .with_parameter(
         Text::builder("oauth_token")
             .label("OAuth Token")
-            .with_display(
-                ParameterDisplay::new()
-                    .show_when_equals("auth_type", Value::text("oauth"))
-            )
+            .visible_when(Expr::Eq("auth_type".into(), Value::text("oauth")))
             .build()
     )
     .build();

@@ -78,130 +78,64 @@ let mut all_events = context.subscribe_all();
 
 ## 3. Conditional Visibility & Enable (Houdini Pattern)
 
-Show/hide and enable/disable based on other parameters.
+Show/hide based on other parameters using a single `Expr` expression.
 
-### DisplayCondition (16 Types)
+### Expr - Visibility Expression
 
 ```rust
-/// A condition that determines whether a parameter should be displayed.
-pub enum DisplayCondition {
-    // === Value Comparisons ===
-    Equals(Value),              // Value equals specified value
-    NotEquals(Value),           // Value does not equal specified value
+/// Visibility expression - evaluates to bool
+pub enum Expr {
+    // === Comparisons ===
+    Eq(Key, Value),           // key == value
+    Ne(Key, Value),           // key != value
     
-    // === Null/Set Checks ===
-    IsSet,                      // Value is not null
-    IsNull,                     // Value is null
+    // === Existence ===
+    IsSet(Key),               // key is not null
+    IsEmpty(Key),             // "", [], {}
     
-    // === Emptiness Checks ===
-    IsEmpty,                    // Empty string, array, object, or null
-    IsNotEmpty,                 // Not empty
+    // === Boolean ===
+    IsTrue(Key),              // key == true
     
-    // === Boolean Checks ===
-    IsTrue,                     // Boolean value is true
-    IsFalse,                    // Boolean value is false
+    // === Numeric ===
+    Lt(Key, f64),             // key < value
+    Le(Key, f64),             // key <= value
+    Gt(Key, f64),             // key > value
+    Ge(Key, f64),             // key >= value
     
-    // === Numeric Comparisons ===
-    GreaterThan(f64),           // Value > threshold
-    LessThan(f64),              // Value < threshold
-    InRange { min: f64, max: f64 }, // min <= value <= max
+    // === Set ===
+    OneOf(Key, Arc<[Value]>), // key in [...]
     
-    // === String Operations ===
-    Contains(String),           // String contains substring
-    StartsWith(String),         // String starts with prefix
-    EndsWith(String),           // String ends with suffix
+    // === Validation ===
+    IsValid(Key),             // key passed validation
     
-    // === Membership ===
-    OneOf(Vec<Value>),          // Value is one of specified values
-    
-    // === Validation State ===
-    IsValid,                    // Field has passed validation
-    IsInvalid,                  // Field has failed validation
+    // === Combinators ===
+    And(Arc<[Expr]>),         // all must be true
+    Or(Arc<[Expr]>),          // any must be true
+    Not(Box<Expr>),           // invert
 }
 ```
 
-### DisplayRule and DisplayRuleSet
+### Context for Evaluation
 
 ```rust
-/// A display rule that checks a specific field against a condition
-pub struct DisplayRule {
-    pub field: Key,
-    pub condition: DisplayCondition,
+/// Context for evaluating visibility expressions
+pub struct Context {
+    values: HashMap<Key, Value>,
+    validation: HashMap<Key, bool>,
 }
 
-impl DisplayRule {
-    pub fn when(field: impl Into<Key>, condition: DisplayCondition) -> Self;
-}
-
-/// Combine rules with logical operators
-pub enum DisplayRuleSet {
-    Single(DisplayRule),        // Single rule
-    All(Vec<DisplayRuleSet>),   // All must pass (AND)
-    Any(Vec<DisplayRuleSet>),   // Any must pass (OR)
-    Not(Box<DisplayRuleSet>),   // Invert result (NOT)
-}
-
-impl DisplayRuleSet {
-    pub fn all(rules: impl IntoIterator<Item = impl Into<DisplayRuleSet>>) -> Self;
-    pub fn any(rules: impl IntoIterator<Item = impl Into<DisplayRuleSet>>) -> Self;
-    pub fn not(rule: impl Into<DisplayRuleSet>) -> Self;
-}
-```
-
-### DisplayContext with Validation State
-
-```rust
-/// Context for evaluating display conditions
-pub struct DisplayContext {
-    values: ParameterValues,
-    validation: HashMap<Key, bool>,  // true = valid
-}
-
-impl DisplayContext {
+impl Context {
     pub fn new() -> Self;
-    pub fn from_values(values: ParameterValues) -> Self;
     
-    // Builder pattern
     pub fn with_value(self, key: impl Into<Key>, value: Value) -> Self;
     pub fn with_validation(self, key: impl Into<Key>, is_valid: bool) -> Self;
     
-    // Check validation state
-    pub fn is_valid(&self, key: &str) -> bool;
-    pub fn is_invalid(&self, key: &str) -> bool;
-}
-```
-
-### ParameterDisplay Configuration
-
-```rust
-pub struct ParameterDisplay {
-    show_when: Option<DisplayRuleSet>,  // Conditions to show
-    hide_when: Option<DisplayRuleSet>,  // Conditions to hide (priority!)
+    pub fn get(&self, key: &Key) -> Option<&Value>;
+    pub fn is_valid(&self, key: &Key) -> bool;
 }
 
-impl ParameterDisplay {
-    pub fn new() -> Self;
-    
-    // Add conditions
-    pub fn show_when(self, rule: impl Into<DisplayRuleSet>) -> Self;
-    pub fn hide_when(self, rule: impl Into<DisplayRuleSet>) -> Self;
-    
-    // Convenience methods
-    pub fn show_when_equals(self, field: impl Into<Key>, value: Value) -> Self;
-    pub fn show_when_true(self, field: impl Into<Key>) -> Self;
-    pub fn hide_when_equals(self, field: impl Into<Key>, value: Value) -> Self;
-    pub fn hide_when_true(self, field: impl Into<Key>) -> Self;
-    
-    // Validation-based visibility
-    pub fn show_when_valid(self, field: impl Into<Key>) -> Self;
-    pub fn show_when_invalid(self, field: impl Into<Key>) -> Self;
-    pub fn hide_when_valid(self, field: impl Into<Key>) -> Self;
-    pub fn hide_when_invalid(self, field: impl Into<Key>) -> Self;
-    
-    // Evaluate
-    pub fn should_display(&self, ctx: &DisplayContext) -> bool;
-    
-    // Get dependencies for reactive updates
+impl Expr {
+    pub fn eval(&self, ctx: &Context) -> bool;
     pub fn dependencies(&self) -> Vec<Key>;
 }
 ```
@@ -209,66 +143,86 @@ impl ParameterDisplay {
 ### Usage Examples
 
 ```rust
+use Expr::*;
+
 // Show API key field only when auth type is "api_key"
-let display = ParameterDisplay::new()
-    .show_when_equals(key("auth_type"), Value::text("api_key"));
+Text::builder("api_key")
+    .visible_when(Eq("auth_type".into(), Value::text("api_key")))
+    .build()
 
 // Show advanced options when enabled AND level > 10
-let display = ParameterDisplay::new()
-    .show_when(DisplayRuleSet::all([
-        DisplayRule::when(key("advanced"), DisplayCondition::IsTrue),
-        DisplayRule::when(key("level"), DisplayCondition::GreaterThan(10.0)),
-    ]));
+Number::builder::<i32>("threshold")
+    .visible_when(And(Arc::from([
+        IsTrue("advanced".into()),
+        Gt("level".into(), 10.0),
+    ])))
+    .build()
 
 // Show either admin OR superuser
-let display = ParameterDisplay::new()
-    .show_when(DisplayRuleSet::any([
-        DisplayRule::when(key("role"), DisplayCondition::Equals(Value::text("admin"))),
-        DisplayRule::when(key("superuser"), DisplayCondition::IsTrue),
-    ]));
+Panel::builder("admin_panel")
+    .visible_when(Or(Arc::from([
+        Eq("role".into(), Value::text("admin")),
+        IsTrue("superuser".into()),
+    ])))
+    .build()
 
-// Hide when disabled (NOT pattern)
-let display = ParameterDisplay::new()
-    .hide_when_true(key("disabled"));
+// Hide when disabled (= show when NOT disabled)
+Text::builder("feature")
+    .visible_when(Not(Box::new(IsTrue("disabled".into()))))
+    .build()
 
 // Show error message only when email is invalid
-let display = ParameterDisplay::new()
-    .show_when_invalid(key("email"));
+Notice::builder("email_error")
+    .visible_when(Not(Box::new(IsValid("email".into()))))
+    .build()
 
 // Show confirmation field only when password is valid
-let display = ParameterDisplay::new()
-    .show_when_valid(key("password"));
+Text::builder("confirm_password")
+    .visible_when(IsValid("password".into()))
+    .build()
 
 // Complex: show when valid AND not in maintenance mode
-let display = ParameterDisplay::new()
-    .show_when(DisplayRule::when(key("email"), DisplayCondition::IsValid))
-    .hide_when(DisplayRule::when(key("maintenance"), DisplayCondition::IsTrue));
-
-// Evaluate with context
-let ctx = DisplayContext::new()
-    .with_value(key("auth_type"), Value::text("api_key"))
-    .with_validation(key("email"), true);
-
-if display.should_display(&ctx) {
-    render_parameter();
-}
+Text::builder("settings")
+    .visible_when(And(Arc::from([
+        IsValid("email".into()),
+        Not(Box::new(IsTrue("maintenance".into()))),
+    ])))
+    .build()
 ```
 
-### Priority: hide_when Takes Precedence
+### Evaluating Visibility
 
 ```rust
-let display = ParameterDisplay::new()
-    .show_when_true(key("enabled"))
-    .hide_when_true(key("maintenance"));
+use Expr::*;
 
-let ctx = DisplayContext::new()
-    .with_value(key("enabled"), Value::boolean(true))
-    .with_value(key("maintenance"), Value::boolean(true));
+let expr = And(Arc::from([
+    IsTrue("enabled".into()),
+    Not(Box::new(IsTrue("maintenance".into()))),
+]));
 
-// hide_when is checked first, so parameter is hidden
-// even though show_when condition is met
-assert!(!display.should_display(&ctx));
+let ctx = Context::new()
+    .with_value("enabled", Value::boolean(true))
+    .with_value("maintenance", Value::boolean(false));
+
+assert!(expr.eval(&ctx));  // true: enabled=true AND NOT maintenance=false
 ```
+
+### Builder Helpers
+
+```rust
+impl<T: Node> Builder<T> {
+    /// Show when expression is true
+    fn visible_when(self, expr: Expr) -> Self;
+    
+    /// Convenience: show when key equals value
+    fn visible_when_eq(self, key: impl Into<Key>, value: Value) -> Self;
+    
+    /// Convenience: show when key is true
+    fn visible_when_true(self, key: impl Into<Key>) -> Self;
+    
+    /// Convenience: hide when expression is true (inverts)
+    fn hidden_when(self, expr: Expr) -> Self;
+}
 
 ---
 
@@ -565,12 +519,7 @@ fn database_connection_schema() -> Schema {
         .with(Text::builder("ssl_cert")
             .label("SSL Certificate")
             .page("Security")
-            .display_when(DisplayRule::show_when(
-                Condition::Equals {
-                    key: "use_ssl".into(),
-                    value: Value::Bool(true),
-                }
-            ))
+            .visible_when(Expr::IsTrue("use_ssl".into()))
             .build())
         
         // Timeouts
