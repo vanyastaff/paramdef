@@ -23,6 +23,7 @@ full = ["display", "validation", "serde", "events", "i18n", "chrono"]
 
 [dependencies]
 smartstring = "1.0"
+smallvec = "1.13"
 thiserror = "2.0"
 bitflags = "2.0"
 
