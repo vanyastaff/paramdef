@@ -101,7 +101,7 @@ The system defines exactly 13 node types across five categories:
 
 ```toml
 default = []                  # Core types only
-visibility = []               # Visibility trait, VisibilityConfig
+visibility = []               # Visibility trait, Expr
 validation = []               # Validators, ValidationConfig
 serde = ["dep:serde"]        # Serialization + JSON conversions
 events = ["dep:tokio"]       # Event system with broadcast channels

@@ -40,7 +40,7 @@ chrono = { version = "0.4", optional = true, default-features = false, features 
 | Feature | Enables |
 |---------|---------|
 | (none) | Core types, Node traits, Value enum |
-| `visibility` | `Visibility` trait, `VisibilityConfig`, visibility conditions |
+| `visibility` | `Visibility` trait, `Expr` visibility conditions |
 | `validation` | `Validatable` trait, `Validator` trait, `ValidationError` |
 | `serde` | Serialize/Deserialize + JSON conversions |
 | `events` | Event system with tokio broadcast channels |
@@ -66,7 +66,7 @@ pub struct Text {
     pub value: Option<String>,
     
     #[cfg(feature = "visibility")]
-    pub visibility: Option<VisibilityConfig>,
+    pub visibility: Option<Expr>,
     
     #[cfg(feature = "validation")]
     pub validation: Option<ValidationConfig>,
@@ -140,21 +140,19 @@ pub trait Node: Send + Sync {
 /// ALL 13 node types implement this trait
 #[cfg(feature = "visibility")]
 pub trait Visibility: Node {
-    /// Get visibility configuration (show_when/hide_when rules)
-    fn visibility(&self) -> Option<&VisibilityConfig>;
+    /// Get visibility expression
+    fn visibility(&self) -> Option<&Expr>;
     
-    /// Set visibility configuration
-    fn set_visibility(&mut self, config: Option<VisibilityConfig>);
+    /// Set visibility expression
+    fn set_visibility(&mut self, expr: Option<Expr>);
     
     /// Check if node should be visible given current context
     fn is_visible(&self, context: &Context) -> bool {
-        self.visibility().map_or(true, |v| v.is_visible(context))
+        self.visibility().map_or(true, |e| e.eval(context))
     }
     
     /// Get all parameter keys this node's visibility depends on
-    fn dependencies(&self) -> Vec<Key> {
-        self.visibility().map_or(Vec::new(), |v| v.dependencies())
-    }
+    fn dependencies(&self) -> &[Key];
 }
 ```
 
@@ -830,70 +828,51 @@ Text::builder("custom_field")
 **ALL 13 node types** implement `Visibility` for conditional visibility:
 
 ```rust
-pub struct VisibilityConfig {
-    show_when: Option<RuleSet>,  // Conditions to show
-    hide_when: Option<RuleSet>,  // Conditions to hide (priority)
+pub trait Visibility: Node {
+    fn visibility(&self) -> Option<&Expr>;
+    fn set_visibility(&mut self, expr: Option<Expr>);
+    fn is_visible(&self, context: &Context) -> bool;
+    fn dependencies(&self) -> &[Key];
 }
 
-pub enum DisplayCondition {
-    Equals(Value),
-    NotEquals(Value),
-    IsSet,
-    IsNull,
-    IsEmpty,
-    IsNotEmpty,
-    IsTrue,
-    IsFalse,
-    GreaterThan(f64),
-    LessThan(f64),
-    InRange { min: f64, max: f64 },
-    Contains(String),
-    StartsWith(String),
-    EndsWith(String),
-    OneOf(Vec<Value>),
-    IsValid,
-    IsInvalid,
+/// Visibility expression - evaluates to bool
+pub enum Expr {
+    Eq(Key, Value),           // key == value
+    Ne(Key, Value),           // key != value
+    IsSet(Key),               // key is not null
+    IsEmpty(Key),             // "", [], {}
+    IsTrue(Key),              // key == true
+    Lt(Key, f64),             // key < value
+    Le(Key, f64),             // key <= value
+    Gt(Key, f64),             // key > value
+    Ge(Key, f64),             // key >= value
+    OneOf(Key, Arc<[Value]>), // key in [...]
+    IsValid(Key),             // key passed validation
+    And(Arc<[Expr]>),         // all must be true
+    Or(Arc<[Expr]>),          // any must be true
+    Not(Box<Expr>),           // invert
 }
 ```
-
-### Use Cases by Category
-
-| Category | Example Use Case |
-|----------|------------------|
-| Group | Hide entire settings group in "simple mode" |
-| Panel | Show "Advanced" tab only for power users |
-| Notice | Show warning only when validation fails |
-| Object | Hide address fields when "same as billing" checked |
-| List | Hide items list when empty |
-| Mode | Always visible (user selects variant) |
-| Routing | Show connection point based on node type |
-| Expirable | Show refresh button when token expiring soon |
-| Text | Show API key field when auth_type="api_key" |
-| Number | Show port field when protocol="custom" |
-| Boolean | Always visible (toggles other fields) |
-| Vector | Show color picker when "use custom color" enabled |
-| Select | Show region selector based on selected country |
 
 ### Example
 
 ```rust
+use Expr::*;
+
 // Show API key field only when auth type is "api_key"
 Text::builder("api_key")
-    .visibility(VisibilityConfig::new()
-        .show_when_equals("auth_type", Value::text("api_key")))
+    .visible_when(Eq("auth_type".into(), Value::text("api_key")))
     .build()
 
 // Show warning notice when password is invalid
 Notice::builder("password_warning")
     .notice_type(NoticeType::Warning)
-    .visibility(VisibilityConfig::new()
-        .show_when_invalid("password"))
+    .visible_when(Not(Box::new(IsValid("password".into()))))
     .build()
 
-// Hide advanced panel in simple mode
+// Hide advanced panel in simple mode (= show when NOT simple)
 Panel::builder("advanced")
-    .visibility(VisibilityConfig::new()
-        .hide_when_equals("mode", Value::text("simple")))
+    .visible_when(Ne("mode".into(), Value::text("simple")))
     .build()
 ```
 

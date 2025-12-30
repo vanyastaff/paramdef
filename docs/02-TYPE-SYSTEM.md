@@ -24,7 +24,7 @@ full = ["visibility", "validation", "serde", "events", "i18n", "chrono"]
 | Feature | What It Adds |
 |---------|-------------|
 | (none) | Core struct fields only |
-| `visibility` | `Visibility` trait, `VisibilityConfig` |
+| `visibility` | `Visibility` trait, `Expr` |
 | `validation` | `Validatable` trait, `Validator` trait |
 | `serde` | Serialize/Deserialize + JSON (From, FromStr, Display) |
 | `events` | Event system (tokio channels) |
@@ -40,7 +40,7 @@ pub struct Text {
     pub value: Option<String>,
     
     #[cfg(feature = "visibility")]
-    pub visibility: Option<VisibilityConfig>,
+    pub visibility: Option<Expr>,
     
     #[cfg(feature = "validation")]
     pub validation: Option<ValidationConfig>,
@@ -1144,96 +1144,108 @@ Select::builder("database")
 
 ### Basic Usage
 
-Every node type has an optional `visibility` field:
+Every node type has an optional `visibility` field storing an `Expr`:
 
 ```rust
 pub struct Text {
     pub metadata: Metadata,
-    pub visibility: Option<VisibilityConfig>,  // Conditional visibility
+    #[cfg(feature = "visibility")]
+    pub visibility: Option<Expr>,  // Conditional visibility
     // ... other fields
 }
+```
 
-pub struct Panel {
-    pub metadata: Metadata,
-    pub visibility: Option<VisibilityConfig>,  // Conditional visibility
-    // ... other fields
-}
+### Expr - Visibility Expression
 
-pub struct Notice {
-    pub metadata: Metadata,
-    pub visibility: Option<VisibilityConfig>,  // Conditional visibility
-    // ... other fields
+```rust
+pub enum Expr {
+    Eq(Key, Value),           // key == value
+    Ne(Key, Value),           // key != value
+    IsSet(Key),               // key is not null
+    IsEmpty(Key),             // "", [], {}
+    IsTrue(Key),              // key == true
+    Lt(Key, f64),             // key < value
+    Le(Key, f64),             // key <= value
+    Gt(Key, f64),             // key > value
+    Ge(Key, f64),             // key >= value
+    OneOf(Key, Arc<[Value]>), // key in [...]
+    IsValid(Key),             // key passed validation
+    And(Arc<[Expr]>),         // all must be true
+    Or(Arc<[Expr]>),          // any must be true
+    Not(Box<Expr>),           // invert
 }
 ```
 
 ### Examples by Category
 
 ```rust
+use Expr::*;
+
 // Group: hide entire settings in simple mode
 Group::builder("advanced_settings")
-    .visibility(VisibilityConfig::new()
-        .hide_when_equals("mode", Value::text("simple")))
+    .visible_when(Ne("mode".into(), Value::text("simple")))
     .build()
 
-// Panel: show only for authenticated users
+// Panel: show only for admin users
 Panel::builder("admin_panel")
-    .visibility(VisibilityConfig::new()
-        .show_when_equals("role", Value::text("admin")))
+    .visible_when(Eq("role".into(), Value::text("admin")))
     .build()
 
 // Notice: show warning when field invalid
 Notice::builder("validation_warning")
     .notice_type(NoticeType::Warning)
-    .visibility(VisibilityConfig::new()
-        .show_when_invalid("email"))
+    .visible_when(Not(Box::new(IsValid("email".into()))))
     .build()
 
 // Object: hide shipping when "pickup" selected
 Object::builder("shipping_address")
-    .visibility(VisibilityConfig::new()
-        .hide_when_equals("delivery_method", Value::text("pickup")))
+    .visible_when(Ne("delivery_method".into(), Value::text("pickup")))
     .build()
 
-// List: hide when no items
+// List: show when has items
 List::builder("items")
-    .visibility(VisibilityConfig::new()
-        .show_when(DisplayRule::when("has_items", DisplayCondition::IsTrue)))
+    .visible_when(Not(Box::new(IsEmpty("items".into()))))
     .build()
 
 // Text: show based on authentication type
 Text::builder("api_key")
-    .visibility(VisibilityConfig::new()
-        .show_when_equals("auth_type", Value::text("api_key")))
+    .visible_when(Eq("auth_type".into(), Value::text("api_key")))
     .build()
 
 // Number: show custom port only when protocol is "custom"
 Number::builder::<i64>("custom_port")
-    .visibility(VisibilityConfig::new()
-        .show_when_equals("protocol", Value::text("custom")))
+    .visible_when(Eq("protocol".into(), Value::text("custom")))
     .build()
 
-// Select: show regions based on country
+// Select: show regions when country is set
 Select::builder("region")
-    .visibility(VisibilityConfig::new()
-        .show_when(DisplayRule::when("country", DisplayCondition::IsSet)))
+    .visible_when(IsSet("country".into()))
     .build()
 ```
 
-### Evaluation Priority
-
-1. `hide_when` is checked first (OR logic between multiple hide conditions)
-2. `show_when` is checked second (AND logic between multiple show conditions)
-3. If no conditions, node is always visible
+### Complex Conditions
 
 ```rust
-// Multiple conditions example
-let visibility = VisibilityConfig::new()
-    // Hide if disabled OR in maintenance mode
-    .hide_when(DisplayRule::when("disabled", DisplayCondition::IsTrue))
-    .hide_when(DisplayRule::when("maintenance", DisplayCondition::IsTrue))
-    // Show only if enabled AND level > 10
-    .show_when(DisplayRule::when("enabled", DisplayCondition::IsTrue))
-    .show_when(DisplayRule::when("level", DisplayCondition::GreaterThan(10.0)));
+use Expr::*;
+
+// Show when enabled AND level > 10
+Number::builder::<i32>("threshold")
+    .visible_when(And(Arc::from([
+        IsTrue("enabled".into()),
+        Gt("level".into(), 10.0),
+    ])))
+    .build()
+
+// Show when (premium OR admin) AND NOT disabled
+Text::builder("secret")
+    .visible_when(And(Arc::from([
+        Or(Arc::from([
+            Eq("plan".into(), Value::text("premium")),
+            Eq("role".into(), Value::text("admin")),
+        ])),
+        Not(Box::new(IsTrue("disabled".into()))),
+    ])))
+    .build()
 ```
 
 ---
@@ -1401,17 +1413,17 @@ Text::builder("username")
 | `Validatable` | Container + Leaf (10 types) | Value validation |
 
 ```rust
+use Expr::*;
+
 // Notice has Visibility but NOT Validatable
 Notice::builder("warning")
-    .visibility(VisibilityConfig::new()
-        .show_when_invalid("email"))  // Can react to validation
-    // .validation(...)              // NOT AVAILABLE - no value to validate
+    .visible_when(Not(Box::new(IsValid("email".into()))))  // Can react to validation
+    // .validation(...)  // NOT AVAILABLE - no value to validate
     .build()
 
 // Text has BOTH Visibility AND Validatable
 Text::builder("api_key")
-    .visibility(VisibilityConfig::new()
-        .show_when_equals("auth_type", Value::text("api_key")))
+    .visible_when(Eq("auth_type".into(), Value::text("api_key")))
     .validation(ValidationConfig::new()
         .required()
         .min_length(32))

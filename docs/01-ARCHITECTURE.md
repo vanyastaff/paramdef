@@ -42,7 +42,7 @@ full = ["visibility", "validation", "serde", "events", "i18n", "chrono"]
 | Feature | Enables |
 |---------|---------|
 | (none) | Core types, Node traits, Value enum |
-| `visibility` | `Visibility` trait, `VisibilityConfig`, visibility conditions |
+| `visibility` | `Visibility` trait, `Expr` visibility conditions |
 | `validation` | `Validatable` trait, `Validator` trait, `ValidationError` |
 | `serde` | Serialize/Deserialize + JSON conversions (From, FromStr, Display) |
 | `events` | Event system with tokio broadcast channels |
@@ -286,80 +286,140 @@ bitflags! {
 ```rust
 #[cfg(feature = "visibility")]
 pub trait Visibility: Node {
-    fn visibility(&self) -> Option<&VisibilityConfig>;
-    fn set_visibility(&mut self, config: Option<VisibilityConfig>);
+    fn visibility(&self) -> Option<&Expr>;
+    fn set_visibility(&mut self, expr: Option<Expr>);
     fn is_visible(&self, context: &Context) -> bool;
-    fn dependencies(&self) -> Vec<Key>;
+    fn dependencies(&self) -> &[Key];
 }
 ```
 
-### VisibilityConfig Configuration
+### Visibility Expression
+
+Single expression that evaluates to `bool`. No config object — just an optional `Expr`:
 
 ```rust
-pub struct VisibilityConfig {
-    show_when: Option<DisplayRuleSet>,  // Conditions to show (AND)
-    hide_when: Option<DisplayRuleSet>,  // Conditions to hide (OR, priority)
+/// Visibility expression - evaluates to bool
+pub enum Expr {
+    // Comparisons (key, value)
+    Eq(Key, Value),           // key == value
+    Ne(Key, Value),           // key != value
+    
+    // Existence checks
+    IsSet(Key),               // key is not null
+    IsEmpty(Key),             // "", [], {}
+    
+    // Boolean checks
+    IsTrue(Key),              // key == true
+    
+    // Numeric comparisons
+    Lt(Key, f64),             // key < value
+    Le(Key, f64),             // key <= value
+    Gt(Key, f64),             // key > value
+    Ge(Key, f64),             // key >= value
+    
+    // Set membership
+    OneOf(Key, Arc<[Value]>), // key in [...]
+    
+    // Validation state
+    IsValid(Key),             // key passed validation
+    
+    // Combinators
+    And(Arc<[Expr]>),         // all must be true
+    Or(Arc<[Expr]>),          // any must be true
+    Not(Box<Expr>),           // invert
 }
 ```
 
-### DisplayCondition Variants
+### Why Single Expression?
 
-| Condition | Description | Example |
-|-----------|-------------|---------|
-| `Equals(Value)` | Value equals | `auth_type == "api_key"` |
-| `NotEquals(Value)` | Value not equals | `status != "disabled"` |
-| `IsSet` | Value is not null | Field has value |
-| `IsNull` | Value is null | Field is empty |
-| `IsEmpty` | Empty string/array/object | `""`, `[]`, `{}` |
-| `IsNotEmpty` | Not empty | Has content |
-| `IsTrue` | Boolean is true | Checkbox checked |
-| `IsFalse` | Boolean is false | Checkbox unchecked |
-| `GreaterThan(f64)` | Numeric comparison | `count > 10` |
-| `LessThan(f64)` | Numeric comparison | `count < 100` |
-| `InRange { min, max }` | Numeric range | `1 <= x <= 100` |
-| `Contains(String)` | String contains | `url.contains("api")` |
-| `StartsWith(String)` | String prefix | `url.startsWith("https")` |
-| `EndsWith(String)` | String suffix | `file.endsWith(".json")` |
-| `OneOf(Vec<Value>)` | Value in list | `method in ["GET", "POST"]` |
-| `IsValid` | Passed validation | Show after valid input |
-| `IsInvalid` | Failed validation | Show error hint |
+| Old Design | New Design |
+|------------|------------|
+| `show_when` + `hide_when` | Single `Expr` |
+| Two evaluation paths | One evaluation |
+| Priority rules (hide wins) | Explicit `Not(...)` |
+| `DisplayRuleSet`, `DisplayRule`, `DisplayCondition` | Just `Expr` |
 
-### Visibility by Node Category
+**`hide_when(X)` becomes `show_when(Not(X))`** — simpler mental model.
 
-| Category | Typical Use Case |
-|----------|------------------|
-| Group | Hide entire group in "simple mode" |
-| Panel | Show "Advanced" tab for power users |
-| Notice | Show warning when validation fails |
-| Object | Hide section when checkbox unchecked |
-| List | Hide when empty |
-| Mode | Usually always visible |
-| Routing | Show based on node capabilities |
-| Expirable | Show refresh when expiring soon |
-| Leaf | Show field based on other field values |
+### Expr Variants
+
+| Variant | Description | Example |
+|---------|-------------|---------|
+| `Eq(key, val)` | Equality | `auth_type == "api_key"` |
+| `Ne(key, val)` | Inequality | `status != "disabled"` |
+| `IsSet(key)` | Not null | Field has value |
+| `IsEmpty(key)` | Empty value | `""`, `[]`, `{}` |
+| `IsTrue(key)` | Boolean true | Checkbox checked |
+| `Lt/Le/Gt/Ge` | Numeric comparison | `count > 10` |
+| `OneOf(key, vals)` | In set | `method in ["GET", "POST"]` |
+| `IsValid(key)` | Passed validation | Show after valid input |
+| `And([...])` | All true | `a && b && c` |
+| `Or([...])` | Any true | `a \|\| b \|\| c` |
+| `Not(expr)` | Invert | `!(disabled)` |
 
 ### Example Usage
 
 ```rust
+use Expr::*;
+
 // Show API key only when auth type is "api_key"
 Text::builder("api_key")
-    .visibility(VisibilityConfig::new()
-        .show_when_equals("auth_type", Value::text("api_key")))
+    .visible_when(Eq("auth_type".into(), Value::text("api_key")))
     .build()
 
 // Show error notice when email is invalid
 Notice::builder("email_error")
     .notice_type(NoticeType::Error)
-    .visibility(VisibilityConfig::new()
-        .show_when_invalid("email"))
+    .visible_when(Not(Box::new(IsValid("email".into()))))
     .build()
 
-// Complex: show when enabled AND level > 10
-let visibility = VisibilityConfig::new()
-    .show_when(DisplayRuleSet::all([
-        DisplayRule::when("enabled", DisplayCondition::IsTrue),
-        DisplayRule::when("level", DisplayCondition::GreaterThan(10.0)),
-    ]));
+// Show when enabled AND level > 10
+Number::builder::<i32>("threshold")
+    .visible_when(And(Arc::from([
+        IsTrue("enabled".into()),
+        Gt("level".into(), 10.0),
+    ])))
+    .build()
+
+// Hide in maintenance mode (= show when NOT maintenance)
+Panel::builder("settings")
+    .visible_when(Not(Box::new(IsTrue("maintenance".into()))))
+    .build()
+
+// Complex: show when (premium OR admin) AND NOT disabled
+Text::builder("secret")
+    .visible_when(And(Arc::from([
+        Or(Arc::from([
+            Eq("plan".into(), Value::text("premium")),
+            Eq("role".into(), Value::text("admin")),
+        ])),
+        Not(Box::new(IsTrue("disabled".into()))),
+    ])))
+    .build()
+```
+
+### Builder Helpers
+
+```rust
+impl<T: Node> Builder<T> {
+    /// Show when expression is true
+    fn visible_when(self, expr: Expr) -> Self;
+    
+    /// Convenience: show when key equals value
+    fn visible_when_eq(self, key: impl Into<Key>, value: Value) -> Self {
+        self.visible_when(Expr::Eq(key.into(), value))
+    }
+    
+    /// Convenience: show when key is true
+    fn visible_when_true(self, key: impl Into<Key>) -> Self {
+        self.visible_when(Expr::IsTrue(key.into()))
+    }
+    
+    /// Convenience: hide when expression is true
+    fn hidden_when(self, expr: Expr) -> Self {
+        self.visible_when(Expr::Not(Box::new(expr)))
+    }
+}
 ```
 
 ---
