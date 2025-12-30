@@ -370,12 +370,13 @@ pub struct Number<T: Numeric, S: NumberSubtype<T> = Generic> {
     pub metadata: Metadata,
     pub subtype: S,
     pub unit: NumberUnit,
-    pub hard_min: Option<T>,
-    pub hard_max: Option<T>,
-    pub soft_min: Option<T>,
-    pub soft_max: Option<T>,
-    pub step: Option<T>,
     pub default: Option<T>,
+    
+    #[cfg(feature = "validation")]
+    pub validators: Vec<Arc<dyn Validator>>,
+    
+    #[cfg(feature = "ui")]
+    pub ui_hints: NumberUiHints<T>,
 }
 
 // Compile-time safety: subtype must be valid for numeric type
@@ -384,21 +385,28 @@ Number::<f64>::builder("port").subtype(Port).build();      // ✗ ERROR: Port no
 Number::<f64>::builder("opacity").subtype(Factor).build(); // ✓ Factor is float-only
 ```
 
-**Hard vs Soft Constraints:**
-- `hard_min/hard_max` - Validation fails if exceeded
-- `soft_min/soft_max` - UI slider range (user can type beyond)
-
-**Example:**
+**Validation via validators (not built-in constraints):**
 ```rust
-// Opacity slider 0-100, but validation allows full range
-Number::builder::<f64>("opacity")
-    .label("Opacity")
-    .subtype(NumberSubtype::Factor)
-    .hard_min(0.0)
-    .hard_max(1.0)
-    .soft_min(0.0)
-    .soft_max(1.0)
-    .step(0.01)
+Number::<u16>::builder("port")
+    .subtype(Port)
+    .range(1, 65535)              // helper → creates range validator
+    .default(8080)
+    .build()
+
+// Equivalent to:
+Number::<u16>::builder("port")
+    .subtype(Port)
+    .validate(range(1, 65535))    // explicit validator
+    .default(8080)
+    .build()
+```
+
+**UI hints (separate from validation):**
+```rust
+Number::<f64>::builder("opacity")
+    .subtype(Factor)
+    .range(0.0, 1.0)              // validation
+    .ui_hints(NumberUiHints::slider(0.0, 1.0).step(0.01))
     .default(1.0)
     .build()
 ```
@@ -439,16 +447,30 @@ pub struct Vector<T: Numeric, const N: usize, S: VectorSubtype<N> = Vector3> {
     pub metadata: Metadata,
     pub subtype: S,
     pub component_units: NumberUnit,
-    pub hard_min: Option<[T; N]>,
-    pub hard_max: Option<[T; N]>,
-    pub soft_min: Option<[T; N]>,
-    pub soft_max: Option<[T; N]>,
     pub default: Option<[T; N]>,
+    
+    #[cfg(feature = "validation")]
+    pub validators: Vec<Arc<dyn Validator>>,
+    
+    #[cfg(feature = "ui")]
+    pub ui_hints: VectorUiHints<T, N>,
 }
 
 // Compile-time safety: subtype must match vector size
 Vector::<f64, 3>::builder("pos").subtype(Position3D).build();  // ✓ 
 Vector::<f64, 3>::builder("rot").subtype(Quaternion).build();  // ✗ ERROR: Quaternion needs size 4
+```
+
+**Example with validation and UI hints:**
+```rust
+Vector::<f64, 3>::builder("position")
+    .subtype(Position3D)
+    .component_range(-1000.0, 1000.0)  // validator for each component
+    .ui_hints(VectorUiHints::new()
+        .labels(["X", "Y", "Z"])
+        .step(0.1))
+    .default([0.0, 0.0, 0.0])
+    .build()
 ```
 
 **Common Subtypes (size-constrained):**
@@ -1573,6 +1595,159 @@ This gives us:
 - 35+ vector subtypes
 - 14 flags
 - = Thousands of combinations with a minimal API!
+
+---
+
+## UiHints Types (Feature: `ui`)
+
+Each node type has its own UiHints struct for type-safe UI configuration.
+
+### NumberUiHints
+
+```rust
+pub struct NumberUiHints<T: Numeric> {
+    pub min: Option<T>,           // slider min
+    pub max: Option<T>,           // slider max
+    pub step: Option<T>,          // slider step
+    pub precision: Option<u8>,    // decimal places
+    pub slider: bool,             // show as slider
+    pub suffix: Option<String>,   // display suffix ("px", "%")
+    pub prefix: Option<String>,   // display prefix ("$")
+}
+
+impl<T: Numeric> NumberUiHints<T> {
+    pub fn slider(min: T, max: T) -> Self;
+    pub fn step(self, step: T) -> Self;
+    pub fn precision(self, decimals: u8) -> Self;
+}
+```
+
+**Example:**
+```rust
+Number::<f64>::builder("opacity")
+    .range(0.0, 1.0)
+    .ui_hints(NumberUiHints::slider(0.0, 1.0).step(0.01).precision(2))
+    .build()
+```
+
+### VectorUiHints
+
+```rust
+pub struct VectorUiHints<T: Numeric, const N: usize> {
+    pub min: Option<[T; N]>,              // slider min per component
+    pub max: Option<[T; N]>,              // slider max per component
+    pub step: Option<T>,                  // step for all components
+    pub labels: Option<[&'static str; N]>,// component labels ["X", "Y", "Z"]
+    pub compact: bool,                    // inline vs stacked display
+    pub linked: bool,                     // lock proportions
+}
+
+impl<T: Numeric, const N: usize> VectorUiHints<T, N> {
+    pub fn labels(self, labels: [&'static str; N]) -> Self;
+    pub fn compact(self) -> Self;
+    pub fn linked(self) -> Self;
+}
+```
+
+**Example:**
+```rust
+Vector::<f64, 3>::builder("scale")
+    .subtype(Scale3D)
+    .ui_hints(VectorUiHints::new()
+        .labels(["X", "Y", "Z"])
+        .linked())  // proportional scaling
+    .build()
+```
+
+### TextUiHints
+
+```rust
+pub struct TextUiHints {
+    pub placeholder: Option<String>,
+    pub rows: Option<u8>,             // multiline height
+    pub max_display_length: Option<usize>,
+    pub monospace: bool,              // for code
+    pub show_char_count: bool,
+    pub autocomplete: Option<Vec<String>>,
+}
+
+impl TextUiHints {
+    pub fn placeholder(self, text: impl Into<String>) -> Self;
+    pub fn rows(self, rows: u8) -> Self;
+    pub fn monospace(self) -> Self;
+}
+```
+
+**Example:**
+```rust
+Text::builder("bio")
+    .subtype(MultiLine)
+    .max_length(500)
+    .ui_hints(TextUiHints::new()
+        .rows(5)
+        .placeholder("Tell us about yourself")
+        .show_char_count())
+    .build()
+```
+
+### SelectUiHints
+
+```rust
+pub struct SelectUiHints {
+    pub searchable: bool,
+    pub creatable: bool,              // can create new options
+    pub max_visible: Option<u8>,      // dropdown height
+    pub show_icons: bool,
+    pub group_options: bool,          // group by category
+}
+
+impl SelectUiHints {
+    pub fn searchable(self) -> Self;
+    pub fn creatable(self) -> Self;
+}
+```
+
+**Example:**
+```rust
+Select::builder("country")
+    .single()
+    .dynamic_options(CountryLoader::new())
+    .ui_hints(SelectUiHints::new()
+        .searchable()
+        .max_visible(10))
+    .build()
+```
+
+### BooleanUiHints
+
+```rust
+pub struct BooleanUiHints {
+    pub style: BooleanStyle,
+    pub label_on: Option<String>,     // custom label when true
+    pub label_off: Option<String>,    // custom label when false
+}
+
+pub enum BooleanStyle {
+    Checkbox,   // [✓] Label
+    Toggle,     // ○━━● switch
+    Button,     // [ON] / [OFF] button
+}
+
+impl BooleanUiHints {
+    pub fn toggle(self) -> Self;
+    pub fn button(self) -> Self;
+    pub fn labels(self, on: &str, off: &str) -> Self;
+}
+```
+
+**Example:**
+```rust
+Boolean::builder("dark_mode")
+    .ui_hints(BooleanUiHints::new()
+        .toggle()
+        .labels("Dark", "Light"))
+    .build()
+```
 
 ---
 
