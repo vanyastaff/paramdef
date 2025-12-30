@@ -3,7 +3,9 @@
     "allow": [
       "Skill(superpowers:brainstorming)",
       "Skill(rust-modern-features)",
-      "Skill(rust-project-structure)"
+      "Skill(rust-project-structure)",
+      "Skill(superpowers:writing-plans)",
+      "Bash(openspec list:*)"
     ]
   }
 }
