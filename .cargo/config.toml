@@ -1,0 +1,13 @@
+[build]
+# Uncomment for faster builds with debug info
+# rustflags = ["-C", "debuginfo=1"]
+
+[target.x86_64-unknown-linux-gnu]
+rustflags = ["-C", "link-arg=-fuse-ld=lld"]
+
+[target.x86_64-pc-windows-msvc]
+linker = "rust-lld.exe"
+rustflags = ["-C", "link-arg=-fuse-ld=lld"]
+
+[alias]
+xtask = "run --package xtask --"

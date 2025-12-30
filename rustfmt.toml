@@ -1,0 +1,7 @@
+# Minimal, stable rustfmt configuration compatible with stable rustfmt
+# Remove unsupported/unstable options to avoid "Warning: can't set ..."
+edition = "2024"
+max_width = 100
+hard_tabs = false
+newline_style = "Unix"
+reorder_imports = true
