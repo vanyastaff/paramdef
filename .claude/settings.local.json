@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Skill(superpowers:brainstorming)",
-      "Skill(rust-modern-features)"
+      "Skill(rust-modern-features)",
+      "Skill(rust-project-structure)"
     ]
   }
 }
