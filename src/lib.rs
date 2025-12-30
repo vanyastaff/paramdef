@@ -1,16 +1,51 @@
-//! Type-safe parameter definition system
+//! Type-safe parameter definition system.
+//!
+//! `paramdef` provides a comprehensive system for defining, validating, and managing
+//! parameters in applications. Inspired by Blender RNA, Unreal Engine UPROPERTY,
+//! and Qt Property System.
+//!
+//! # Features
+//!
+//! - **Type-safe**: Compile-time guarantees for parameter types
+//! - **Flexible**: Support for primitives, collections, and complex types
+//! - **Extensible**: Custom validators, transformers, and subtypes
+//! - **UI-agnostic**: Core library works headless, UI is optional
+//!
+//! # Quick Start
+//!
+//! ```
+//! use paramdef::core::{Value, Flags, Metadata};
+//!
+//! // Create metadata for a parameter
+//! let meta = Metadata::builder("username")
+//!     .label("Username")
+//!     .description("Your unique identifier")
+//!     .build();
+//!
+//! // Define flags
+//! let flags = Flags::REQUIRED;
+//!
+//! // Work with values
+//! let value = Value::text("alice");
+//! assert_eq!(value.as_text(), Some("alice"));
+//! ```
+//!
+//! # Feature Flags
+//!
+//! - `serde` - Enable serialization/deserialization support
+//! - `events` - Enable event system with tokio channels
+//! - `validation` - Enable validation system
+//! - `display` - Enable display/visibility conditions
+//! - `i18n` - Enable internationalization with Fluent
+//! - `chrono` - Enable chrono type conversions
+//! - `full` - Enable all features
 
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+#![warn(missing_docs)]
+#![warn(clippy::all)]
+#![warn(clippy::pedantic)]
+#![allow(clippy::module_name_repetitions)]
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+pub mod core;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+// Re-export commonly used types at crate root
+pub use core::{Error, Flags, Key, Metadata, Result, StateFlags, Value};

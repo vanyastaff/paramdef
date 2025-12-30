@@ -15,7 +15,7 @@ readme = "README.md"
 default = []
 display = []
 validation = []
-serde = ["dep:serde", "dep:serde_json"]
+serde = ["dep:serde", "dep:serde_json", "dep:base64", "smartstring/serde"]
 events = ["dep:tokio"]
 i18n = ["dep:fluent"]
 chrono = ["dep:chrono"]
@@ -29,6 +29,7 @@ bitflags = "2.10"
 
 serde = { version = "1.0", optional = true, features = ["derive"] }
 serde_json = { version = "1.0", optional = true }
+base64 = { version = "0.22", optional = true }
 tokio = { version = "1.43", optional = true, features = ["sync"] }
 fluent = { version = "0.17", optional = true }
 chrono = { version = "0.4", optional = true, default-features = false, features = ["std"] }

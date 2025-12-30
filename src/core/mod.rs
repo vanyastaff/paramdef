@@ -1,0 +1,21 @@
+//! Core types for the paramdef library.
+//!
+//! This module contains the foundational types that all other components depend on:
+//! - [`Key`] - Parameter identifier using stack-optimized strings
+//! - [`Metadata`] - Parameter display information (label, description, group, tags)
+//! - [`Flags`] - Schema-level parameter attributes (REQUIRED, READONLY, etc.)
+//! - [`StateFlags`] - Runtime parameter state (DIRTY, TOUCHED, VALID, etc.)
+//! - [`Value`] - Unified runtime representation for all parameter values
+//! - [`Error`] - Error types for parameter operations
+
+mod error;
+mod flags;
+mod key;
+mod metadata;
+mod value;
+
+pub use error::{Error, Result};
+pub use flags::{Flags, StateFlags};
+pub use key::Key;
+pub use metadata::{Metadata, MetadataBuilder};
+pub use value::Value;
