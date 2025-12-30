@@ -8,7 +8,11 @@
       "Bash(openspec list:*)",
       "SlashCommand(/openspec:apply add-core-types)",
       "SlashCommand(/openspec:apply:*)",
-      "Skill(superpowers:requesting-code-review)"
+      "Skill(superpowers:requesting-code-review)",
+      "Skill(rust-ms-libraries)",
+      "Skill(rust-patterns)",
+      "Skill(rust-ms-universal)",
+      "Skill(rust-docs)"
     ]
   }
 }
