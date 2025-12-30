@@ -238,7 +238,7 @@ pub struct Text {
     allowed_values: Option<Vec<String>>,
     validators: Vec<Arc<dyn Validator>>,
     transformers: Vec<Arc<dyn Transformer>>,
-    display: Option<ParameterDisplay>,
+    visibility: Option<Expr>,
 }
 
 // Builder
@@ -293,7 +293,7 @@ pub struct Boolean {
     metadata: Metadata,
     flags: Flags,
     default: bool,
-    display: Option<ParameterDisplay>,
+    visibility: Option<Expr>,
 }
 
 // Simple - no subtype!
@@ -612,78 +612,68 @@ pub struct HistoryManager {
 
 ### Goal: Conditional visibility
 
-### 5.1 Display Conditions
+### 5.1 Visibility Expression
 
 ```rust
-// src/core/display/condition.rs
-pub enum DisplayCondition {
-    Equals(Value),
-    NotEquals(Value),
-    IsSet, IsNull,
-    IsEmpty, IsNotEmpty,
-    IsTrue, IsFalse,
-    GreaterThan(f64),
-    LessThan(f64),
-    InRange { min: f64, max: f64 },
-    Contains(String),
-    StartsWith(String),
-    EndsWith(String),
-    OneOf(Vec<Value>),
-    IsValid,
-    IsInvalid,
+// src/visibility/expr.rs
+pub enum Expr {
+    // Comparisons
+    Eq(Key, Value),           // key == value
+    Ne(Key, Value),           // key != value
+    
+    // Existence
+    IsSet(Key),               // key is not null
+    IsEmpty(Key),             // "", [], {}
+    
+    // Boolean
+    IsTrue(Key),              // key == true
+    
+    // Numeric
+    Lt(Key, f64),             // key < value
+    Le(Key, f64),             // key <= value
+    Gt(Key, f64),             // key > value
+    Ge(Key, f64),             // key >= value
+    
+    // Set membership
+    OneOf(Key, Arc<[Value]>), // key in [...]
+    
+    // Validation state
+    IsValid(Key),             // key passed validation
+    
+    // Combinators
+    And(Arc<[Expr]>),         // all must be true
+    Or(Arc<[Expr]>),          // any must be true
+    Not(Box<Expr>),           // invert
+}
+
+impl Expr {
+    pub fn eval(&self, ctx: &Context) -> bool;
+    pub fn dependencies(&self) -> Vec<Key>;
 }
 ```
 
-**Deliverable:** Display condition system
+**Deliverable:** Visibility expression system
 
 ---
 
-### 5.2 Display Rules
+### 5.2 VisibilityObserver
 
 ```rust
-// src/core/display/rule.rs
-pub struct DisplayRule {
-    pub field: Key,
-    pub condition: DisplayCondition,
+// src/observer/visibility.rs
+pub struct VisibilityObserver {
+    context: Arc<RwLock<Context>>,
+    expressions: HashMap<Key, Expr>,
 }
 
-pub enum DisplayRuleSet {
-    Single(DisplayRule),
-    All(Vec<DisplayRuleSet>),
-    Any(Vec<DisplayRuleSet>),
-    Not(Box<DisplayRuleSet>),
-}
-
-pub struct ParameterDisplay {
-    show_when: Option<DisplayRuleSet>,
-    hide_when: Option<DisplayRuleSet>,
-}
-```
-
-**Deliverable:** Display rule system
-
----
-
-### 5.3 DisplayObserver
-
-```rust
-// src/observer/display.rs
-pub struct DisplayObserver {
-    context: DisplayContext,
-    displays: HashMap<Key, ParameterDisplay>,
-    dependencies: HashMap<Key, HashSet<Key>>,
-}
-
-impl Observer for DisplayObserver {
-    fn on_event(&mut self, event: &ParameterEvent) {
-        // Update context → recalculate visibility → emit events
-    }
+impl VisibilityObserver {
+    pub fn register(&mut self, key: Key, expr: Expr);
+    pub async fn start(&self);  // Listen and react to changes
 }
 ```
 
 **Test Coverage:** 90%+
 
-**Deliverable:** Reactive display system integrated with events
+**Deliverable:** Reactive visibility system integrated with events
 
 ---
 

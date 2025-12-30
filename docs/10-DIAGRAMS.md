@@ -521,27 +521,27 @@ Stack:                          Heap:
 
 ---
 
-## Display Conditions
+## Visibility Expression
 
 ```
-                    DisplayRule
-                         |
-         +---------------+---------------+
-         |               |               |
-     show_when       hide_when     show_and_enable
-         |               |               |
-         v               v               v
-     Condition       Condition       Condition
-         |
-    +----+----+----+----+
-    |    |    |    |    |
- Equals  In  Greater And  Or
-    |              Than  |    |
-    v                    v    v
-+--------+          +---+    +---+
-|key:mode|          |...|    |...|
-|val:adv |          +---+    +---+
-+--------+
+                      Expr
+                        |
+    +--------+----------+----------+--------+
+    |        |          |          |        |
+   Eq       Ne       IsTrue      And       Or
+    |        |          |          |        |
+    v        v          v          v        v
++-------+ +-------+ +------+  +-------+ +-------+
+|key    | |key    | |key   |  |[Expr] | |[Expr] |
+|value  | |value  | +------+  +-------+ +-------+
++-------+ +-------+
+
+               Not
+                |
+                v
+           +--------+
+           | Expr   |
+           +--------+
 ```
 
 ---

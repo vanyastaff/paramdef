@@ -209,16 +209,13 @@ Text::builder("email")
     .build()
 ```
 
-### Display Conditions
+### Visibility Conditions
 
 ```rust
+use Expr::*;
+
 Text::builder("ssl_cert")
-    .display_when(DisplayRule::show_when(
-        Condition::Equals {
-            key: "protocol".into(),
-            value: Value::Text("https".into()),
-        }
-    ))
+    .visible_when(Eq("protocol".into(), Value::text("https")))
     .build()
 ```
 

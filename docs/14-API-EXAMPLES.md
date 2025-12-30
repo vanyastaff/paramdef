@@ -137,10 +137,7 @@ fn create_registration_form() -> Schema {
             Text::password("confirm_password")
                 .label("Confirm Password")
                 .required()
-                .with_display(
-                    ParameterDisplay::new()
-                        .show_when_valid("password")
-                )
+                .visible_when(Expr::IsValid("password".into()))
                 .build()
         )
         .with_parameter(
@@ -265,33 +262,24 @@ fn create_http_request_node() -> Schema {
             Text::builder("api_key")
                 .subtype(TextSubtype::Secret)
                 .label("API Key")
-                .with_display(
-                    ParameterDisplay::new()
-                        .show_when_equals("auth_type", Value::text("api_key"))
-                )
+                .visible_when(Expr::Eq("auth_type".into(), Value::text("api_key")))
                 .build()
         )
         .with_parameter(
             Text::builder("bearer_token")
                 .subtype(TextSubtype::Secret)
                 .label("Bearer Token")
-                .with_display(
-                    ParameterDisplay::new()
-                        .show_when_equals("auth_type", Value::text("bearer"))
-                )
+                .visible_when(Expr::Eq("auth_type".into(), Value::text("bearer")))
                 .build()
         )
         .with_parameter(
             Text::builder("request_body")
                 .subtype(TextSubtype::Json)
                 .label("Request Body")
-                .with_display(
-                    ParameterDisplay::new()
-                        .show_when(DisplayRuleSet::any([
-                            DisplayRule::when("method", DisplayCondition::Equals(Value::text("POST"))),
-                            DisplayRule::when("method", DisplayCondition::Equals(Value::text("PUT"))),
-                        ]))
-                )
+                .visible_when(Expr::OneOf(
+                    "method".into(),
+                    Arc::from([Value::text("POST"), Value::text("PUT")]),
+                ))
                 .build()
         )
         .with_parameter(
@@ -525,10 +513,7 @@ fn create_graphics_settings() -> Schema {
                 .option("medium", "Medium")
                 .option("high", "High")
                 .option("ultra", "Ultra")
-                .with_display(
-                    ParameterDisplay::new()
-                        .show_when_equals("quality_preset", Value::text("custom"))
-                )
+                .visible_when(Expr::Eq("quality_preset".into(), Value::text("custom")))
                 .build()
         )
         .with_parameter(
@@ -538,10 +523,7 @@ fn create_graphics_settings() -> Schema {
                 .option("low", "Low")
                 .option("medium", "Medium")
                 .option("high", "High")
-                .with_display(
-                    ParameterDisplay::new()
-                        .show_when_equals("quality_preset", Value::text("custom"))
-                )
+                .visible_when(Expr::Eq("quality_preset".into(), Value::text("custom")))
                 .build()
         )
         .with_parameter(
@@ -661,10 +643,7 @@ fn create_cli_config() -> Schema {
                 .option("github", "GitHub Actions")
                 .option("gitlab", "GitLab CI")
                 .option("circleci", "CircleCI")
-                .with_display(
-                    ParameterDisplay::new()
-                        .show_when_true("use_ci")
-                )
+                .visible_when(Expr::IsTrue("use_ci".into()))
                 .build()
         )
         .build()
@@ -858,30 +837,21 @@ fn create_api_client_config() -> Schema {
             Text::builder("api_key")
                 .subtype(TextSubtype::Secret)
                 .label("API Key")
-                .with_display(
-                    ParameterDisplay::new()
-                        .show_when_equals("auth_method", Value::text("api_key"))
-                )
+                .visible_when(Expr::Eq("auth_method".into(), Value::text("api_key")))
                 .build()
         )
         .with_parameter(
             Text::builder("api_key_header")
                 .label("API Key Header Name")
                 .default_value("X-API-Key")
-                .with_display(
-                    ParameterDisplay::new()
-                        .show_when_equals("auth_method", Value::text("api_key"))
-                )
+                .visible_when(Expr::Eq("auth_method".into(), Value::text("api_key")))
                 .build()
         )
         .with_parameter(
             Text::builder("bearer_token")
                 .subtype(TextSubtype::Secret)
                 .label("Bearer Token")
-                .with_display(
-                    ParameterDisplay::new()
-                        .show_when_equals("auth_method", Value::text("bearer"))
-                )
+                .visible_when(Expr::Eq("auth_method".into(), Value::text("bearer")))
                 .build()
         )
         .end_group()

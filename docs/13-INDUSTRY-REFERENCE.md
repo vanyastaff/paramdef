@@ -402,7 +402,7 @@ RED.nodes.registerType('my-node', {
 | Min/Max constraints | All | ✅ `.range()` |
 | Labels/Descriptions | All | ✅ Metadata |
 | Change notifications | Qt, WPF, Unreal | ✅ EventBus |
-| Conditional visibility | All node editors | ✅ DisplayRule |
+| Conditional visibility | All node editors | ✅ Expr |
 | Type validation | All | ✅ Type-safe keys |
 
 ### Advanced Patterns (Found in 5-9 Systems)

@@ -398,60 +398,50 @@ When using i18n feature, fluent IDs are serialized:
 
 ## Display Config Serialization
 
-### Display Rules
+### Visibility Expression
 
 ```json
 {
-  "show_when": {
-    "type": "Equals",
-    "field": "auth_type",
+  "visibility": {
+    "type": "Eq",
+    "key": "auth_type",
     "value": "api_key"
   }
 }
 ```
 
-### Complex Conditions
+### Complex Expressions
 
 ```json
 {
-  "show_when": {
+  "visibility": {
     "type": "And",
-    "conditions": [
-      {
-        "type": "Equals",
-        "field": "use_ssl",
-        "value": true
-      },
-      {
-        "type": "NotEquals",
-        "field": "protocol",
-        "value": "http"
-      }
+    "exprs": [
+      { "type": "IsTrue", "key": "use_ssl" },
+      { "type": "Ne", "key": "protocol", "value": "http" }
     ]
   }
 }
 ```
 
-### Condition Types
+### Expr Types
 
 | Type | JSON | Description |
 |------|------|-------------|
-| Equals | `{"type": "Equals", "field": "x", "value": v}` | field == value |
-| NotEquals | `{"type": "NotEquals", "field": "x", "value": v}` | field != value |
-| IsSet | `{"type": "IsSet", "field": "x"}` | field is not null |
-| IsNull | `{"type": "IsNull", "field": "x"}` | field is null |
-| IsEmpty | `{"type": "IsEmpty", "field": "x"}` | field is empty |
-| IsNotEmpty | `{"type": "IsNotEmpty", "field": "x"}` | field is not empty |
-| IsTrue | `{"type": "IsTrue", "field": "x"}` | field == true |
-| IsFalse | `{"type": "IsFalse", "field": "x"}` | field == false |
-| GreaterThan | `{"type": "GreaterThan", "field": "x", "value": n}` | field > n |
-| LessThan | `{"type": "LessThan", "field": "x", "value": n}` | field < n |
-| InRange | `{"type": "InRange", "field": "x", "min": a, "max": b}` | a <= field <= b |
-| Contains | `{"type": "Contains", "field": "x", "value": s}` | field contains s |
-| OneOf | `{"type": "OneOf", "field": "x", "values": [...]}` | field in values |
-| And | `{"type": "And", "conditions": [...]}` | all conditions |
-| Or | `{"type": "Or", "conditions": [...]}` | any condition |
-| Not | `{"type": "Not", "condition": {...}}` | negate |
+| Eq | `{"type": "Eq", "key": "x", "value": v}` | key == value |
+| Ne | `{"type": "Ne", "key": "x", "value": v}` | key != value |
+| IsSet | `{"type": "IsSet", "key": "x"}` | key is not null |
+| IsEmpty | `{"type": "IsEmpty", "key": "x"}` | key is empty |
+| IsTrue | `{"type": "IsTrue", "key": "x"}` | key == true |
+| Lt | `{"type": "Lt", "key": "x", "value": n}` | key < n |
+| Le | `{"type": "Le", "key": "x", "value": n}` | key <= n |
+| Gt | `{"type": "Gt", "key": "x", "value": n}` | key > n |
+| Ge | `{"type": "Ge", "key": "x", "value": n}` | key >= n |
+| OneOf | `{"type": "OneOf", "key": "x", "values": [...]}` | key in values |
+| IsValid | `{"type": "IsValid", "key": "x"}` | key passed validation |
+| And | `{"type": "And", "exprs": [...]}` | all expressions |
+| Or | `{"type": "Or", "exprs": [...]}` | any expression |
+| Not | `{"type": "Not", "expr": {...}}` | negate |
 
 ---
 

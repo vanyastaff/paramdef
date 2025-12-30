@@ -338,46 +338,35 @@ impl Context {
 
 ## Display Conditions
 
-Conditionally show/hide parameters based on values:
+Conditionally show/hide parameters based on values using `Expr`:
 
 ```rust
-pub enum DisplayRule {
-    Show(Condition),
-    Hide(Condition),
-    And(Vec<DisplayRule>),
-    Or(Vec<DisplayRule>),
-    Not(Box<DisplayRule>),
-}
-
-pub enum Condition {
-    Equals { key: String, value: Value },
-    NotEquals { key: String, value: Value },
-    In { key: String, values: Vec<Value> },
-    GreaterThan { key: String, value: f64 },
-    LessThan { key: String, value: f64 },
-    Between { key: String, min: f64, max: f64 },
-    IsNull { key: String },
-    IsEmpty { key: String },
-    IsValid { key: String },
-    ModeIs { key: String, variant: String },
-    Custom(Arc<dyn Fn(&Context) -> bool + Send + Sync>),
+pub enum Expr {
+    Eq(Key, Value),           // key == value
+    Ne(Key, Value),           // key != value
+    IsSet(Key),               // key is not null
+    IsEmpty(Key),             // "", [], {}
+    IsTrue(Key),              // key == true
+    Lt(Key, f64),             // key < value
+    Gt(Key, f64),             // key > value
+    OneOf(Key, Arc<[Value]>), // key in [...]
+    IsValid(Key),             // key passed validation
+    And(Arc<[Expr]>),         // all must be true
+    Or(Arc<[Expr]>),          // any must be true
+    Not(Box<Expr>),           // invert
 }
 ```
 
 **Example:**
 ```rust
-// Show SSL options only for HTTPS
+use Expr::*;
+
+// Show SSL options only when protocol is HTTPS and use_ssl is true
 Text::builder("ssl_cert")
-    .display_when(DisplayRule::And(vec![
-        DisplayRule::Show(Condition::Equals {
-            key: "protocol".into(),
-            value: Value::Text("https".into()),
-        }),
-        DisplayRule::Show(Condition::Equals {
-            key: "use_ssl".into(),
-            value: Value::Bool(true),
-        }),
-    ]))
+    .visible_when(And(Arc::from([
+        Eq("protocol".into(), Value::text("https")),
+        IsTrue("use_ssl".into()),
+    ])))
     .build()
 ```
 
