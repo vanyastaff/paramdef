@@ -86,7 +86,7 @@ impl Metadata {
     /// Returns the parameter key.
     #[inline]
     #[must_use]
-    pub fn key(&self) -> &str {
+    pub fn key(&self) -> &Key {
         &self.key
     }
 

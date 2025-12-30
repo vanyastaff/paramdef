@@ -13,13 +13,13 @@ readme = "README.md"
 
 [features]
 default = []
-display = []
+visibility = []
 validation = []
 serde = ["dep:serde", "dep:serde_json", "dep:base64", "smartstring/serde"]
 events = ["dep:tokio"]
 i18n = ["dep:fluent"]
 chrono = ["dep:chrono"]
-full = ["display", "validation", "serde", "events", "i18n", "chrono"]
+full = ["visibility", "validation", "serde", "events", "i18n", "chrono"]
 
 [dependencies]
 smartstring = "1.0.1"

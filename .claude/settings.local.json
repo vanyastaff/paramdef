@@ -7,7 +7,8 @@
       "Skill(superpowers:writing-plans)",
       "Bash(openspec list:*)",
       "SlashCommand(/openspec:apply add-core-types)",
-      "SlashCommand(/openspec:apply:*)"
+      "SlashCommand(/openspec:apply:*)",
+      "Skill(superpowers:requesting-code-review)"
     ]
   }
 }

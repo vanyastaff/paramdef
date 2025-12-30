@@ -46,6 +46,7 @@
 #![allow(clippy::module_name_repetitions)]
 
 pub mod core;
+pub mod node;
 pub mod subtypes;
 
 // Re-export commonly used types at crate root
