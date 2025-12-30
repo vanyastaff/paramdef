@@ -8,7 +8,7 @@ Comprehensive guide to the paramdef event system, observer patterns, and reactiv
 
 The event system enables reactive parameter behavior through:
 
-- **ParameterEvent enum** - Type-safe event variants
+- **Event enum** - Type-safe event variants
 - **EventBus** - Central event dispatch
 - **Observer pattern** - Subscribe to parameter changes
 - **DisplayObserver** - Reactive visibility updates
@@ -18,7 +18,7 @@ The event system enables reactive parameter behavior through:
 ## Event Types
 
 ```rust
-pub enum ParameterEvent {
+pub enum Event {
     // Value lifecycle
     BeforeChange { key: String, old_value: Value, new_value: Value },
     AfterChange { key: String, old_value: Value, new_value: Value },
@@ -48,30 +48,51 @@ pub enum ParameterEvent {
 
 ## EventBus Architecture
 
-Central event dispatch with typed channels:
+Hybrid architecture: sync callbacks always available, async broadcast optional.
 
 ```rust
-use tokio::sync::broadcast;
-
 pub struct EventBus {
-    sender: broadcast::Sender<ParameterEvent>,
+    /// Sync callbacks (always available, no dependencies)
+    callbacks: Vec<Box<dyn Fn(&Event) + Send + Sync>>,
+    
+    /// Async broadcast (feature = "async")
+    #[cfg(feature = "async")]
+    broadcast: tokio::sync::broadcast::Sender<Event>,
 }
 
 impl EventBus {
-    pub fn new(capacity: usize) -> Self {
-        let (sender, _) = broadcast::channel(capacity);
-        Self { sender }
+    pub fn new() -> Self {
+        Self {
+            callbacks: Vec::new(),
+            #[cfg(feature = "async")]
+            broadcast: tokio::sync::broadcast::channel(256).0,
+        }
+    }
+    
+    /// Register sync callback
+    pub fn on<F>(&mut self, callback: F)
+    where
+        F: Fn(&Event) + Send + Sync + 'static,
+    {
+        self.callbacks.push(Box::new(callback));
     }
     
     /// Emit event to all subscribers
-    pub fn emit(&self, event: ParameterEvent) {
-        // Ignore error if no receivers
-        let _ = self.sender.send(event);
+    pub fn emit(&self, event: Event) {
+        // Call sync callbacks
+        for callback in &self.callbacks {
+            callback(&event);
+        }
+        
+        // Broadcast to async receivers
+        #[cfg(feature = "async")]
+        let _ = self.broadcast.send(event);
     }
     
-    /// Subscribe to all events
-    pub fn subscribe(&self) -> broadcast::Receiver<ParameterEvent> {
-        self.sender.subscribe()
+    /// Subscribe to async broadcast (feature = "async")
+    #[cfg(feature = "async")]
+    pub fn subscribe(&self) -> tokio::sync::broadcast::Receiver<Event> {
+        self.broadcast.subscribe()
     }
 }
 ```
@@ -86,10 +107,10 @@ let mut rx = bus.subscribe();
 tokio::spawn(async move {
     while let Ok(event) = rx.recv().await {
         match event {
-            ParameterEvent::AfterChange { key, new_value, .. } => {
+            Event::AfterChange { key, new_value, .. } => {
                 println!("Parameter {} changed to {:?}", key, new_value);
             }
-            ParameterEvent::ValidationFailed { key, errors } => {
+            Event::ValidationFailed { key, errors } => {
                 eprintln!("Validation failed for {}: {:?}", key, errors);
             }
             _ => {}
@@ -98,7 +119,7 @@ tokio::spawn(async move {
 });
 
 // Emit events
-bus.emit(ParameterEvent::AfterChange {
+bus.emit(Event::AfterChange {
     key: "username".into(),
     old_value: Value::Null,
     new_value: Value::Text("alice".into()),
@@ -117,7 +138,7 @@ use tokio::sync::mpsc;
 
 pub struct ParameterObserver {
     bus: EventBus,
-    subscriptions: HashMap<String, Vec<mpsc::Sender<ParameterEvent>>>,
+    subscriptions: HashMap<String, Vec<mpsc::Sender<Event>>>,
 }
 
 impl ParameterObserver {
@@ -125,7 +146,7 @@ impl ParameterObserver {
     pub fn subscribe_parameter(
         &mut self,
         key: &str,
-    ) -> mpsc::Receiver<ParameterEvent> {
+    ) -> mpsc::Receiver<Event> {
         let (tx, rx) = mpsc::channel(32);
         self.subscriptions
             .entry(key.to_string())
@@ -138,9 +159,9 @@ impl ParameterObserver {
     pub fn subscribe_filtered<F>(
         &self,
         predicate: F,
-    ) -> mpsc::Receiver<ParameterEvent>
+    ) -> mpsc::Receiver<Event>
     where
-        F: Fn(&ParameterEvent) -> bool + Send + 'static,
+        F: Fn(&Event) -> bool + Send + 'static,
     {
         let (tx, rx) = mpsc::channel(32);
         let mut bus_rx = self.bus.subscribe();
@@ -180,12 +201,12 @@ tokio::spawn(async move {
 ```rust
 // Only validation failures
 let mut failures = observer.subscribe_filtered(|e| {
-    matches!(e, ParameterEvent::ValidationFailed { .. })
+    matches!(e, Event::ValidationFailed { .. })
 });
 
 // Only value changes
 let mut changes = observer.subscribe_filtered(|e| {
-    matches!(e, ParameterEvent::AfterChange { .. })
+    matches!(e, Event::AfterChange { .. })
 });
 ```
 
@@ -208,7 +229,7 @@ impl Context {
         let old_value = self.values.get(key).cloned().unwrap_or(Value::Null);
         
         // Emit before change
-        self.bus.emit(ParameterEvent::BeforeChange {
+        self.bus.emit(Event::BeforeChange {
             key: key.into(),
             old_value: old_value.clone(),
             new_value: value.clone(),
@@ -218,14 +239,14 @@ impl Context {
         let transformed = self.apply_transformers(key, value)?;
         
         // Validate
-        self.bus.emit(ParameterEvent::ValidationStarted { key: key.into() });
+        self.bus.emit(Event::ValidationStarted { key: key.into() });
         
         match self.validate(key, &transformed) {
             Ok(()) => {
-                self.bus.emit(ParameterEvent::ValidationPassed { key: key.into() });
+                self.bus.emit(Event::ValidationPassed { key: key.into() });
             }
             Err(errors) => {
-                self.bus.emit(ParameterEvent::ValidationFailed {
+                self.bus.emit(Event::ValidationFailed {
                     key: key.into(),
                     errors: errors.clone(),
                 });
@@ -237,7 +258,7 @@ impl Context {
         self.values.insert(key.into(), transformed.clone());
         
         // Emit after change
-        self.bus.emit(ParameterEvent::AfterChange {
+        self.bus.emit(Event::AfterChange {
             key: key.into(),
             old_value,
             new_value: transformed,
@@ -247,12 +268,12 @@ impl Context {
     }
     
     /// Subscribe to all events
-    pub fn subscribe_all(&self) -> broadcast::Receiver<ParameterEvent> {
+    pub fn subscribe_all(&self) -> broadcast::Receiver<Event> {
         self.bus.subscribe()
     }
     
     /// Subscribe to specific parameter
-    pub fn subscribe_parameter(&self, key: &str) -> mpsc::Receiver<ParameterEvent> {
+    pub fn subscribe_parameter(&self, key: &str) -> mpsc::Receiver<Event> {
         // Implementation with filtering
         todo!()
     }
@@ -291,7 +312,7 @@ impl DisplayObserver {
         drop(context);
         
         while let Ok(event) = events.recv().await {
-            if let ParameterEvent::AfterChange { key, new_value, .. } = event {
+            if let Event::AfterChange { key, new_value, .. } = event {
                 self.evaluate_dependent_rules(&key, &new_value).await;
             }
         }
@@ -308,14 +329,14 @@ impl DisplayObserver {
                 
                 // Emit visibility/enabled changes
                 if rule.visibility_changed(visible) {
-                    context.bus.emit(ParameterEvent::VisibilityChanged {
+                    context.bus.emit(Event::VisibilityChanged {
                         key: param_key.clone(),
                         visible,
                     });
                 }
                 
                 if rule.enabled_changed(enabled) {
-                    context.bus.emit(ParameterEvent::EnabledChanged {
+                    context.bus.emit(Event::EnabledChanged {
                         key: param_key.clone(),
                         enabled,
                     });
@@ -421,7 +442,7 @@ impl Context {
             self.batch_mode = false;
             
             if !self.batch_keys.is_empty() {
-                self.bus.emit(ParameterEvent::BatchUpdate {
+                self.bus.emit(Event::BatchUpdate {
                     keys: self.batch_keys.drain().collect(),
                 });
             }
@@ -456,7 +477,7 @@ use tokio::time::{Duration, sleep};
 
 pub struct DebouncedSubscriber {
     delay: Duration,
-    pending: Option<ParameterEvent>,
+    pending: Option<Event>,
 }
 
 impl DebouncedSubscriber {
@@ -466,8 +487,8 @@ impl DebouncedSubscriber {
     
     pub async fn subscribe(
         mut self,
-        mut rx: broadcast::Receiver<ParameterEvent>,
-        mut handler: impl FnMut(ParameterEvent),
+        mut rx: broadcast::Receiver<Event>,
+        mut handler: impl FnMut(Event),
     ) {
         loop {
             tokio::select! {
@@ -492,7 +513,7 @@ impl DebouncedSubscriber {
 // Usage: debounce validation for 300ms
 let debounced = DebouncedSubscriber::new(Duration::from_millis(300));
 debounced.subscribe(events, |event| {
-    if let ParameterEvent::AfterChange { key, new_value, .. } = event {
+    if let Event::AfterChange { key, new_value, .. } = event {
         // Expensive validation or API call
         validate_with_server(&key, &new_value);
     }
@@ -535,10 +556,10 @@ impl ParameterWidget {
             
             while let Ok(event) = events.recv().await {
                 match event {
-                    ParameterEvent::VisibilityChanged { key, visible } => {
+                    Event::VisibilityChanged { key, visible } => {
                         visibility.write().await.insert(key, visible);
                     }
-                    ParameterEvent::EnabledChanged { key, enabled: e } => {
+                    Event::EnabledChanged { key, enabled: e } => {
                         enabled.write().await.insert(key, e);
                     }
                     _ => {}
@@ -603,7 +624,7 @@ impl Context {
     fn set_value_internal(&mut self, key: &str, value: Value, emit: bool) {
         // Only emit event if not internal update
         if emit {
-            self.bus.emit(ParameterEvent::AfterChange { ... });
+            self.bus.emit(Event::AfterChange { ... });
         }
     }
 }
@@ -643,7 +664,7 @@ token.cancel();
 
 | Component | Purpose |
 |-----------|---------|
-| `ParameterEvent` | Type-safe event variants |
+| `Event` | Type-safe event variants |
 | `EventBus` | Central broadcast dispatch |
 | `ParameterObserver` | Per-parameter subscriptions |
 | `DisplayObserver` | Reactive visibility updates |

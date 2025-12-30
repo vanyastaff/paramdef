@@ -810,24 +810,26 @@ Expirable::builder("cached_token")
 
 ---
 
-## Type-Safe Property Keys
+## Type-Safe Access
 
-Compile-time type safety using phantom types:
+Type safety is achieved through builders and typed getters:
 
 ```rust
-pub struct PropertyKey<T> {
-    id: u32,
-    _marker: PhantomData<T>,
-}
+pub type Key = SmartString<LazyCompact>;
 
-// Define keys
-const USERNAME: PropertyKey<String> = PropertyKey::new(1);
-const AGE: PropertyKey<i64> = PropertyKey::new(2);
+// Type-safe builders
+let schema = Schema::builder()
+    .add(Text::builder("username").required().build())
+    .add(Number::builder("age").range(0, 150).build())
+    .build();
 
-// Type-safe access
-let name: String = context.get(USERNAME)?;  // OK
-let age: i64 = context.get(AGE)?;           // OK
-let wrong: i64 = context.get(USERNAME)?;    // Compile error!
+// Type-safe getters
+let name: &str = context.get_string("username")?;
+let age: i64 = context.get_int("age")?;
+let opacity: f64 = context.get_float("opacity")?;
+
+// Generic get with type inference
+let value: Value = context.get_value("username")?;
 ```
 
 ---

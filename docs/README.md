@@ -113,11 +113,15 @@ if context.validate_all().await.is_ok() {
 ### Type Safety
 
 ```rust
-const USERNAME: PropertyKey<String> = PropertyKey::new(1);
-const AGE: PropertyKey<i64> = PropertyKey::new(2);
+// Type-safe builders
+let schema = Schema::builder()
+    .add(Text::builder("username").required().build())
+    .add(Number::builder("age").range(0, 150).build())
+    .build();
 
-let name: String = context.get(USERNAME)?;  // Compile-time checked
-let age: i64 = context.get(AGE)?;           // Compile-time checked
+// Type-safe getters
+let name: &str = context.get_string("username")?;
+let age: i64 = context.get_int("age")?;
 ```
 
 ### 13 Node Types

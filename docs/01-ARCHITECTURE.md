@@ -600,9 +600,9 @@ Text::builder("custom")
 ### Core Principles
 
 1. **Compile-Time Safety Over Runtime Flexibility**
-   - Type-safe property keys with `PropertyKey<T>`
+   - Type-safe builders with generic constraints
+   - Type-safe getters (`get_string`, `get_int`, `get_float`)
    - Compile-time validation where possible
-   - No stringly-typed access patterns
 
 2. **Separation of Concerns**
    - **Schema Layer** - Immutable parameter definitions
@@ -612,11 +612,11 @@ Text::builder("custom")
 3. **Zero-Cost Abstractions**
    - SmartString for stack-allocated short strings
    - Arc-based sharing for immutable data
-   - Const generics for fixed-size vectors
+   - Generic builders for type-safe construction
    - Fast path when no transformers/validators present
 
 4. **KISS (Keep It Simple)**
-   - 10 core node types, not 50
+   - 13 core node types, not 50
    - Subtypes for semantic variation
    - Units for measurement systems
 

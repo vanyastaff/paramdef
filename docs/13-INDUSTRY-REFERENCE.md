@@ -432,12 +432,17 @@ RED.nodes.registerType('my-node', {
 ### 1. Compile-Time Type Safety
 
 ```rust
-// PropertyKey<T> - compile-time checked
-const USERNAME: PropertyKey<String> = PropertyKey::new(1);
-let name: String = context.get(USERNAME)?;  // Type-safe!
+// Type-safe builders
+Text::builder("username").required().min_length(3).build();
+Number::builder("age").range(0, 150).build();
+Vector::builder::<f64, 3>("position").default([0.0, 0.0, 0.0]).build();
+
+// Type-safe getters
+let name: &str = context.get_string("username")?;
+let age: i64 = context.get_int("age")?;
 ```
 
-No other system provides compile-time type checking for property access.
+Type safety achieved through builders and typed getters, not stringly-typed access.
 
 ### 2. Zero-Cost Abstractions
 

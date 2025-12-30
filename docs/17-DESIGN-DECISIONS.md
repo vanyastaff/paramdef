@@ -695,4 +695,245 @@ pub struct Text {
 5. **Type Safety** - Where it matters, with runtime flexibility
 6. **Zero-Cost** - Efficient abstractions, Arc sharing
 
-**All major architectural decisions resolved!** ✅
+---
+
+## Additional Decisions (Review Session)
+
+### ✅ DECISION: Schema as Group Trait Implementation
+
+**Question:** How do Schema and Group relate?
+
+**Decision:** `Group` is a trait, `Schema` is its implementation.
+
+```rust
+// Group - trait for root aggregator
+pub trait Group: Node + ValueAccess {
+    fn children(&self) -> &[GroupChild];
+}
+
+// Schema - concrete implementation
+pub struct Schema {
+    metadata: Metadata,
+    children: Vec<GroupChild>,
+}
+
+impl Group for Schema { ... }
+impl Node for Schema { ... }
+impl ValueAccess for Schema { ... }
+```
+
+**Benefits:**
+- Clear separation of interface and implementation
+- Type-safe child nesting rules via GroupChild enum
+- Schema is the single root type
+
+---
+
+### ✅ DECISION: Macro for Child Enums
+
+**Question:** How to enforce node nesting rules?
+
+**Decision:** Use macro to generate child enums with From impls.
+
+```rust
+macro_rules! define_child_enums {
+    (
+        layouts: [$($layout:ident),*],
+        decorations: [$($decoration:ident),*],
+        containers: [$($container:ident),*],
+        leaves: [$($leaf:ident),*]
+    ) => {
+        pub enum GroupChild {
+            $($layout(Arc<$layout>),)*
+            $($decoration(Arc<$decoration>),)*
+            $($container(Arc<$container>),)*
+            $($leaf(Arc<$leaf>),)*
+        }
+
+        pub enum LayoutChild {
+            $($decoration(Arc<$decoration>),)*
+            $($container(Arc<$container>),)*
+            $($leaf(Arc<$leaf>),)*
+        }
+
+        pub enum ContainerChild {
+            $($decoration(Arc<$decoration>),)*
+            $($container(Arc<$container>),)*
+            $($leaf(Arc<$leaf>),)*
+        }
+
+        // From impls generated automatically...
+    };
+}
+
+define_child_enums! {
+    layouts: [Panel],
+    decorations: [Notice],
+    containers: [Object, List, Mode, Routing, Expirable],
+    leaves: [Text, Number, Boolean, Vector, Select]
+}
+```
+
+**Benefits:**
+- Single source of truth for all types
+- Compile-time nesting enforcement
+- Easy to add new types
+- No orphan rule issues
+
+---
+
+### ✅ DECISION: SoA Storage + RuntimeNode View
+
+**Question:** How to store runtime state?
+
+**Decision:** Hybrid approach - SoA for storage, RuntimeNode for UI access.
+
+```rust
+// Storage: Structure of Arrays (efficient)
+pub struct Context {
+    schema: Arc<Schema>,
+    values: HashMap<Key, Value>,
+    states: HashMap<Key, StateFlags>,
+    errors: HashMap<Key, Vec<ValidationError>>,
+}
+
+// View: RuntimeNode for UI (convenient)
+pub struct RuntimeNode<'ctx, T: Node> {
+    node: &'ctx T,
+    value: &'ctx mut Value,
+    state: &'ctx mut StateFlags,
+    errors: &'ctx [ValidationError],
+}
+
+impl Context {
+    pub fn get_runtime<T: Node>(&mut self, key: &Key) -> Option<RuntimeNode<'_, T>> {
+        // Assembles view from HashMaps
+    }
+}
+```
+
+**Benefits:**
+- SoA: Cache-friendly for batch operations
+- SoA: Easy snapshots for undo/redo
+- RuntimeNode: Convenient for UI integration
+- Best of both worlds
+
+---
+
+### ✅ DECISION: Key = SmartString (No Typed Keys)
+
+**Question:** Should keys be typed like `PropertyKey<T>`?
+
+**Decision:** NO, use simple SmartString keys.
+
+```rust
+pub type Key = SmartString<LazyCompact>;
+
+context.get_value("email")?;
+context.set_value("port", Value::Int(8080))?;
+```
+
+**Why NOT typed keys:**
+- Simpler API
+- Dynamic schemas work naturally
+- SmartString gives stack allocation for short keys (<23 bytes)
+- Type safety achieved through builders and getters
+
+---
+
+### ✅ DECISION: validators + async_validators
+
+**Question:** How to handle sync and async validation?
+
+**Decision:** Two separate vectors, async feature-gated.
+
+```rust
+pub struct ValidationConfig {
+    validators: Vec<Arc<dyn Fn(&Value) -> Result<(), ValidationError> + Send + Sync>>,
+    
+    #[cfg(feature = "async")]
+    async_validators: Vec<Arc<dyn Fn(&Value) -> BoxFuture<'static, Result<(), ValidationError>> + Send + Sync>>,
+}
+```
+
+**Usage with async closures (Rust 1.85+):**
+```rust
+Text::builder("username")
+    .validate(|v| { /* sync */ Ok(()) })
+    .validate_async(async |v| { /* async */ Ok(()) })
+    .build()
+```
+
+**Benefits:**
+- Zero cost when async not needed
+- Clean feature separation
+- Native async closures (no macros)
+
+---
+
+### ✅ DECISION: Vector with Generic Builder
+
+**Question:** How to handle Vector type safety with runtime storage?
+
+**Decision:** Generic builder, runtime storage.
+
+```rust
+// Schema type (stored in Schema)
+pub struct Vector {
+    metadata: Metadata,
+    element_type: ElementType,
+    size: usize,
+}
+
+// Generic builder (compile-time type safety)
+pub struct VectorBuilder<T, const N: usize> { ... }
+
+impl<T: VectorElement, const N: usize> VectorBuilder<T, N> {
+    pub fn default(mut self, value: [T; N]) -> Self { ... }
+    pub fn build(self) -> Vector { ... }
+}
+
+// Usage
+let position = Vector::builder::<f64, 3>("position")
+    .default([0.0, 0.0, 0.0])
+    .build();
+```
+
+**Benefits:**
+- Type-safe at construction time
+- Uniform storage in Schema
+- Supports any size, not just predefined subtypes
+
+---
+
+### ✅ DECISION: Callbacks + Optional Async Broadcast for Events
+
+**Question:** How to implement EventBus?
+
+**Decision:** Sync callbacks always, tokio broadcast with feature.
+
+```rust
+pub enum Event {
+    BeforeChange { key: Key, old_value: Value, new_value: Value },
+    AfterChange { key: Key, old_value: Value, new_value: Value },
+    ValidationPassed { key: Key },
+    ValidationFailed { key: Key, errors: Vec<ValidationError> },
+    // ...
+}
+
+pub struct EventBus {
+    // Always available (no dependencies)
+    callbacks: Vec<Box<dyn Fn(&Event) + Send + Sync>>,
+    
+    // Optional async broadcast
+    #[cfg(feature = "async")]
+    broadcast: tokio::sync::broadcast::Sender<Event>,
+}
+```
+
+**Also:** Renamed `ParameterEvent` → `Event`.
+
+**Benefits:**
+- Zero dependencies for sync use
+- Async broadcast for reactive apps
+- Simple naming
