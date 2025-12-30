@@ -22,16 +22,16 @@ chrono = ["dep:chrono"]
 full = ["display", "validation", "serde", "events", "i18n", "chrono"]
 
 [dependencies]
-smartstring = "1.0"
+smartstring = "1.0.1"
 smallvec = "1.13"
 thiserror = "2.0"
-bitflags = "2.0"
+bitflags = "2.10"
 
 serde = { version = "1.0", optional = true, features = ["derive"] }
 serde_json = { version = "1.0", optional = true }
-tokio = { version = "1.0", optional = true, features = ["sync"] }
-fluent = { version = "0.16", optional = true }
+tokio = { version = "1.43", optional = true, features = ["sync"] }
+fluent = { version = "0.17", optional = true }
 chrono = { version = "0.4", optional = true, default-features = false, features = ["std"] }
 
 [dev-dependencies]
-tokio = { version = "1.0", features = ["rt-multi-thread", "macros"] }
+tokio = { version = "1.43", features = ["rt-multi-thread", "macros"] }
