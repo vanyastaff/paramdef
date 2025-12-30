@@ -754,6 +754,12 @@ pub trait IntoBuilder {
 }
 ```
 
+Each `IntoBuilder` implementation provides a complete "package" for the subtype:
+- **Subtype** — semantic meaning
+- **Validators** — validation rules
+- **Transformers** — value normalization
+- **UiHints** — UI defaults
+
 ### Number Subtype Implementations
 
 ```rust
@@ -763,7 +769,11 @@ impl IntoBuilder for Port {
     fn builder(self, key: impl Into<Key>) -> Self::Builder {
         Number::<u16>::builder(key)
             .subtype(self)
+            // Validation
             .range(1, 65535)
+            // UI
+            .ui_hints(NumberUiHints::new()
+                .suffix("port"))
     }
 }
 
@@ -773,7 +783,14 @@ impl IntoBuilder for Factor {
     fn builder(self, key: impl Into<Key>) -> Self::Builder {
         Number::<f64>::builder(key)
             .subtype(self)
+            // Validation
             .range(0.0, 1.0)
+            // Transform
+            .transform(clamp(0.0, 1.0))
+            // UI
+            .ui_hints(NumberUiHints::slider(0.0, 1.0)
+                .step(0.01)
+                .precision(2))
     }
 }
 
@@ -783,7 +800,14 @@ impl IntoBuilder for Percentage {
     fn builder(self, key: impl Into<Key>) -> Self::Builder {
         Number::<f64>::builder(key)
             .subtype(self)
+            // Validation
             .range(0.0, 100.0)
+            // Transform
+            .transform(clamp(0.0, 100.0))
+            // UI
+            .ui_hints(NumberUiHints::slider(0.0, 100.0)
+                .step(1.0)
+                .suffix("%"))
     }
 }
 
@@ -793,7 +817,12 @@ impl IntoBuilder for Rating {
     fn builder(self, key: impl Into<Key>) -> Self::Builder {
         Number::<u8>::builder(key)
             .subtype(self)
+            // Validation
             .range(0, 5)
+            // UI
+            .ui_hints(NumberUiHints::new()
+                .slider(0, 5)
+                .step(1))
     }
 }
 ```
@@ -805,7 +834,11 @@ impl IntoBuilder for Position3D {
     type Builder = VectorBuilder<f64, 3, Position3D>;
     
     fn builder(self, key: impl Into<Key>) -> Self::Builder {
-        Vector::<f64, 3>::builder(key).subtype(self)
+        Vector::<f64, 3>::builder(key)
+            .subtype(self)
+            // UI
+            .ui_hints(VectorUiHints::new()
+                .labels(["X", "Y", "Z"]))
     }
 }
 
@@ -815,7 +848,14 @@ impl IntoBuilder for ColorRgba {
     fn builder(self, key: impl Into<Key>) -> Self::Builder {
         Vector::<f64, 4>::builder(key)
             .subtype(self)
+            // Validation
             .component_range(0.0, 1.0)
+            // Transform
+            .transform(clamp_components(0.0, 1.0))
+            // UI
+            .ui_hints(VectorUiHints::new()
+                .labels(["R", "G", "B", "A"])
+                .compact())
     }
 }
 
@@ -825,7 +865,13 @@ impl IntoBuilder for Quaternion {
     fn builder(self, key: impl Into<Key>) -> Self::Builder {
         Vector::<f64, 4>::builder(key)
             .subtype(self)
+            // Validation
             .normalized()
+            // Transform
+            .transform(normalize())
+            // UI
+            .ui_hints(VectorUiHints::new()
+                .labels(["X", "Y", "Z", "W"]))
     }
 }
 ```
@@ -839,7 +885,13 @@ impl IntoBuilder for Email {
     fn builder(self, key: impl Into<Key>) -> Self::Builder {
         Text::builder(key)
             .subtype(self)
+            // Validation
             .validate(email())
+            // Transform
+            .transform(trim().and_then(lowercase()))
+            // UI
+            .ui_hints(TextUiHints::new()
+                .placeholder("user@example.com"))
     }
 }
 
@@ -849,9 +901,54 @@ impl IntoBuilder for Url {
     fn builder(self, key: impl Into<Key>) -> Self::Builder {
         Text::builder(key)
             .subtype(self)
+            // Validation
             .validate(url())
+            // Transform
+            .transform(trim())
+            // UI
+            .ui_hints(TextUiHints::new()
+                .placeholder("https://example.com"))
     }
 }
+
+impl IntoBuilder for Secret {
+    type Builder = TextBuilder<Secret>;
+    
+    fn builder(self, key: impl Into<Key>) -> Self::Builder {
+        Text::builder(key)
+            .subtype(self)
+            // Flags
+            .flags(Flags::SENSITIVE | Flags::WRITE_ONLY)
+            // UI
+            .ui_hints(TextUiHints::new()
+                .masked())
+    }
+}
+```
+
+### Overriding Defaults
+
+All defaults can be overridden:
+
+```rust
+// Use defaults
+Factor.builder("opacity").build()
+
+// Override UI hints
+Factor.builder("opacity")
+    .ui_hints(NumberUiHints::slider(0.0, 1.0).step(0.1))  // coarser step
+    .build()
+
+// Override transform
+Factor.builder("opacity")
+    .transform(round_to(0.1))  // round instead of clamp
+    .build()
+
+// Override validation
+Factor.builder("opacity")
+    .clear_validators()
+    .range(0.0, 0.5)  // custom range
+    .build()
 ```
 
 ---
