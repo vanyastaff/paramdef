@@ -743,48 +743,163 @@ Stored value:   1.8 (meters)
 
 ---
 
-## Usage Examples
+## IntoBuilder Trait
+
+Subtypes implement `IntoBuilder` for ergonomic node creation with sensible defaults:
 
 ```rust
-// Network port (integer-only)
+pub trait IntoBuilder {
+    type Builder;
+    fn builder(self, key: impl Into<Key>) -> Self::Builder;
+}
+```
+
+### Number Subtype Implementations
+
+```rust
+impl IntoBuilder for Port {
+    type Builder = NumberBuilder<u16, Port>;
+    
+    fn builder(self, key: impl Into<Key>) -> Self::Builder {
+        Number::<u16>::builder(key)
+            .subtype(self)
+            .range(1, 65535)
+    }
+}
+
+impl IntoBuilder for Factor {
+    type Builder = NumberBuilder<f64, Factor>;
+    
+    fn builder(self, key: impl Into<Key>) -> Self::Builder {
+        Number::<f64>::builder(key)
+            .subtype(self)
+            .range(0.0, 1.0)
+    }
+}
+
+impl IntoBuilder for Percentage {
+    type Builder = NumberBuilder<f64, Percentage>;
+    
+    fn builder(self, key: impl Into<Key>) -> Self::Builder {
+        Number::<f64>::builder(key)
+            .subtype(self)
+            .range(0.0, 100.0)
+    }
+}
+
+impl IntoBuilder for Rating {
+    type Builder = NumberBuilder<u8, Rating>;
+    
+    fn builder(self, key: impl Into<Key>) -> Self::Builder {
+        Number::<u8>::builder(key)
+            .subtype(self)
+            .range(0, 5)
+    }
+}
+```
+
+### Vector Subtype Implementations
+
+```rust
+impl IntoBuilder for Position3D {
+    type Builder = VectorBuilder<f64, 3, Position3D>;
+    
+    fn builder(self, key: impl Into<Key>) -> Self::Builder {
+        Vector::<f64, 3>::builder(key).subtype(self)
+    }
+}
+
+impl IntoBuilder for ColorRgba {
+    type Builder = VectorBuilder<f64, 4, ColorRgba>;
+    
+    fn builder(self, key: impl Into<Key>) -> Self::Builder {
+        Vector::<f64, 4>::builder(key)
+            .subtype(self)
+            .component_range(0.0, 1.0)
+    }
+}
+
+impl IntoBuilder for Quaternion {
+    type Builder = VectorBuilder<f64, 4, Quaternion>;
+    
+    fn builder(self, key: impl Into<Key>) -> Self::Builder {
+        Vector::<f64, 4>::builder(key)
+            .subtype(self)
+            .normalized()
+    }
+}
+```
+
+### Text Subtype Implementations
+
+```rust
+impl IntoBuilder for Email {
+    type Builder = TextBuilder<Email>;
+    
+    fn builder(self, key: impl Into<Key>) -> Self::Builder {
+        Text::builder(key)
+            .subtype(self)
+            .validate(email())
+    }
+}
+
+impl IntoBuilder for Url {
+    type Builder = TextBuilder<Url>;
+    
+    fn builder(self, key: impl Into<Key>) -> Self::Builder {
+        Text::builder(key)
+            .subtype(self)
+            .validate(url())
+    }
+}
+```
+
+---
+
+## Usage Examples
+
+With `IntoBuilder`, subtype becomes the entry point:
+
+```rust
+// Network port — includes range(1, 65535) validator
+Port.builder("http_port").default(8080).build()
+
+// Opacity — includes range(0.0, 1.0) validator
+Factor.builder("opacity").default(1.0).build()
+
+// Rating — includes range(0, 5) validator
+Rating.builder("stars").default(5).build()
+
+// 3D position
+Position3D.builder("location").default([0.0, 0.0, 0.0]).build()
+
+// RGBA color — includes component_range(0.0, 1.0) validator
+ColorRgba.builder("tint").default([1.0, 1.0, 1.0, 1.0]).build()
+
+// Quaternion — includes normalized() validator
+Quaternion.builder("rotation").default([0.0, 0.0, 0.0, 1.0]).build()
+
+// Email — includes email() validator
+Email.builder("contact").build()
+
+// URL — includes url() validator
+Url.builder("website").build()
+```
+
+### Verbose Syntax (still available)
+
+```rust
+// Equivalent to Port.builder("port")
 Number::<u16>::builder("port")
     .subtype(Port)
+    .range(1, 65535)
     .default(8080)
     .build()
 
-// Opacity (float-only)
-Number::<f64>::builder("opacity")
-    .subtype(Factor)
-    .default(1.0)
-    .build()
-
-// Distance (universal)
-Number::<f64>::builder("height")
-    .subtype(Distance)
-    .unit(NumberUnit::Length)
-    .default(1.8)
-    .build()
-
-// 3D position
-Vector::<f64, 3>::builder("position")
+// Equivalent to Position3D.builder("location")
+Vector::<f64, 3>::builder("location")
     .subtype(Position3D)
     .default([0.0, 0.0, 0.0])
-    .build()
-
-// Quaternion rotation
-Vector::<f64, 4>::builder("rotation")
-    .subtype(Quaternion)
-    .default([0.0, 0.0, 0.0, 1.0])
-    .build()
-
-// Email input
-Text::builder("email")
-    .subtype(Email)
-    .build()
-
-// Python code
-Text::builder("script")
-    .subtype(Code(CodeLanguage::Python))
     .build()
 ```
 

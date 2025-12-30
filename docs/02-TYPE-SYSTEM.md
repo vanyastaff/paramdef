@@ -1598,6 +1598,45 @@ This gives us:
 
 ---
 
+## IntoBuilder Trait
+
+Subtypes implement `IntoBuilder` for ergonomic node creation:
+
+```rust
+pub trait IntoBuilder {
+    type Builder;
+    fn builder(self, key: impl Into<Key>) -> Self::Builder;
+}
+```
+
+**Usage — subtype as entry point:**
+```rust
+// Instead of verbose:
+Number::<u16>::builder("port").subtype(Port).range(1, 65535).build()
+
+// Use concise:
+Port.builder("port").default(8080).build()
+```
+
+**Examples:**
+```rust
+// Number subtypes with built-in validators
+Port.builder("http_port").default(8080).build()       // range(1, 65535)
+Factor.builder("opacity").default(1.0).build()        // range(0.0, 1.0)
+Rating.builder("stars").default(5).build()            // range(0, 5)
+
+// Vector subtypes
+Position3D.builder("location").build()
+ColorRgba.builder("tint").build()                     // component_range(0.0, 1.0)
+Quaternion.builder("rotation").build()                // normalized()
+
+// Text subtypes with validators
+Email.builder("contact").build()                      // email()
+Url.builder("website").build()                        // url()
+```
+
+---
+
 ## UiHints Types (Feature: `ui`)
 
 Each node type has its own UiHints struct for type-safe UI configuration.
