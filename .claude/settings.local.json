@@ -5,7 +5,9 @@
       "Skill(rust-modern-features)",
       "Skill(rust-project-structure)",
       "Skill(superpowers:writing-plans)",
-      "Bash(openspec list:*)"
+      "Bash(openspec list:*)",
+      "SlashCommand(/openspec:apply add-core-types)",
+      "SlashCommand(/openspec:apply:*)"
     ]
   }
 }
