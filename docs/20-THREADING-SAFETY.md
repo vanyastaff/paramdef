@@ -68,7 +68,7 @@ paramdef is designed for concurrent usage in multi-threaded applications. The li
 
 ### Node Types
 
-All 13 node types are `Send + Sync`:
+All 14 node types are `Send + Sync`:
 
 ```rust
 // All node types implement these bounds
@@ -78,7 +78,7 @@ impl Sync for Text {}
 impl Send for Number {}
 impl Sync for Number {}
 
-// ... same for all 13 types
+// ... same for all 14 types
 ```
 
 ### Value Enum

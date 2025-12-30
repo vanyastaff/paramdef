@@ -19,7 +19,7 @@
 
 ## Core Types
 
-### Node Types (13 total)
+### Node Types (14 total)
 
 ```rust
 // Group (root aggregator)
@@ -37,6 +37,7 @@ NodeKind::List       // Dynamic arrays
 NodeKind::Mode       // Discriminated union
 NodeKind::Routing    // Connection wrapper
 NodeKind::Expirable  // TTL wrapper
+NodeKind::Ref        // Template reference
 
 // Leaf (terminal values)
 NodeKind::Text       // String values

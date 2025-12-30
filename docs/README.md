@@ -124,14 +124,14 @@ let name: &str = context.get_string("username")?;
 let age: i64 = context.get_int("age")?;
 ```
 
-### 13 Node Types
+### 14 Node Types
 
 | Category | Types | Purpose |
 |----------|-------|---------|
 | **Group** | `Group` | Root aggregator |
 | **Layout** | `Panel` | UI organization (tabs/sections) |
 | **Decoration** | `Notice` | Display-only messages |
-| **Container** | `Object`, `List`, `Mode`, `Routing`, `Expirable` | Structured data with children |
+| **Container** | `Object`, `List`, `Mode`, `Routing`, `Expirable`, `Ref` | Structured data with children |
 | **Leaf** | `Text`, `Number`, `Boolean`, `Vector`, `Select` | Terminal values |
 
 **Leaf types** (most commonly used):

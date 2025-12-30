@@ -150,7 +150,8 @@ Node (base trait)
 │   ├── List      -> Value::Array  // Dynamic array
 │   ├── Mode      -> Value::Object // Discriminated union
 │   ├── Routing   -> Value::Object // Connection wrapper (workflow)
-│   └── Expirable -> Value::Object // TTL wrapper (caching)
+│   ├── Expirable -> Value::Object // TTL wrapper (caching)
+│   └── Ref       -> delegates     // Reference to template Node
 │
 └── Leaf: Node                     // Terminal values
     ├── Text    -> Value::Text     // HAS own Value, NO children
@@ -159,7 +160,7 @@ Node (base trait)
     ├── Vector  -> Value::Array (fixed)
     └── Select  -> Value::Text/Array (unified)
 
-// Total: 1 Group + 1 Layout + 1 Decoration + 5 Container + 5 Leaf = 13 types
+// Total: 1 Group + 1 Layout + 1 Decoration + 6 Container + 5 Leaf = 14 types
 ```
 
 ### Categories Summary
@@ -169,7 +170,7 @@ Node (base trait)
 | Group | Group | NO | YES | Layout, Decoration, Container, Leaf |
 | Layout | Panel | NO | YES | Decoration, Container, Leaf |
 | Decoration | Notice | NO | NO | nothing |
-| Container | Object, List, Mode, Routing, Expirable | YES | YES | Decoration, Container, Leaf |
+| Container | Object, List, Mode, Routing, Expirable, Ref | YES | YES | Decoration, Container, Leaf |
 | Leaf | Text, Number, Boolean, Vector, Select | YES | NO | nothing |
 
 ---
@@ -810,6 +811,57 @@ Expirable::builder("cached_token")
 
 ---
 
+### Ref (Template Reference)
+
+Reference to a template Node. Shares structure definition with target, has own metadata and visibility.
+
+```rust
+pub struct Ref {
+    pub metadata: Metadata,
+    pub target: Key,  // Key of the template Node to reference
+    
+    #[cfg(feature = "visibility")]
+    pub visibility: Option<Expr>,
+}
+```
+
+**Key Features:**
+- References another Node's structure without duplicating it
+- Has own metadata (key, label, description)
+- Has own visibility (can be shown/hidden independently)
+- Does NOT have own validation (delegates to target)
+- Value type is determined by the target Node
+
+**Example:**
+```rust
+// Define a reusable address template
+let address_template = Object::builder("address_template")
+    .field("street", Text::builder("street").required().build())
+    .field("city", Text::builder("city").required().build())
+    .field("zip", Text::builder("zip").required().build())
+    .build();
+
+// Reference it multiple times with different visibility
+Ref::builder("billing_address")
+    .target("address_template")
+    .label("Billing Address")
+    .build()
+
+Ref::builder("shipping_address")
+    .target("address_template")
+    .label("Shipping Address")
+    .visible_when(Expr::Ne("same_as_billing".into(), Value::Bool(true)))
+    .build()
+```
+
+**Use Cases:**
+- Reusing complex structures across multiple places
+- Reducing schema duplication
+- Independent visibility for each instance
+- Template-based form generation
+
+---
+
 ## Type-Safe Access
 
 Type safety is achieved through builders and typed getters:
@@ -846,6 +898,7 @@ let value: Value = context.get_value("username")?;
 | Mode | Container | `Value::Object` | `{"mode": "...", "value": {...}}` |
 | Routing | Container | `Value::Object` | `{"connected_node_id": "...", ...}` |
 | Expirable | Container | `Value::Object` | `{"value": ..., "expires_at": "..."}` |
+| Ref | Container | delegates to target | (references template Node) |
 | Text | Leaf | `Value::Text` | `"hello"` |
 | Number<i64> | Leaf | `Value::Int` | `42` |
 | Number<f64> | Leaf | `Value::Float` | `3.14` |
@@ -1140,7 +1193,7 @@ Select::builder("database")
 
 > **Requires:** `features = ["visibility"]`
 
-**ALL 13 node types** support conditional visibility via the `Visibility` trait.
+**ALL 14 node types** support conditional visibility via the `Visibility` trait.
 
 ### Basic Usage
 
@@ -1254,7 +1307,7 @@ Text::builder("secret")
 
 > **Requires:** `features = ["validation"]`
 
-Only **Container and Leaf types** (10 out of 13) implement the `Validatable` trait — nodes that have their own Value. Group, Layout, and Decoration do not implement `Validatable`.
+Only **Container and Leaf types** (10 out of 14) implement the `Validatable` trait — nodes that have their own Value. Group, Layout, Decoration, and Ref do not implement `Validatable`.
 
 ### Who Implements Validatable
 
@@ -1264,6 +1317,7 @@ Only **Container and Leaf types** (10 out of 13) implement the `Validatable` tra
 | Layout | Panel | ❌ | No own Value (only delegates) |
 | Decoration | Notice | ❌ | No Value at all (display-only) |
 | Container | Object, List, Mode, Routing, Expirable | ✅ | Has own Value |
+| Container | Ref | ❌ | Delegates to target, no own validation |
 | Leaf | Text, Number, Boolean, Vector, Select | ✅ | Has own Value |
 
 ### Validatable Trait
@@ -1409,7 +1463,7 @@ Text::builder("username")
 
 | Trait | Applies To | Purpose |
 |-------|-----------|---------|
-| `Visibility` | ALL 13 types | Conditional visibility |
+| `Visibility` | ALL 14 types | Conditional visibility |
 | `Validatable` | Container + Leaf (10 types) | Value validation |
 
 ```rust
@@ -1490,9 +1544,9 @@ Text::builder("custom")
 
 ## Design Principle: Composition Over Proliferation
 
-**Why 13 types instead of 50?**
+**Why 14 types instead of 50?**
 
-1. **Simpler API** - Learn 13 types, not 50
+1. **Simpler API** - Learn 14 types, not 50
 2. **Composable** - Combine subtypes + flags for any use case
 3. **Extensible** - Add new subtypes without new node types
 4. **Consistent** - All text fields behave the same way
@@ -1504,7 +1558,7 @@ Specialized Node = Base Type + Subtype + Flags + Options
 ```
 
 This gives us:
-- 13 base types (1 Group + 1 Layout + 1 Decoration + 5 Container + 5 Leaf)
+- 14 base types (1 Group + 1 Layout + 1 Decoration + 6 Container + 5 Leaf)
 - 60+ text subtypes
 - 50+ number subtypes  
 - 35+ vector subtypes

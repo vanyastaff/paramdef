@@ -104,7 +104,8 @@ Node (base trait)
 │   ├── List                  // Dynamic array
 │   ├── Mode                  // Discriminated union
 │   ├── Routing               // Connection wrapper (workflow)
-│   └── Expirable             // TTL wrapper (caching)
+│   ├── Expirable             // TTL wrapper (caching)
+│   └── Ref                   // Reference to template Node
 │
 └── Leaf: Node                // WITH own Value (terminal), NO children
     ├── Text
@@ -113,7 +114,7 @@ Node (base trait)
     ├── Vector
     └── Select (unified)
 
-// Total: 1 Group + 1 Layout + 1 Decoration + 5 Container + 5 Leaf = 13 types
+// Total: 1 Group + 1 Layout + 1 Decoration + 6 Container + 5 Leaf = 14 types
 ```
 
 ---
@@ -137,7 +138,7 @@ pub trait Node: Send + Sync {
 
 ```rust
 /// Conditional visibility for all nodes
-/// ALL 13 node types implement this trait
+/// ALL 14 node types implement this trait
 #[cfg(feature = "visibility")]
 pub trait Visibility: Node {
     /// Get visibility expression
@@ -160,7 +161,7 @@ pub trait Visibility: Node {
 
 ```rust
 /// Validation trait for nodes with values
-/// Only Container (5) + Leaf (5) = 10 types implement this
+/// Only Container (5 of 6, excluding Ref) + Leaf (5) = 10 types implement this
 #[cfg(feature = "validation")]
 pub trait Validatable: Node {
     fn expected_kind(&self) -> Option<ValueKind>;
@@ -260,6 +261,7 @@ pub enum NodeKind {
     Mode,
     Routing,
     Expirable,
+    Ref,
     
     // Leaf (with own Value)
     Text,
@@ -283,7 +285,7 @@ impl NodeKind {
     }
     
     pub fn is_container(&self) -> bool {
-        matches!(self, Self::Object | Self::List | Self::Mode | Self::Routing | Self::Expirable)
+        matches!(self, Self::Object | Self::List | Self::Mode | Self::Routing | Self::Expirable | Self::Ref)
     }
     
     pub fn is_leaf(&self) -> bool {
@@ -345,6 +347,7 @@ Leaf       → nothing                               (terminal, with value)
    - Mode → `Value::Object { mode, value }`
    - Routing → `Value::Object { connected_node_id, ... }`
    - Expirable → `Value::Object { value, expires_at, ... }`
+   - Ref → delegates to target Node's Value type
    - Text → `Value::Text`
    - Number → `Value::Int | Value::Float`
    - Boolean → `Value::Bool`
@@ -365,6 +368,7 @@ Leaf       → nothing                               (terminal, with value)
 | Mode | Container | `Value::Object` | YES | `{ "mode": "basic", "value": { "user": "..." } }` |
 | Routing | Container | `Value::Object` | YES | `{ "connected_node_id": "node-1", ... }` |
 | Expirable | Container | `Value::Object` | YES | `{ "value": ..., "expires_at": "..." }` |
+| Ref | Container | delegates to target | YES | References template Node structure |
 | Text | Leaf | `Value::Text` | NO | `"hello@example.com"` |
 | Number | Leaf | `Value::Int/Float` | NO | `42` or `3.14` |
 | Boolean | Leaf | `Value::Bool` | NO | `true` |
@@ -498,6 +502,16 @@ pub struct ExpirableOptions {
     pub auto_clear_expired: bool,
     pub warning_threshold: Option<u64>,
 }
+
+/// Ref - reference to a template Node
+/// Shares structure definition with target, has own metadata and visibility
+pub struct Ref {
+    metadata: Metadata,
+    target: Key,  // Key of the template Node to reference
+    
+    #[cfg(feature = "visibility")]
+    visibility: Option<Expr>,
+}
 ```
 
 ### Leaf Types
@@ -617,7 +631,7 @@ Instead of many types, use **base type + subtype + flags**:
 
 | Feature | Trait | Applies To |
 |---------|-------|-----------|
-| `visibility` | `Visibility` | ALL 13 types |
+| `visibility` | `Visibility` | ALL 14 types |
 | `validation` | `Validatable` | Container + Leaf (10 types) |
 
 ---
@@ -626,9 +640,9 @@ Instead of many types, use **base type + subtype + flags**:
 
 > **Requires:** `features = ["validation"]`
 
-**Only nodes with values** implement `Validatable`: Container (5) + Leaf (5) = 10 types.
+**Only nodes with values** implement `Validatable`: Container (5 of 6, excluding Ref) + Leaf (5) = 10 types.
 
-Group, Layout, and Decoration do NOT implement Validatable (they have no own value).
+Group, Layout, Decoration, and Ref do NOT implement Validatable (they have no own value or delegate to target).
 
 ```rust
 pub struct ValidationConfig {
@@ -730,6 +744,7 @@ Text::builder("username")
 | Layout (Panel) | ❌ NO | No own value |
 | Decoration (Notice) | ❌ NO | No own value |
 | Container (Object, List, Mode, Routing, Expirable) | ✅ YES | Has own value |
+| Container (Ref) | ❌ NO | Delegates to target, no own validation |
 | Leaf (Text, Number, Boolean, Vector, Select) | ✅ YES | Has own value |
 
 ---
@@ -825,7 +840,7 @@ Text::builder("custom_field")
 
 > **Requires:** `features = ["visibility"]`
 
-**ALL 13 node types** implement `Visibility` for conditional visibility:
+**ALL 14 node types** implement `Visibility` for conditional visibility:
 
 ```rust
 pub trait Visibility: Node {

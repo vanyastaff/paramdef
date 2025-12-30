@@ -69,14 +69,14 @@ cargo deny check licenses
    - Unified `Value` enum for all parameter types
    - Serialization target
 
-### Node Hierarchy (13 Core Types)
+### Node Hierarchy (14 Core Types)
 
-The system defines exactly 13 node types across five categories:
+The system defines exactly 14 node types across five categories:
 
 - **Group (1)**: Root aggregator, no own value, has ValueAccess
 - **Layout (1)**: UI organization (Panel), no own value, has ValueAccess
 - **Decoration (1)**: Display-only (Notice), no value, no children
-- **Container (5)**: Object, List, Mode, Routing, Expirable - have own value + children
+- **Container (6)**: Object, List, Mode, Routing, Expirable, Ref - have own value + children
 - **Leaf (5)**: Text, Number, Boolean, Vector, Select - have own value, no children
 
 **Key Invariants:**
@@ -147,7 +147,7 @@ pub struct NumberParameter { ... }
 ### Design Patterns
 
 **Composition over proliferation:**
-- 13 base types + subtypes + flags = thousands of combinations
+- 14 base types + subtypes + flags = thousands of combinations
 - No specialized types like `Password` - use `Text` + `subtype: Secret` + `flags: SENSITIVE`
 
 **Type-safe API without const generics:**
@@ -197,7 +197,7 @@ Uses `tokio::broadcast` for EventBus:
 
 Essential reading in `docs/`:
 - `01-ARCHITECTURE.md` - Core design decisions and philosophy
-- `02-TYPE-SYSTEM.md` - Complete reference for all 13 node types
+- `02-TYPE-SYSTEM.md` - Complete reference for all 14 node types
 - `17-DESIGN-DECISIONS.md` - Rationale for major architectural choices
 - `18-ROADMAP.md` - Implementation plan and milestones
 
@@ -215,7 +215,7 @@ Essential reading in `docs/`:
 2. Implement the `Node` trait + category-specific trait
 3. If has own Value: implement `Validatable` trait (if validation feature enabled)
 4. If can contain children: implement `ValueAccess` trait
-5. All 13 types implement `Visibility` trait (if visibility feature enabled)
+5. All 14 types implement `Visibility` trait (if visibility feature enabled)
 6. Add builder pattern with `::builder()` constructor
 
 ### Adding a New Subtype

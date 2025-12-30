@@ -81,7 +81,8 @@ Node (base trait)
 │   ├── List                  // Dynamic array → Value::Array
 │   ├── Mode                  // Discriminated union → Value::Object
 │   ├── Routing               // Connection wrapper → Value::Object
-│   └── Expirable             // TTL wrapper → Value::Object
+│   ├── Expirable             // TTL wrapper → Value::Object
+│   └── Ref                   // Reference to template Node
 │
 └── Leaf: Node                // WITH own Value (terminal), NO children
     ├── Text                  // String values → Value::Text
@@ -90,7 +91,7 @@ Node (base trait)
     ├── Vector                // Fixed arrays → Value::Array
     └── Select (unified)      // Selections → Value::Text/Array
 
-// Total: 1 Group + 1 Layout + 1 Decoration + 5 Container + 5 Leaf = 13 types
+// Total: 1 Group + 1 Layout + 1 Decoration + 6 Container + 5 Leaf = 14 types
 ```
 
 ### Nesting Rules
@@ -281,7 +282,7 @@ bitflags! {
 
 > **Requires:** `features = ["visibility"]`
 
-**ALL 13 node types** implement the `Visibility` trait for conditional visibility.
+**ALL 14 node types** implement the `Visibility` trait for conditional visibility.
 
 ```rust
 #[cfg(feature = "visibility")]
@@ -428,7 +429,7 @@ impl<T: Node> Builder<T> {
 
 > **Requires:** `features = ["validation"]`
 
-Only **Container and Leaf types** (10 out of 13) implement the `Validatable` trait — nodes that have their own Value.
+Only **Container and Leaf types** (10 out of 14) implement the `Validatable` trait — nodes that have their own Value.
 
 ```rust
 #[cfg(feature = "validation")]
@@ -676,7 +677,7 @@ Text::builder("custom")
    - Fast path when no transformers/validators present
 
 4. **KISS (Keep It Simple)**
-   - 13 core node types, not 50
+   - 14 core node types, not 50
    - Subtypes for semantic variation
    - Units for measurement systems
 
@@ -742,9 +743,9 @@ struct Context {
 
 ## Type System Overview
 
-### 13 Core Node Types
+### 14 Core Node Types
 
-The system defines exactly 13 node types across five categories:
+The system defines exactly 14 node types across five categories:
 
 #### Group Type (1) - Root Aggregator, NO own Value, HAS ValueAccess
 
@@ -764,7 +765,7 @@ The system defines exactly 13 node types across five categories:
 |------|---------|-------|
 | `Notice` | Info/warning/error/success messages | - |
 
-#### Container Types (5) - WITH own Value, HAS ValueAccess
+#### Container Types (6) - WITH own Value, HAS ValueAccess
 
 | Type | Purpose | Value |
 |------|---------|-------|
@@ -773,6 +774,7 @@ The system defines exactly 13 node types across five categories:
 | `Mode` | Discriminated unions | `Value::Object` |
 | `Routing` | Connection wrapper (workflow) | `Value::Object` |
 | `Expirable` | TTL wrapper (caching) | `Value::Object` |
+| `Ref` | Reference to template Node | delegates to target |
 
 #### Leaf Types (5) - WITH own Value, NO children
 
