@@ -20,7 +20,7 @@ cargo test --workspace
 
 # Run tests with specific features
 cargo test --workspace --no-default-features
-cargo test --workspace --features display
+cargo test --workspace --features visibility
 cargo test --workspace --features validation
 cargo test --workspace --features serde
 cargo test --workspace --features full
@@ -101,13 +101,13 @@ The system defines exactly 13 node types across five categories:
 
 ```toml
 default = []                  # Core types only
-display = []                  # DisplayConfig, visibility conditions
+visibility = []               # Visibility trait, VisibilityConfig
 validation = []               # Validators, ValidationConfig
 serde = ["dep:serde"]        # Serialization + JSON conversions
 events = ["dep:tokio"]       # Event system with broadcast channels
 i18n = ["dep:fluent"]        # Fluent localization
 chrono = ["dep:chrono"]      # Chrono type conversions
-full = ["display", "validation", "serde", "events", "i18n", "chrono"]
+full = ["visibility", "validation", "serde", "events", "i18n", "chrono"]
 ```
 
 **Design Philosophy:** Core library has zero UI dependencies - works headless (servers, CLI).
@@ -215,7 +215,7 @@ Essential reading in `docs/`:
 2. Implement the `Node` trait + category-specific trait
 3. If has own Value: implement `Validatable` trait (if validation feature enabled)
 4. If can contain children: implement `ValueAccess` trait
-5. All 13 types implement `Displayable` trait (if display feature enabled)
+5. All 13 types implement `Visibility` trait (if visibility feature enabled)
 6. Add builder pattern with `::builder()` constructor
 
 ### Adding a New Subtype
@@ -244,7 +244,7 @@ cargo clippy --workspace --all-features -- -D warnings
 
 # Test all feature combinations
 cargo test --workspace --no-default-features
-cargo test --workspace --features display
+cargo test --workspace --features visibility
 cargo test --workspace --features validation
 cargo test --workspace --features full
 

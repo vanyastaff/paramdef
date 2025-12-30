@@ -12,19 +12,19 @@ name = "paramdef"
 
 [features]
 default = []
-display = []
+visibility = []
 validation = []
 serde = ["dep:serde", "dep:serde_json"]
 events = ["dep:tokio"]
 i18n = ["dep:fluent"]
 chrono = ["dep:chrono"]
-full = ["display", "validation", "serde", "events", "i18n", "chrono"]
+full = ["visibility", "validation", "serde", "events", "i18n", "chrono"]
 ```
 
 | Feature | What It Adds |
 |---------|-------------|
 | (none) | Core struct fields only |
-| `display` | `Displayable` trait, `DisplayConfig` |
+| `visibility` | `Visibility` trait, `VisibilityConfig` |
 | `validation` | `Validatable` trait, `Validator` trait |
 | `serde` | Serialize/Deserialize + JSON (From, FromStr, Display) |
 | `events` | Event system (tokio channels) |
@@ -39,8 +39,8 @@ pub struct Text {
     pub subtype: TextSubtype,
     pub value: Option<String>,
     
-    #[cfg(feature = "display")]
-    pub display: Option<DisplayConfig>,
+    #[cfg(feature = "visibility")]
+    pub visibility: Option<VisibilityConfig>,
     
     #[cfg(feature = "validation")]
     pub validation: Option<ValidationConfig>,
@@ -1136,32 +1136,32 @@ Select::builder("database")
 
 ---
 
-## Conditional Visibility (Feature: `display`)
+## Conditional Visibility (Feature: `visibility`)
 
-> **Requires:** `features = ["display"]`
+> **Requires:** `features = ["visibility"]`
 
-**ALL 13 node types** support conditional visibility via the `Displayable` trait.
+**ALL 13 node types** support conditional visibility via the `Visibility` trait.
 
 ### Basic Usage
 
-Every node type has an optional `display` field:
+Every node type has an optional `visibility` field:
 
 ```rust
 pub struct Text {
     pub metadata: Metadata,
-    pub display: Option<DisplayConfig>,  // Conditional visibility
+    pub visibility: Option<VisibilityConfig>,  // Conditional visibility
     // ... other fields
 }
 
 pub struct Panel {
     pub metadata: Metadata,
-    pub display: Option<DisplayConfig>,  // Conditional visibility
+    pub visibility: Option<VisibilityConfig>,  // Conditional visibility
     // ... other fields
 }
 
 pub struct Notice {
     pub metadata: Metadata,
-    pub display: Option<DisplayConfig>,  // Conditional visibility
+    pub visibility: Option<VisibilityConfig>,  // Conditional visibility
     // ... other fields
 }
 ```
@@ -1171,50 +1171,50 @@ pub struct Notice {
 ```rust
 // Group: hide entire settings in simple mode
 Group::builder("advanced_settings")
-    .display(DisplayConfig::new()
+    .visibility(VisibilityConfig::new()
         .hide_when_equals("mode", Value::text("simple")))
     .build()
 
 // Panel: show only for authenticated users
 Panel::builder("admin_panel")
-    .display(DisplayConfig::new()
+    .visibility(VisibilityConfig::new()
         .show_when_equals("role", Value::text("admin")))
     .build()
 
 // Notice: show warning when field invalid
 Notice::builder("validation_warning")
     .notice_type(NoticeType::Warning)
-    .display(DisplayConfig::new()
+    .visibility(VisibilityConfig::new()
         .show_when_invalid("email"))
     .build()
 
 // Object: hide shipping when "pickup" selected
 Object::builder("shipping_address")
-    .display(DisplayConfig::new()
+    .visibility(VisibilityConfig::new()
         .hide_when_equals("delivery_method", Value::text("pickup")))
     .build()
 
 // List: hide when no items
 List::builder("items")
-    .display(DisplayConfig::new()
+    .visibility(VisibilityConfig::new()
         .show_when(DisplayRule::when("has_items", DisplayCondition::IsTrue)))
     .build()
 
 // Text: show based on authentication type
 Text::builder("api_key")
-    .display(DisplayConfig::new()
+    .visibility(VisibilityConfig::new()
         .show_when_equals("auth_type", Value::text("api_key")))
     .build()
 
 // Number: show custom port only when protocol is "custom"
 Number::builder::<i64>("custom_port")
-    .display(DisplayConfig::new()
+    .visibility(VisibilityConfig::new()
         .show_when_equals("protocol", Value::text("custom")))
     .build()
 
 // Select: show regions based on country
 Select::builder("region")
-    .display(DisplayConfig::new()
+    .visibility(VisibilityConfig::new()
         .show_when(DisplayRule::when("country", DisplayCondition::IsSet)))
     .build()
 ```
@@ -1227,7 +1227,7 @@ Select::builder("region")
 
 ```rust
 // Multiple conditions example
-let display = DisplayConfig::new()
+let visibility = VisibilityConfig::new()
     // Hide if disabled OR in maintenance mode
     .hide_when(DisplayRule::when("disabled", DisplayCondition::IsTrue))
     .hide_when(DisplayRule::when("maintenance", DisplayCondition::IsTrue))
@@ -1393,24 +1393,24 @@ Text::builder("username")
     .build()
 ```
 
-### Validation vs Displayable
+### Validation vs Visibility
 
 | Trait | Applies To | Purpose |
 |-------|-----------|---------|
-| `Displayable` | ALL 13 types | Conditional visibility |
+| `Visibility` | ALL 13 types | Conditional visibility |
 | `Validatable` | Container + Leaf (10 types) | Value validation |
 
 ```rust
-// Notice has Displayable but NOT Validatable
+// Notice has Visibility but NOT Validatable
 Notice::builder("warning")
-    .display(DisplayConfig::new()
+    .visibility(VisibilityConfig::new()
         .show_when_invalid("email"))  // Can react to validation
     // .validation(...)              // NOT AVAILABLE - no value to validate
     .build()
 
-// Text has BOTH Displayable AND Validatable
+// Text has BOTH Visibility AND Validatable
 Text::builder("api_key")
-    .display(DisplayConfig::new()
+    .visibility(VisibilityConfig::new()
         .show_when_equals("auth_type", Value::text("api_key")))
     .validation(ValidationConfig::new()
         .required()

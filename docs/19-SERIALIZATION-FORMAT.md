@@ -138,7 +138,7 @@ Schema serializes as a JSON object with parameter definitions.
       "metadata": { ... },
       "subtype": "SingleLine",
       "constraints": { ... },
-      "display": { ... },
+      "visibility": { ... },
       "validation": { ... }
     },
     {

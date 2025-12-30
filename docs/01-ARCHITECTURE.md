@@ -30,19 +30,19 @@ name = "paramdef"
 
 [features]
 default = []
-display = []
+visibility = []
 validation = []
 serde = ["dep:serde", "dep:serde_json"]
 events = ["dep:tokio"]
 i18n = ["dep:fluent"]
 chrono = ["dep:chrono"]
-full = ["display", "validation", "serde", "events", "i18n", "chrono"]
+full = ["visibility", "validation", "serde", "events", "i18n", "chrono"]
 ```
 
 | Feature | Enables |
 |---------|---------|
 | (none) | Core types, Node traits, Value enum |
-| `display` | `Displayable` trait, `DisplayConfig`, visibility conditions |
+| `visibility` | `Visibility` trait, `VisibilityConfig`, visibility conditions |
 | `validation` | `Validatable` trait, `Validator` trait, `ValidationError` |
 | `serde` | Serialize/Deserialize + JSON conversions (From, FromStr, Display) |
 | `events` | Event system with tokio broadcast channels |
@@ -277,26 +277,26 @@ bitflags! {
 
 ---
 
-## Conditional Visibility (Feature: `display`)
+## Conditional Visibility (Feature: `visibility`)
 
-> **Requires:** `features = ["display"]`
+> **Requires:** `features = ["visibility"]`
 
-**ALL 13 node types** implement the `Displayable` trait for conditional visibility.
+**ALL 13 node types** implement the `Visibility` trait for conditional visibility.
 
 ```rust
-#[cfg(feature = "display")]
-pub trait Displayable: Node {
-    fn display(&self) -> Option<&DisplayConfig>;
-    fn set_display(&mut self, display: Option<DisplayConfig>);
-    fn should_display(&self, context: &DisplayContext) -> bool;
+#[cfg(feature = "visibility")]
+pub trait Visibility: Node {
+    fn visibility(&self) -> Option<&VisibilityConfig>;
+    fn set_visibility(&mut self, config: Option<VisibilityConfig>);
+    fn is_visible(&self, context: &Context) -> bool;
     fn dependencies(&self) -> Vec<Key>;
 }
 ```
 
-### DisplayConfig Configuration
+### VisibilityConfig Configuration
 
 ```rust
-pub struct DisplayConfig {
+pub struct VisibilityConfig {
     show_when: Option<DisplayRuleSet>,  // Conditions to show (AND)
     hide_when: Option<DisplayRuleSet>,  // Conditions to hide (OR, priority)
 }
@@ -343,19 +343,19 @@ pub struct DisplayConfig {
 ```rust
 // Show API key only when auth type is "api_key"
 Text::builder("api_key")
-    .display(DisplayConfig::new()
+    .visibility(VisibilityConfig::new()
         .show_when_equals("auth_type", Value::text("api_key")))
     .build()
 
 // Show error notice when email is invalid
 Notice::builder("email_error")
     .notice_type(NoticeType::Error)
-    .display(DisplayConfig::new()
+    .visibility(VisibilityConfig::new()
         .show_when_invalid("email"))
     .build()
 
 // Complex: show when enabled AND level > 10
-let display = DisplayConfig::new()
+let visibility = VisibilityConfig::new()
     .show_when(DisplayRuleSet::all([
         DisplayRule::when("enabled", DisplayCondition::IsTrue),
         DisplayRule::when("level", DisplayCondition::GreaterThan(10.0)),

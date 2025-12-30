@@ -13,13 +13,13 @@ version = "0.1.0"
 
 [features]
 default = []
-display = []
+visibility = []
 validation = []
 serde = ["dep:serde", "dep:serde_json"]
 events = ["dep:tokio"]
 i18n = ["dep:fluent"]
 chrono = ["dep:chrono"]
-full = ["display", "validation", "serde", "events", "i18n", "chrono"]
+full = ["visibility", "validation", "serde", "events", "i18n", "chrono"]
 
 [dependencies]
 # Core (always)
@@ -40,7 +40,7 @@ chrono = { version = "0.4", optional = true, default-features = false, features 
 | Feature | Enables |
 |---------|---------|
 | (none) | Core types, Node traits, Value enum |
-| `display` | `Displayable` trait, `DisplayConfig`, visibility conditions |
+| `visibility` | `Visibility` trait, `VisibilityConfig`, visibility conditions |
 | `validation` | `Validatable` trait, `Validator` trait, `ValidationError` |
 | `serde` | Serialize/Deserialize + JSON conversions |
 | `events` | Event system with tokio broadcast channels |
@@ -65,15 +65,15 @@ pub struct Text {
     pub subtype: TextSubtype,
     pub value: Option<String>,
     
-    #[cfg(feature = "display")]
-    pub display: Option<DisplayConfig>,
+    #[cfg(feature = "visibility")]
+    pub visibility: Option<VisibilityConfig>,
     
     #[cfg(feature = "validation")]
     pub validation: Option<ValidationConfig>,
 }
 
-#[cfg(feature = "display")]
-impl Displayable for Text { /* ... */ }
+#[cfg(feature = "visibility")]
+impl Visibility for Text { /* ... */ }
 
 #[cfg(feature = "validation")]
 impl Validatable for Text { /* ... */ }
@@ -133,27 +133,27 @@ pub trait Node: Send + Sync {
 }
 ```
 
-### Feature: `display`
+### Feature: `visibility`
 
 ```rust
 /// Conditional visibility for all nodes
 /// ALL 13 node types implement this trait
-#[cfg(feature = "display")]
-pub trait Displayable: Node {
-    /// Get display configuration (show_when/hide_when rules)
-    fn display(&self) -> Option<&DisplayConfig>;
+#[cfg(feature = "visibility")]
+pub trait Visibility: Node {
+    /// Get visibility configuration (show_when/hide_when rules)
+    fn visibility(&self) -> Option<&VisibilityConfig>;
     
-    /// Set display configuration
-    fn set_display(&mut self, display: Option<DisplayConfig>);
+    /// Set visibility configuration
+    fn set_visibility(&mut self, config: Option<VisibilityConfig>);
     
     /// Check if node should be visible given current context
-    fn should_display(&self, context: &DisplayContext) -> bool {
-        self.display().map_or(true, |d| d.should_display(context))
+    fn is_visible(&self, context: &Context) -> bool {
+        self.visibility().map_or(true, |v| v.is_visible(context))
     }
     
     /// Get all parameter keys this node's visibility depends on
     fn dependencies(&self) -> Vec<Key> {
-        self.display().map_or(Vec::new(), |d| d.dependencies())
+        self.visibility().map_or(Vec::new(), |v| v.dependencies())
     }
 }
 ```
@@ -619,7 +619,7 @@ Instead of many types, use **base type + subtype + flags**:
 
 | Feature | Trait | Applies To |
 |---------|-------|-----------|
-| `display` | `Displayable` | ALL 13 types |
+| `visibility` | `Visibility` | ALL 13 types |
 | `validation` | `Validatable` | Container + Leaf (10 types) |
 
 ---
@@ -823,16 +823,16 @@ Text::builder("custom_field")
 
 ---
 
-## Displayable Trait (Feature: `display`)
+## Visibility Trait (Feature: `visibility`)
 
-> **Requires:** `features = ["display"]`
+> **Requires:** `features = ["visibility"]`
 
-**ALL 13 node types** implement `Displayable` for conditional visibility:
+**ALL 13 node types** implement `Visibility` for conditional visibility:
 
 ```rust
-pub struct DisplayConfig {
-    show_when: Option<DisplayRuleSet>,  // Conditions to show
-    hide_when: Option<DisplayRuleSet>,  // Conditions to hide (priority)
+pub struct VisibilityConfig {
+    show_when: Option<RuleSet>,  // Conditions to show
+    hide_when: Option<RuleSet>,  // Conditions to hide (priority)
 }
 
 pub enum DisplayCondition {
@@ -879,20 +879,20 @@ pub enum DisplayCondition {
 ```rust
 // Show API key field only when auth type is "api_key"
 Text::builder("api_key")
-    .display(DisplayConfig::new()
+    .visibility(VisibilityConfig::new()
         .show_when_equals("auth_type", Value::text("api_key")))
     .build()
 
 // Show warning notice when password is invalid
 Notice::builder("password_warning")
     .notice_type(NoticeType::Warning)
-    .display(DisplayConfig::new()
+    .visibility(VisibilityConfig::new()
         .show_when_invalid("password"))
     .build()
 
 // Hide advanced panel in simple mode
 Panel::builder("advanced")
-    .display(DisplayConfig::new()
+    .visibility(VisibilityConfig::new()
         .hide_when_equals("mode", Value::text("simple")))
     .build()
 ```
