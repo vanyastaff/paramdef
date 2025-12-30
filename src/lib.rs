@@ -47,10 +47,13 @@
 
 pub mod core;
 pub mod node;
+pub mod parameter;
 pub mod subtypes;
 
 // Re-export commonly used types at crate root
 pub use core::{Error, Flags, Key, Metadata, Result, StateFlags, Value};
 
 // Re-export subtype traits and common subtypes
-pub use subtypes::{IntoBuilder, NumberSubtype, NumberUnit, Numeric, TextSubtype, VectorSubtype};
+pub use subtypes::{
+    IntoBuilder, NumberSubtype, NumberUnit, Numeric, NumericKind, TextSubtype, VectorSubtype,
+};

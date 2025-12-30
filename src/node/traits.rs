@@ -171,30 +171,20 @@ pub trait Container: Node + ValueAccess {
 // Leaf Trait
 // =============================================================================
 
-/// Trait for Leaf node types.
+/// Trait for Leaf node types (schema definition).
 ///
-/// Leaf nodes have a value but no children. This includes:
+/// Leaf nodes represent terminal values with no children. This includes:
 /// - Text: String values
 /// - Number: Integer or float values
 /// - Boolean: True/false values
 /// - Vector: Fixed-size numeric arrays
 /// - Select: Single or multiple selection
+///
+/// This trait defines the **schema** for leaf parameters. Runtime values
+/// are managed separately in `RuntimeParameter<T>` or `Context`.
 pub trait Leaf: Node {
-    /// Converts the leaf's data to a Value.
-    fn to_value(&self) -> Value;
-
-    /// Sets the leaf's value from a Value.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the value type doesn't match the expected type.
-    fn set_from_value(&mut self, value: Value) -> crate::core::Result<()>;
-
-    /// Returns whether the leaf has a value set.
-    fn has_value(&self) -> bool;
-
-    /// Clears the leaf's value.
-    fn clear(&mut self);
+    /// Returns the default value for this parameter, if set.
+    fn default_value(&self) -> Option<Value>;
 }
 
 // =============================================================================
@@ -355,14 +345,21 @@ mod tests {
     // Test implementation of Leaf for testing
     struct TestLeaf {
         metadata: Metadata,
-        value: Option<Value>,
+        default: Option<Value>,
     }
 
     impl TestLeaf {
         fn new(key: &str) -> Self {
             Self {
                 metadata: Metadata::new(key),
-                value: None,
+                default: None,
+            }
+        }
+
+        fn with_default(key: &str, default: Value) -> Self {
+            Self {
+                metadata: Metadata::new(key),
+                default: Some(default),
             }
         }
     }
@@ -382,37 +379,21 @@ mod tests {
     }
 
     impl Leaf for TestLeaf {
-        fn to_value(&self) -> Value {
-            self.value.clone().unwrap_or(Value::Null)
-        }
-
-        fn set_from_value(&mut self, value: Value) -> crate::core::Result<()> {
-            self.value = Some(value);
-            Ok(())
-        }
-
-        fn has_value(&self) -> bool {
-            self.value.is_some()
-        }
-
-        fn clear(&mut self) {
-            self.value = None;
+        fn default_value(&self) -> Option<Value> {
+            self.default.clone()
         }
     }
 
     #[test]
     fn test_leaf_trait() {
-        let mut leaf = TestLeaf::new("test");
+        let leaf = TestLeaf::new("test");
+        assert!(leaf.default_value().is_none());
 
-        assert!(!leaf.has_value());
-        assert_eq!(leaf.to_value(), Value::Null);
-
-        leaf.set_from_value(Value::text("hello")).unwrap();
-        assert!(leaf.has_value());
-        assert_eq!(leaf.to_value(), Value::text("hello"));
-
-        leaf.clear();
-        assert!(!leaf.has_value());
+        let leaf_with_default = TestLeaf::with_default("test", Value::text("hello"));
+        assert_eq!(
+            leaf_with_default.default_value(),
+            Some(Value::text("hello"))
+        );
     }
 
     // Test implementation of Decoration for testing

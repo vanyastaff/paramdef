@@ -49,8 +49,10 @@ mod unit;
 mod vector;
 
 pub use macros::{define_number_subtype, define_text_subtype, define_vector_subtype};
+#[allow(clippy::wildcard_imports)]
 pub use number::*;
+#[allow(clippy::wildcard_imports)]
 pub use text::*;
-pub use traits::{IntoBuilder, NumberSubtype, Numeric, TextSubtype, VectorSubtype};
+pub use traits::{IntoBuilder, NumberSubtype, Numeric, NumericKind, TextSubtype, VectorSubtype};
 pub use unit::NumberUnit;
 pub use vector::*;

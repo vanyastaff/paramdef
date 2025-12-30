@@ -2,6 +2,49 @@
 
 use std::fmt::Debug;
 
+/// Runtime representation of a numeric type.
+///
+/// Used to store the element type of vectors and other generic numeric
+/// containers at runtime, while still allowing compile-time type safety
+/// through generic builders.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+pub enum NumericKind {
+    /// 32-bit signed integer.
+    I32,
+    /// 64-bit signed integer.
+    I64,
+    /// 32-bit floating point.
+    F32,
+    /// 64-bit floating point (default).
+    #[default]
+    F64,
+}
+
+impl NumericKind {
+    /// Returns the name of this numeric kind.
+    #[must_use]
+    pub fn name(&self) -> &'static str {
+        match self {
+            Self::I32 => "i32",
+            Self::I64 => "i64",
+            Self::F32 => "f32",
+            Self::F64 => "f64",
+        }
+    }
+
+    /// Returns true if this is an integer type.
+    #[must_use]
+    pub fn is_integer(&self) -> bool {
+        matches!(self, Self::I32 | Self::I64)
+    }
+
+    /// Returns true if this is a floating-point type.
+    #[must_use]
+    pub fn is_float(&self) -> bool {
+        matches!(self, Self::F32 | Self::F64)
+    }
+}
+
 /// Trait for numeric types that can be used with [`NumberSubtype`].
 ///
 /// This trait provides bounds for numeric operations used in parameter
@@ -14,6 +57,9 @@ use std::fmt::Debug;
 /// - Unsigned: `u8`, `u16`, `u32`, `u64`, `u128`, `usize`
 /// - Floats: `f32`, `f64`
 pub trait Numeric: Copy + PartialOrd + Debug + Send + Sync + 'static {
+    /// Returns the runtime kind for this numeric type.
+    fn kind() -> NumericKind;
+
     /// Returns zero for this numeric type.
     fn zero() -> Self;
 
@@ -28,9 +74,12 @@ pub trait Numeric: Copy + PartialOrd + Debug + Send + Sync + 'static {
 }
 
 macro_rules! impl_numeric_int {
-    ($($t:ty),*) => {
+    ($($t:ty => $kind:expr),* $(,)?) => {
         $(
             impl Numeric for $t {
+                #[inline]
+                fn kind() -> NumericKind { $kind }
+
                 #[inline]
                 fn zero() -> Self { 0 }
 
@@ -50,9 +99,12 @@ macro_rules! impl_numeric_int {
 }
 
 macro_rules! impl_numeric_float {
-    ($($t:ty),*) => {
+    ($($t:ty => $kind:expr),* $(,)?) => {
         $(
             impl Numeric for $t {
+                #[inline]
+                fn kind() -> NumericKind { $kind }
+
                 #[inline]
                 fn zero() -> Self { 0.0 }
 
@@ -71,10 +123,26 @@ macro_rules! impl_numeric_float {
     };
 }
 
+// Only i32, i64, f32, f64 have specific NumericKind variants.
+// Other integer types map to the closest kind.
 impl_numeric_int!(
-    i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize
+    i8 => NumericKind::I32,
+    i16 => NumericKind::I32,
+    i32 => NumericKind::I32,
+    i64 => NumericKind::I64,
+    i128 => NumericKind::I64,
+    isize => NumericKind::I64,
+    u8 => NumericKind::I32,
+    u16 => NumericKind::I32,
+    u32 => NumericKind::I32,
+    u64 => NumericKind::I64,
+    u128 => NumericKind::I64,
+    usize => NumericKind::I64,
 );
-impl_numeric_float!(f32, f64);
+impl_numeric_float!(
+    f32 => NumericKind::F32,
+    f64 => NumericKind::F64,
+);
 
 /// Marker trait for integer types.
 ///
