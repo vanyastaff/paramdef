@@ -400,6 +400,82 @@ where
 
 ---
 
+## SmallVec Usage
+
+`SmallVec` stores small collections on the stack, falling back to heap when exceeded:
+
+```rust
+use smallvec::SmallVec;
+
+// Up to 4 elements on stack, then heap
+let mut v: SmallVec<[i32; 4]> = SmallVec::new();
+v.push(1);  // stack
+v.push(2);  // stack
+v.push(3);  // stack
+v.push(4);  // stack (inline)
+v.push(5);  // heap allocation, all moved to heap
+```
+
+### Memory Trade-off
+
+SmallVec reserves space for N elements in the struct, even when empty:
+
+```rust
+use std::mem::size_of;
+
+size_of::<Vec<u64>>()              // 24 bytes (always)
+size_of::<SmallVec<[u64; 2]>>()    // ~32 bytes
+size_of::<SmallVec<[u64; 4]>>()    // ~48 bytes
+size_of::<SmallVec<[u64; 8]>>()    // ~80 bytes
+```
+
+### When to Use
+
+| | Vec | SmallVec<[T; N]> |
+|---|-----|------------------|
+| Struct size | 24 bytes | N * size_of::<T>() + overhead |
+| Empty | 0 allocations | 0 allocations |
+| 1-N elements | 1 allocation | 0 allocations |
+| N+ elements | 1 allocation | 1 allocation |
+
+**Use SmallVec when:**
+- Typically 1-N elements (avoid heap allocation)
+- Struct lives in `Arc` (size less critical)
+- N is small (2-8)
+
+### Recommended Capacities
+
+| Field | Typical count | SmallVec |
+|-------|---------------|----------|
+| `validators` | 1-3 | `SmallVec<[Arc<dyn Validator>; 4]>` |
+| `transformers` | 1-2 | `SmallVec<[Arc<dyn Transform>; 2]>` |
+| `errors` | 0-2 | `SmallVec<[ValidationError; 2]>` |
+| `select.options` | 3-8 | `SmallVec<[SelectOption; 8]>` |
+| `list.default` | 0-3 | `SmallVec<[Value; 4]>` |
+
+### Example
+
+```rust
+use smallvec::SmallVec;
+
+pub struct Number<T: Numeric, S: NumberSubtype<T>> {
+    pub metadata: Metadata,
+    pub subtype: S,
+    pub default: Option<T>,
+    
+    // Typically 1-3 validators, rarely more
+    #[cfg(feature = "validation")]
+    pub validators: SmallVec<[Arc<dyn NumericValidator<T>>; 4]>,
+    
+    // Typically 1-2 transformers
+    pub transformers: SmallVec<[Arc<dyn NumericTransform<T>>; 2]>,
+}
+```
+
+**Note:** For `Vector<T, N>` default values, use `[T; N]` directly — already stack-allocated.
+
+---
+
 ## Public API
 
 `lib.rs` provides clean public interface:
