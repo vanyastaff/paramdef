@@ -363,12 +363,12 @@ Text::builder("email")
 
 ### Number
 
-Numeric values with type-safe generics.
+Numeric values with type-safe generics and **compile-time subtype safety**.
 
 ```rust
-pub struct Number<T: Numeric> {
+pub struct Number<T: Numeric, S: NumberSubtype<T> = Generic> {
     pub metadata: Metadata,
-    pub subtype: NumberSubtype,
+    pub subtype: S,
     pub unit: NumberUnit,
     pub hard_min: Option<T>,
     pub hard_max: Option<T>,
@@ -377,6 +377,11 @@ pub struct Number<T: Numeric> {
     pub step: Option<T>,
     pub default: Option<T>,
 }
+
+// Compile-time safety: subtype must be valid for numeric type
+Number::<u16>::builder("port").subtype(Port).build();      // ✓ Port is int-only
+Number::<f64>::builder("port").subtype(Port).build();      // ✗ ERROR: Port not for float
+Number::<f64>::builder("opacity").subtype(Factor).build(); // ✓ Factor is float-only
 ```
 
 **Hard vs Soft Constraints:**
@@ -427,12 +432,12 @@ Boolean::builder("enabled")
 
 ### Vector
 
-Fixed-size numeric arrays with const generics.
+Fixed-size numeric arrays with const generics and **compile-time subtype safety**.
 
 ```rust
-pub struct Vector<T: Numeric, const N: usize> {
+pub struct Vector<T: Numeric, const N: usize, S: VectorSubtype<N> = Vector3> {
     pub metadata: Metadata,
-    pub subtype: VectorSubtype,
+    pub subtype: S,
     pub component_units: NumberUnit,
     pub hard_min: Option<[T; N]>,
     pub hard_max: Option<[T; N]>,
@@ -440,9 +445,13 @@ pub struct Vector<T: Numeric, const N: usize> {
     pub soft_max: Option<[T; N]>,
     pub default: Option<[T; N]>,
 }
+
+// Compile-time safety: subtype must match vector size
+Vector::<f64, 3>::builder("pos").subtype(Position3D).build();  // ✓ 
+Vector::<f64, 3>::builder("rot").subtype(Quaternion).build();  // ✗ ERROR: Quaternion needs size 4
 ```
 
-**Common Subtypes:**
+**Common Subtypes (size-constrained):**
 - `Position` - 3D position (XYZ)
 - `Direction` - Normalized direction vector
 - `Scale` - Scale factors

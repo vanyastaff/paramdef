@@ -17,14 +17,44 @@
 
 ## Subtype System Decisions
 
-### ✅ DECISION: Create TextSubtype, NumberSubtype, VectorSubtype
+### ✅ DECISION: Trait-Based Subtypes with Compile-Time Safety
 
 **Rationale:**
 - Industry standard (Blender RNA, Unreal Engine)
 - Semantic meaning is valuable
-- Enables proper validation
+- **Compile-time type safety** - prevent invalid combinations
 - UI hints without coupling
 - 150+ real-world use cases identified
+
+**Design:**
+```rust
+// Trait definitions with type/size parameters
+pub trait NumberSubtype<T: Numeric> {}
+pub trait VectorSubtype<const N: usize> {}
+pub trait TextSubtype {}
+
+// Compile-time safety examples:
+Number::<u16>::builder("port").subtype(Port).build();      // ✓ Port is int-only
+Number::<f64>::builder("port").subtype(Port).build();      // ✗ ERROR: Port not for float
+
+Vector::<f64, 3>::builder("pos").subtype(Position3D).build();  // ✓ Position3D is size 3
+Vector::<f64, 3>::builder("rot").subtype(Quaternion).build();  // ✗ ERROR: Quaternion needs size 4
+```
+
+**Macros for DRY:**
+```rust
+define_number_subtype! {
+    int_only { Port, Count, Rating, Index }
+    float_only { Factor, Percentage, Angle }
+    any { Distance, Duration, Temperature }
+}
+
+define_vector_subtype! {
+    size_2 { Position2D, Size2D, Uv }
+    size_3 { Position3D, Direction3D, Euler, ColorRgb, Velocity }
+    size_4 { Quaternion, AxisAngle, ColorRgba }
+}
+```
 
 **Evidence:**
 - Blender: FloatProperty has 15+ subtypes (FACTOR, ANGLE, DISTANCE, etc.)
@@ -32,6 +62,7 @@
 - Qt: QVariant has type system with semantic meaning
 
 **Impact:**
+- Compile-time errors instead of runtime
 - Better DX (Developer Experience)
 - Type-safe validation
 - Clear documentation

@@ -88,10 +88,16 @@ The system defines exactly 14 node types across five categories:
 
 ### Separation of Concerns
 
+**Trait-Based Subtypes (compile-time safe):**
+- **NumberSubtype<T>**: Constrained by numeric type (int-only, float-only, any)
+- **VectorSubtype<N>**: Constrained by vector size (2, 3, 4, etc.)
+- **TextSubtype**: All work with String (runtime validation)
+- Macros: `define_number_subtype!`, `define_vector_subtype!` for DRY definitions
+
 **Subtype vs Unit Pattern (Blender-style):**
-- **Subtype**: Semantic meaning (WHAT it is) - e.g., `NumberSubtype::Distance`
+- **Subtype**: Semantic meaning (WHAT it is) - e.g., `Distance`, `Port`, `Position3D`
 - **Unit**: Measurement system (HOW to measure) - e.g., `NumberUnit::Length`
-- Benefits: 60 subtypes × 17 unit categories = thousands of combinations with minimal API
+- Benefits: Compile-time safety + 60 subtypes × 17 unit categories
 
 **Soft vs Hard Constraints:**
 - **Hard constraints**: Validation enforced (value MUST be in range)
