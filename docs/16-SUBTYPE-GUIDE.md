@@ -20,15 +20,15 @@
 ### Step 1: Identify the Base Type
 
 ```
-┌─ Is it text/string? ────────→ TextParameter
+┌─ Is it text/string? ────────→ Text
 │
-├─ Is it numeric? ─────────────→ NumberParameter
+├─ Is it numeric? ─────────────→ Number
 │
-├─ Is it true/false? ──────────→ BoolParameter
+├─ Is it true/false? ──────────→ Boolean
 │
-├─ Is it one of a fixed set? ──→ ChoiceParameter
+├─ Is it one of a fixed set? ──→ Select
 │
-└─ Is it fixed-size numeric? ──→ VectorParameter
+└─ Is it fixed-size numeric? ──→ Vector
 ```
 
 ### Step 2: Ask Three Questions
@@ -70,15 +70,15 @@ TextSubtype::RichText       // Formatted content (HTML/Markdown)
 **Examples:**
 ```rust
 // Name (single line)
-TextParameter::builder("name")
+Text::builder("name")
     .subtype(TextSubtype::SingleLine)
 
 // Description (multi-line)
-TextParameter::builder("description")
+Text::builder("description")
     .subtype(TextSubtype::MultiLine)
 
 // Blog post (rich text)
-TextParameter::builder("content")
+Text::builder("content")
     .subtype(TextSubtype::RichText)
 ```
 
@@ -110,15 +110,15 @@ Is it code or data?
 **Examples:**
 ```rust
 // Python script
-TextParameter::builder("script")
+Text::builder("script")
     .subtype(TextSubtype::CodeWithLanguage(CodeLanguage::Python))
 
 // API request body
-TextParameter::builder("request")
+Text::builder("request")
     .subtype(TextSubtype::Json)
 
 // Kubernetes manifest
-TextParameter::builder("manifest")
+Text::builder("manifest")
     .subtype(TextSubtype::Yaml)
 ```
 
@@ -148,19 +148,19 @@ Is it a web/network identifier?
 **Examples:**
 ```rust
 // User email
-TextParameter::email("email")
+Text::email("email")
     // Automatic email validation!
 
 // Website URL
-TextParameter::url("website")
+Text::url("website")
     // Validates URL format
 
 // Server hostname
-TextParameter::builder("server")
+Text::builder("server")
     .subtype(TextSubtype::Hostname)
 
 // IP address
-TextParameter::builder("ip")
+Text::builder("ip")
     .subtype(TextSubtype::IpV4Address)
 ```
 
@@ -189,15 +189,15 @@ Is it a file system path?
 **Examples:**
 ```rust
 // Config file
-TextParameter::builder("config")
+Text::builder("config")
     .subtype(TextSubtype::FilePath)
 
 // Output directory
-TextParameter::builder("output_dir")
+Text::builder("output_dir")
     .subtype(TextSubtype::DirectoryPath)
 
 // Project root (absolute)
-TextParameter::builder("project_root")
+Text::builder("project_root")
     .subtype(TextSubtype::FilePathAbsolute)
 ```
 
@@ -226,16 +226,16 @@ Is it an identifier?
 **Examples:**
 ```rust
 // Record ID
-TextParameter::builder("id")
+Text::builder("id")
     .subtype(TextSubtype::Uuid)
 
 // Blog post slug
-TextParameter::builder("slug")
+Text::builder("slug")
     .subtype(TextSubtype::Slug)
     // Validates lowercase, numbers, hyphens
 
 // Password
-TextParameter::password("password")
+Text::password("password")
     // Uses Secret subtype automatically
 ```
 
@@ -266,15 +266,15 @@ Is it temporal data?
 **Examples:**
 ```rust
 // Birth date
-TextParameter::builder("birth_date")
+Text::builder("birth_date")
     .subtype(TextSubtype::Date)
 
 // Appointment time
-TextParameter::builder("appointment")
+Text::builder("appointment")
     .subtype(TextSubtype::DateTime)
 
 // Session timeout
-TextParameter::builder("timeout")
+Text::builder("timeout")
     .subtype(TextSubtype::Duration)
 ```
 
@@ -303,13 +303,13 @@ Is it a number?
 **Examples:**
 ```rust
 // Count
-NumberParameter::integer("count")
+Number::integer("count")
 
 // Ratio
-NumberParameter::float("ratio")
+Number::float("ratio")
 
 // Opacity
-NumberParameter::percentage("opacity")
+Number::percentage("opacity")
     .min(0.0)
     .max(100.0)
 ```
@@ -341,17 +341,17 @@ Is it a physical quantity?
 **Examples:**
 ```rust
 // Room temperature
-NumberParameter::builder("temperature")
+Number::builder("temperature")
     .subtype(NumberSubtype::Temperature)
     .unit(Unit::Temperature(TemperatureUnit::Celsius))
 
 // Travel distance
-NumberParameter::builder("distance")
+Number::builder("distance")
     .subtype(NumberSubtype::Distance)
     .unit(Unit::Distance(DistanceUnit::Kilometers))
 
 // Package weight
-NumberParameter::builder("weight")
+Number::builder("weight")
     .subtype(NumberSubtype::Weight)
     .unit(Unit::Weight(WeightUnit::Kilograms))
 ```
@@ -381,19 +381,19 @@ Is it money-related?
 **Examples:**
 ```rust
 // Product price
-NumberParameter::builder("price")
+Number::builder("price")
     .subtype(NumberSubtype::Price)
     .unit(Unit::Currency(CurrencyCode::USD))
     .min(0.0)
 
 // Sales tax rate
-NumberParameter::builder("tax_rate")
+Number::builder("tax_rate")
     .subtype(NumberSubtype::Tax)
     .min(0.0)
     .max(100.0)  // Percentage
 
 // Discount amount
-NumberParameter::builder("discount")
+Number::builder("discount")
     .subtype(NumberSubtype::Discount)
 ```
 
@@ -422,18 +422,18 @@ Is it computer/network related?
 **Examples:**
 ```rust
 // Upload limit
-NumberParameter::builder("max_upload")
+Number::builder("max_upload")
     .subtype(NumberSubtype::FileSize)
     .unit(Unit::DataSize(DataSizeUnit::Megabytes))
 
 // Server port
-NumberParameter::builder("port")
+Number::builder("port")
     .subtype(NumberSubtype::Port)
     .min(1024)
     .max(65535)
 
 // Connection timeout
-NumberParameter::builder("timeout")
+Number::builder("timeout")
     .subtype(NumberSubtype::Latency)
     .min(100)
     .max(30000)
@@ -455,12 +455,12 @@ NumberSubtype::Altitude     // Height above sea level
 **Examples:**
 ```rust
 // GPS location
-NumberParameter::builder("latitude")
+Number::builder("latitude")
     .subtype(NumberSubtype::Latitude)
     .min(-90.0)
     .max(90.0)
 
-NumberParameter::builder("longitude")
+Number::builder("longitude")
     .subtype(NumberSubtype::Longitude)
     .min(-180.0)
     .max(180.0)
@@ -491,11 +491,11 @@ Is it a vector?
 **Examples:**
 ```rust
 // 2D point
-VectorParameter::vector2("point")
+Vector::vector2("point")
     .default_vec2([0.0, 0.0])
 
 // 3D position
-VectorParameter::vector3("position")
+Vector::vector3("position")
     .default_vec3([0.0, 0.0, 0.0])
 ```
 
@@ -521,16 +521,16 @@ VectorSubtype::Normal       // Surface normal (normalized)
 **Examples:**
 ```rust
 // Object position (any values)
-VectorParameter::builder("position")
+Vector::builder("position")
     .subtype(VectorSubtype::Position3D)
 
 // Movement direction (normalized)
-VectorParameter::builder("direction")
+Vector::builder("direction")
     .subtype(VectorSubtype::Direction3D)
     // Will validate that length ≈ 1
 
 // Surface normal (normalized)
-VectorParameter::builder("normal")
+Vector::builder("normal")
     .subtype(VectorSubtype::Normal)
     // Must be unit vector
 ```
@@ -560,11 +560,11 @@ Is it a color?
 **Examples:**
 ```rust
 // Tint color with transparency
-VectorParameter::color_rgba("tint")
+Vector::color_rgba("tint")
     .default_vec4([1.0, 1.0, 1.0, 1.0])
 
 // Background color (no alpha)
-VectorParameter::color_rgb("background")
+Vector::color_rgb("background")
     .default_vec3([0.2, 0.2, 0.2])
 ```
 
@@ -599,12 +599,12 @@ Is it a rotation?
 **Examples:**
 ```rust
 // Camera rotation (Euler)
-VectorParameter::builder("rotation")
+Vector::builder("rotation")
     .subtype(VectorSubtype::EulerAngles)
     .default_vec3([0.0, 0.0, 0.0])  // pitch, yaw, roll
 
 // Bone rotation (Quaternion)
-VectorParameter::builder("bone_rotation")
+Vector::builder("bone_rotation")
     .subtype(VectorSubtype::Quaternion)
     .default_vec4([0.0, 0.0, 0.0, 1.0])  // identity
 ```
@@ -623,7 +623,7 @@ VectorSubtype::Matrix4x4    // 3D transforms
 **Examples:**
 ```rust
 // 3D transformation matrix
-VectorParameter::builder("transform")
+Vector::builder("transform")
     .subtype(VectorSubtype::Matrix4x4)
     // 16 components
 ```
@@ -638,31 +638,31 @@ VectorParameter::builder("transform")
 Schema::new()
     // Name (single line)
     .with_parameter(
-        TextParameter::builder("name")
+        Text::builder("name")
             .subtype(TextSubtype::SingleLine)
             .required()
     )
     
     // Email (validated)
     .with_parameter(
-        TextParameter::email("email")
+        Text::email("email")
             .required()
     )
     
     // Bio (multi-line)
     .with_parameter(
-        TextParameter::builder("bio")
+        Text::builder("bio")
             .subtype(TextSubtype::MultiLine)
     )
     
     // Avatar URL
     .with_parameter(
-        TextParameter::url("avatar")
+        Text::url("avatar")
     )
     
     // Age (integer)
     .with_parameter(
-        NumberParameter::integer("age")
+        Number::integer("age")
             .subtype(NumberSubtype::Age)
             .min(13)
     )
@@ -676,26 +676,26 @@ Schema::new()
 Schema::new()
     // Position in world
     .with_parameter(
-        VectorParameter::builder("position")
+        Vector::builder("position")
             .subtype(VectorSubtype::Position3D)
     )
     
     // Rotation (Euler angles for UI)
     .with_parameter(
-        VectorParameter::builder("rotation")
+        Vector::builder("rotation")
             .subtype(VectorSubtype::EulerAngles)
     )
     
     // Scale (uniform or non-uniform)
     .with_parameter(
-        VectorParameter::builder("scale")
+        Vector::builder("scale")
             .subtype(VectorSubtype::Scale3D)
             .default_vec3([1.0, 1.0, 1.0])
     )
     
     // Color with transparency
     .with_parameter(
-        VectorParameter::color_rgba("color")
+        Vector::color_rgba("color")
             .default_vec4([1.0, 1.0, 1.0, 1.0])
     )
 ```
@@ -708,28 +708,28 @@ Schema::new()
 Schema::new()
     // Endpoint URL
     .with_parameter(
-        TextParameter::url("endpoint")
+        Text::url("endpoint")
             .subtype(TextSubtype::UrlAbsolute)
             .required()
     )
     
     // API Key (secret)
     .with_parameter(
-        TextParameter::builder("api_key")
+        Text::builder("api_key")
             .subtype(TextSubtype::Secret)
             .required()
     )
     
     // Timeout (milliseconds)
     .with_parameter(
-        NumberParameter::integer("timeout")
+        Number::integer("timeout")
             .subtype(NumberSubtype::DurationMillis)
             .default_value(30000)
     )
     
     // Max retries
     .with_parameter(
-        NumberParameter::integer("max_retries")
+        Number::integer("max_retries")
             .subtype(NumberSubtype::Count)
             .min(0)
             .max(10)
@@ -744,12 +744,12 @@ Schema::new()
 
 ```rust
 // ❌ BAD
-TextParameter::builder("email")
+Text::builder("email")
     .subtype(TextSubtype::Generic)
     .pattern(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
 
 // ✅ GOOD
-TextParameter::email("email")
+Text::email("email")
     // Built-in validation!
 ```
 
@@ -759,11 +759,11 @@ TextParameter::email("email")
 
 ```rust
 // ❌ BAD
-VectorParameter::vector3("velocity")
+Vector::vector3("velocity")
     // velocity is a direction, not position!
 
 // ✅ GOOD
-VectorParameter::builder("velocity")
+Vector::builder("velocity")
     .subtype(VectorSubtype::Direction3D)
 ```
 
@@ -773,12 +773,12 @@ VectorParameter::builder("velocity")
 
 ```rust
 // ❌ BAD
-NumberParameter::float("temperature")
+Number::float("temperature")
     .subtype(NumberSubtype::Temperature)
     // What unit? Celsius? Fahrenheit?
 
 // ✅ GOOD
-NumberParameter::builder("temperature")
+Number::builder("temperature")
     .subtype(NumberSubtype::Temperature)
     .unit(Unit::Temperature(TemperatureUnit::Celsius))
 ```
@@ -789,12 +789,12 @@ NumberParameter::builder("temperature")
 
 ```rust
 // ❌ BAD
-TextParameter::builder("username")
+Text::builder("username")
     .subtype(TextSubtype::Secret)
     // Username is not secret!
 
 // ✅ GOOD
-TextParameter::builder("username")
+Text::builder("username")
     .subtype(TextSubtype::Username)
 ```
 

@@ -12,20 +12,20 @@ Type-safe, production-ready parameter definition system for workflow automation 
 use paramdef::prelude::*;
 
 let schema = Schema::new()
-    .with(TextParameter::builder("name")
+    .with(Text::builder("name")
         .label("Name")
         .required()
         .min_length(1)
         .build())
     
-    .with(NumberParameter::builder::<f64>("opacity")
+    .with(Number::builder("opacity")
         .label("Opacity")
         .subtype(NumberSubtype::Factor)
         .range(0.0, 1.0)
         .default(1.0)
         .build())
     
-    .with(EnumParameter::builder("method")
+    .with(Select::builder("method")
         .label("Method")
         .option("GET", "GET")
         .option("POST", "POST")
@@ -113,24 +113,30 @@ let name: String = context.get(USERNAME)?;  // Compile-time checked
 let age: i64 = context.get(AGE)?;           // Compile-time checked
 ```
 
-### 9 Core Types
+### 13 Node Types
+
+| Category | Types | Purpose |
+|----------|-------|---------|
+| **Group** | `Group` | Root aggregator |
+| **Layout** | `Panel` | UI organization (tabs/sections) |
+| **Decoration** | `Notice` | Display-only messages |
+| **Container** | `Object`, `List`, `Mode`, `Routing`, `Expirable` | Structured data with children |
+| **Leaf** | `Text`, `Number`, `Boolean`, `Vector`, `Select` | Terminal values |
+
+**Leaf types** (most commonly used):
 
 | Type | Purpose |
 |------|---------|
-| `TextParameter` | Strings with 60+ subtypes |
-| `NumberParameter<T>` | Numbers with units |
-| `BoolParameter` | Boolean toggles |
-| `VectorParameter<T, N>` | Fixed-size arrays |
-| `EnumParameter` | Static options |
-| `DynamicEnumParameter` | Async-loaded options |
-| `ObjectParameter` | Nested structures |
-| `ListParameter` | Dynamic arrays |
-| `ModeParameter` | Discriminated unions |
+| `Text` | Strings with 60+ subtypes |
+| `Number` | Numbers with units |
+| `Boolean` | Boolean toggles |
+| `Vector` | Fixed-size arrays (2D/3D/4D, colors) |
+| `Select` | Single/multi selection (static or dynamic options) |
 
 ### Subtype + Unit Pattern
 
 ```rust
-NumberParameter::builder::<f64>("height")
+Number::builder("height")
     .subtype(NumberSubtype::Distance)  // WHAT it is
     .unit(NumberUnit::Length)          // HOW to measure
     .build()
@@ -140,10 +146,10 @@ NumberParameter::builder::<f64>("height")
 // Stored as: 1.8 (meters)
 ```
 
-### Mode Parameter (Discriminated Unions)
+### Mode (Discriminated Unions)
 
 ```rust
-ModeParameter::builder("auth")
+Mode::builder("auth")
     .variant("none", "No Auth", Schema::empty())
     .variant("basic", "Basic", Schema::new()
         .with(username_param)
@@ -157,7 +163,7 @@ ModeParameter::builder("auth")
 ### Transformers
 
 ```rust
-NumberParameter::builder::<f64>("angle")
+Number::builder("angle")
     .transformer(RoundTransformer { step: 15.0 })
     .transformer(ModuloTransformer { modulo: 360.0 })
     .build()
@@ -165,15 +171,17 @@ NumberParameter::builder::<f64>("angle")
 // Input: 373.0 -> Round: 375.0 -> Modulo: 15.0
 ```
 
-### Parameter Flags
+### Flags
 
 ```rust
-TextParameter::password("api_key")
+Text::builder("api_key")
+    .subtype(TextSubtype::Secret)
     .flags(Flags::SENSITIVE | Flags::WRITE_ONLY | Flags::SKIP_SAVE)
     .build()
 
 // Or use convenience methods:
-TextParameter::password("api_key")
+Text::builder("api_key")
+    .subtype(TextSubtype::Secret)
     .sensitive()
     .write_only()
     .skip_save()
@@ -183,7 +191,7 @@ TextParameter::password("api_key")
 ### Validation
 
 ```rust
-TextParameter::builder("email")
+Text::builder("email")
     .subtype(TextSubtype::Email)  // Built-in validation
     .required()
     .async_validator(Arc::new(EmailExistsValidator::new(db)))
@@ -193,7 +201,7 @@ TextParameter::builder("email")
 ### Display Conditions
 
 ```rust
-TextParameter::builder("ssl_cert")
+Text::builder("ssl_cert")
     .display_when(DisplayRule::show_when(
         Condition::Equals {
             key: "protocol".into(),
@@ -208,7 +216,7 @@ TextParameter::builder("ssl_cert")
 ```rust
 // Schema is immutable, shareable
 let schema = Arc::new(Schema::new()
-    .with(TextParameter::builder("name").build())
+    .with(Text::builder("name").build())
 );
 
 // Context holds mutable state

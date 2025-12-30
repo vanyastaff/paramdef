@@ -422,7 +422,7 @@ RED.nodes.registerType('my-node', {
 |---------|---------|----------|
 | Value coercion | WPF, Qt | ✅ Transformers |
 | Action triggers | TouchDesigner, Houdini | ✅ ActionParameter |
-| Discriminated unions | n8n (resources) | ✅ ModeParameter |
+| Discriminated unions | n8n (resources) | ✅ Mode |
 | Storage control | Qt (STORED) | ✅ SKIP_SAVE flag |
 | Animation support | Blender, Unreal | ✅ ANIMATABLE flag |
 

@@ -285,21 +285,21 @@ pub struct ParameterLocation {
 }
 
 // Usage
-NumberParameter::distance("pos_x")
+Number::builder("pos_x")
     .label("X Position")
     .page("Transform")
     .group("Position")
     .order(0)
     .build()
 
-NumberParameter::distance("pos_y")
+Number::builder("pos_y")
     .label("Y Position")
     .page("Transform")
     .group("Position")
     .order(1)
     .build()
 
-VectorParameter::color_rgba("color")
+Vector::builder("color")
     .label("Color")
     .page("Appearance")
     .order(0)
@@ -326,12 +326,12 @@ bitflags! {
 }
 
 // Don't serialize temporary values
-TextParameter::builder("cached_value")
+Text::builder("cached_value")
     .not_stored()
     .build()
 
 // Session-only identifier
-TextParameter::builder("session_id")
+Text::builder("session_id")
     .constant()
     .not_stored()
     .build()
@@ -399,7 +399,7 @@ pub struct TemplateContext {
 }
 
 // Mark parameter as templatable
-TextParameter::builder("message")
+Text::builder("message")
     .templatable()
     .default("Hello {{user.name}}!")
     .build()
@@ -435,15 +435,15 @@ pub struct UnionVariant {
 UnionParameter::builder("value")
     .label("Value")
     .variant("literal", "Literal", Box::new(
-        TextParameter::builder("literal").build()
+        Text::builder("literal").build()
     ))
     .variant("expression", "Expression", Box::new(
-        TextParameter::builder("expression")
+        Text::builder("expression")
             .subtype(TextSubtype::Expression)
             .build()
     ))
     .variant("reference", "Reference", Box::new(
-        TextParameter::builder("reference")
+        Text::builder("reference")
             .subtype(TextSubtype::JsonPath)
             .build()
     ))
@@ -576,12 +576,12 @@ context.restore(&before);
 fn database_connection_schema() -> Schema {
     Schema::new()
         // Connection mode (discriminated union)
-        .with(ModeParameter::builder("connection")
+        .with(Mode::builder("connection")
             .label("Connection")
             .page("Connection")
             
             .variant("uri", "Connection String", Schema::new()
-                .with(TextParameter::builder("uri")
+                .with(Text::builder("uri")
                     .label("Connection URI")
                     .subtype(TextSubtype::Url)
                     .required()
@@ -591,7 +591,7 @@ fn database_connection_schema() -> Schema {
             )
             
             .variant("details", "Connection Details", Schema::new()
-                .with(TextParameter::builder("host")
+                .with(Text::builder("host")
                     .label("Host")
                     .required()
                     .default("localhost")
@@ -600,7 +600,7 @@ fn database_connection_schema() -> Schema {
                     .order(0)
                     .build())
                 
-                .with(NumberParameter::builder::<i64>("port")
+                .with(Number::builder::<i64>("port")
                     .label("Port")
                     .range(1, 65535)
                     .default(5432)
@@ -609,7 +609,7 @@ fn database_connection_schema() -> Schema {
                     .order(1)
                     .build())
                 
-                .with(TextParameter::builder("database")
+                .with(Text::builder("database")
                     .label("Database")
                     .required()
                     .page("Connection")
@@ -617,7 +617,7 @@ fn database_connection_schema() -> Schema {
                     .order(2)
                     .build())
                 
-                .with(TextParameter::builder("username")
+                .with(Text::builder("username")
                     .label("Username")
                     .required()
                     .page("Connection")
@@ -625,7 +625,7 @@ fn database_connection_schema() -> Schema {
                     .order(0)
                     .build())
                 
-                .with(TextParameter::password("password")
+                .with(Text::builder("password")
                     .label("Password")
                     .required()
                     .page("Connection")
@@ -636,13 +636,13 @@ fn database_connection_schema() -> Schema {
             .build())
         
         // SSL options (conditional)
-        .with(BoolParameter::builder("use_ssl")
+        .with(Boolean::builder("use_ssl")
             .label("Use SSL")
             .default(true)
             .page("Security")
             .build())
         
-        .with(TextParameter::file("ssl_cert")
+        .with(Text::builder("ssl_cert")
             .label("SSL Certificate")
             .page("Security")
             .display_when(DisplayRule::show_when(
@@ -654,7 +654,7 @@ fn database_connection_schema() -> Schema {
             .build())
         
         // Timeouts
-        .with(NumberParameter::duration_seconds("connection_timeout")
+        .with(Number::builder("connection_timeout")
             .label("Connection Timeout")
             .page("Advanced")
             .group("Timeouts")
@@ -662,7 +662,7 @@ fn database_connection_schema() -> Schema {
             .default(30.0)
             .build())
         
-        .with(NumberParameter::duration_seconds("query_timeout")
+        .with(Number::builder("query_timeout")
             .label("Query Timeout")
             .page("Advanced")
             .group("Timeouts")
@@ -671,7 +671,7 @@ fn database_connection_schema() -> Schema {
             .build())
         
         // Pool settings
-        .with(NumberParameter::builder::<i64>("pool_size")
+        .with(Number::builder::<i64>("pool_size")
             .label("Pool Size")
             .page("Advanced")
             .group("Performance")

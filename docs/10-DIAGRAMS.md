@@ -39,7 +39,7 @@ Visual representation of the paramdef architecture.
 |  |  +----------------------------------------------+  |  |
 |  |  |       LAYER 1: SCHEMA (Immutable)            |  |  |
 |  |  |                                               |  |  |
-|  |  |  TextParameter {                             |  |  |
+|  |  |  Text {                             |  |  |
 |  |  |    metadata: Arc<Metadata>,                  |  |  |
 |  |  |    flags: Flags,                    |  |  |
 |  |  |    validators: Vec<Arc<Validator>>,          |  |  |
@@ -258,7 +258,7 @@ Stack:                          Heap:
 |  history       |      |               |
 +----------------+      |               v
                         |      +------------------------+
-                        |      | TextParameter (Arc)    |
+                        |      | Text (Arc)    |
                         |      |  - metadata            |
                         |      |  - flags               |
                         |      |  - validators          |
@@ -449,7 +449,7 @@ Stack:                          Heap:
 |                    SCHEMA (Immutable)                      |
 |                                                            |
 |  +-------------+  +-------------+  +-------------+         |
-|  |TextParameter|  |NumberParam  |  |BoolParameter|         |
+|  |Text|  |Number  |  |Boolean|         |
 |  |             |  |             |  |             |         |
 |  | metadata    |  | metadata    |  | metadata    |         |
 |  | subtype     |  | subtype     |  | default     |         |
@@ -551,40 +551,40 @@ Stack:                          Heap:
 ```
 Schema::new()
     |
-    +-- TextParameter::url("base_url")
+    +-- Text::url("base_url")
     |       label: "Base URL"
     |       required: true
     |
-    +-- EnumParameter::builder("method")
+    +-- Select::builder("method")
     |       options: [GET, POST, PUT, DELETE]
     |       default: GET
     |
-    +-- ModeParameter::builder("auth")
+    +-- Mode::builder("auth")
     |       |
     |       +-- variant("none")
     |       |       Schema::empty()
     |       |
     |       +-- variant("basic")
-    |       |       +-- TextParameter("username")
-    |       |       +-- TextParameter::password("password")
+    |       |       +-- Text("username")
+    |       |       +-- Text::password("password")
     |       |
     |       +-- variant("bearer")
-    |       |       +-- TextParameter::secret("token")
+    |       |       +-- Text::secret("token")
     |       |
     |       +-- variant("oauth2")
-    |               +-- TextParameter("client_id")
-    |               +-- TextParameter::secret("client_secret")
-    |               +-- TextParameter::url("token_url")
+    |               +-- Text("client_id")
+    |               +-- Text::secret("client_secret")
+    |               +-- Text::url("token_url")
     |
-    +-- TextParameter::json("body")
+    +-- Text::json("body")
     |       display_when: method IN [POST, PUT, PATCH]
     |
-    +-- ListParameter("headers")
+    +-- List("headers")
     |       item_schema:
-    |           +-- TextParameter("key")
-    |           +-- TextParameter("value")
+    |           +-- Text("key")
+    |           +-- Text("value")
     |
-    +-- NumberParameter::duration_seconds("timeout")
+    +-- Number::duration_seconds("timeout")
             range: 1..300
             default: 30
 ```

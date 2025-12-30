@@ -222,13 +222,13 @@ pub trait Parameter: Send + Sync {
 
 ---
 
-### 2.2 TextParameter
+### 2.2 Text
 
 **Priority: CRITICAL (most common type)**
 
 ```rust
 // src/parameter/text.rs
-pub struct TextParameter {
+pub struct Text {
     metadata: Metadata,
     flags: Flags,
     subtype: TextSubtype,
@@ -242,27 +242,27 @@ pub struct TextParameter {
 }
 
 // Builder
-pub struct TextParameterBuilder { ... }
+pub struct TextBuilder { ... }
 
-impl TextParameter {
-    pub fn builder(key: impl Into<Key>) -> TextParameterBuilder;
-    pub fn email(key: impl Into<Key>) -> TextParameterBuilder;
-    pub fn url(key: impl Into<Key>) -> TextParameterBuilder;
-    pub fn password(key: impl Into<Key>) -> TextParameterBuilder;
+impl Text {
+    pub fn builder(key: impl Into<Key>) -> TextBuilder;
+    pub fn email(key: impl Into<Key>) -> TextBuilder;
+    pub fn url(key: impl Into<Key>) -> TextBuilder;
+    pub fn password(key: impl Into<Key>) -> TextBuilder;
 }
 ```
 
 **Test Coverage:** 90%+
 
-**Deliverable:** TextParameter with builder and tests
+**Deliverable:** Text with builder and tests
 
 ---
 
-### 2.3 NumberParameter
+### 2.3 Number
 
 ```rust
 // src/parameter/number.rs
-pub struct NumberParameter {
+pub struct Number {
     metadata: Metadata,
     flags: Flags,
     subtype: NumberSubtype,
@@ -274,10 +274,10 @@ pub struct NumberParameter {
 }
 
 // Builder
-impl NumberParameter {
-    pub fn integer(key: impl Into<Key>) -> NumberParameterBuilder;
-    pub fn float(key: impl Into<Key>) -> NumberParameterBuilder;
-    pub fn percentage(key: impl Into<Key>) -> NumberParameterBuilder;
+impl Number {
+    pub fn integer(key: impl Into<Key>) -> NumberBuilder;
+    pub fn float(key: impl Into<Key>) -> NumberBuilder;
+    pub fn percentage(key: impl Into<Key>) -> NumberBuilder;
 }
 ```
 
@@ -285,11 +285,11 @@ impl NumberParameter {
 
 ---
 
-### 2.4 BoolParameter
+### 2.4 Boolean
 
 ```rust
 // src/parameter/boolean.rs
-pub struct BoolParameter {
+pub struct Boolean {
     metadata: Metadata,
     flags: Flags,
     default: bool,
@@ -303,23 +303,23 @@ pub struct BoolParameter {
 
 ---
 
-### 2.5 ChoiceParameter
+### 2.5 Select
 
 ```rust
-// src/parameter/choice.rs
-pub struct ChoiceParameter {
+// src/parameter/select.rs
+pub struct Select {
     metadata: Metadata,
     flags: Flags,
-    mode: ChoiceMode,
-    options: Vec<ChoiceOption>,
+    mode: SelectionMode,
+    options: Vec<SelectOption>,
 }
 
-pub enum ChoiceMode {
+pub enum SelectionMode {
     Single,
     Multi,
 }
 
-pub struct ChoiceOption {
+pub struct SelectOption {
     value: String,
     label: Option<String>,
     icon: Option<String>,
@@ -331,21 +331,21 @@ pub struct ChoiceOption {
 
 ---
 
-### 2.6 VectorParameter
+### 2.6 Vector
 
 ```rust
 // src/parameter/vector.rs
-pub struct VectorParameter {
+pub struct Vector {
     metadata: Metadata,
     flags: Flags,
     subtype: VectorSubtype,
     validators: Vec<Arc<dyn Validator>>,
 }
 
-impl VectorParameter {
-    pub fn vector3(key: impl Into<Key>) -> VectorParameterBuilder;
-    pub fn color_rgba(key: impl Into<Key>) -> VectorParameterBuilder;
-    pub fn matrix4x4(key: impl Into<Key>) -> VectorParameterBuilder;
+impl Vector {
+    pub fn vector3(key: impl Into<Key>) -> VectorBuilder;
+    pub fn color_rgba(key: impl Into<Key>) -> VectorBuilder;
+    pub fn matrix4x4(key: impl Into<Key>) -> VectorBuilder;
 }
 ```
 
@@ -353,13 +353,13 @@ impl VectorParameter {
 
 ---
 
-### 2.7 ArrayParameter, ObjectParameter
+### 2.7 List, Object
 
 **Priority: MEDIUM (can be Phase 3)**
 
 ```rust
-// src/parameter/array.rs
-pub struct ArrayParameter {
+// src/parameter/list.rs
+pub struct List {
     metadata: Metadata,
     flags: Flags,
     element_type: Box<dyn Parameter>,
@@ -368,7 +368,7 @@ pub struct ArrayParameter {
 }
 
 // src/parameter/object.rs
-pub struct ObjectParameter {
+pub struct Object {
     metadata: Metadata,
     flags: Flags,
     properties: Vec<Arc<dyn Parameter>>,

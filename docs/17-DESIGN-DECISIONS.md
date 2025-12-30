@@ -89,7 +89,7 @@ pub enum ChoiceMode {
 }
 
 // UI variations in metadata, not subtype
-ChoiceParameter::builder("color")
+Select::builder("color")
     .mode(ChoiceMode::Single)
     .with_ui_hint(UIHint::Dropdown)  // ← Metadata, not subtype
     .build()
@@ -148,7 +148,7 @@ impl TextSubtype {
 
 ### ✅ DECISION: Runtime Vector Size (NOT Const Generics)
 
-**Question:** Should we use `VectorParameter<const N: usize>`?
+**Question:** Should we use `Vector<const N: usize>`?
 
 **Decision:** NO, use runtime size.
 
@@ -159,7 +159,7 @@ impl TextSubtype {
 // ❌ IMPOSSIBLE:
 pub struct Schema {
     // Cannot store different N in same collection!
-    parameters: Vec<Arc<VectorParameter<???>>>,
+    parameters: Vec<Arc<Vector<???>>>,
 }
 
 // ✅ REQUIRED:
@@ -210,7 +210,7 @@ FVector4 Tangent;       // 4 components
 
 ```rust
 // Type-safe builders
-let position = VectorParameter::vector3("position")
+let position = Vector::vector3("position")
     .default_vec3([0.0, 0.0, 0.0])  // ✅ Enforces [f64; 3]
     .build();
 
@@ -290,7 +290,7 @@ pub enum Unit {
 **Implementation:**
 ```rust
 // Layer 1: Schema (immutable)
-pub struct TextParameter {
+pub struct Text {
     metadata: Metadata,
     flags: Flags,
     validators: Vec<Validator>,
@@ -334,8 +334,8 @@ pub struct RuntimeParameter {
 ```rust
 // ❌ BAD: Exhaustive matching everywhere
 pub enum RuntimeParameter {
-    Text(RuntimeTextParameter),
-    Number(RuntimeNumberParameter),
+    Text(RuntimeText),
+    Number(RuntimeNumber),
     // ...
 }
 ```
@@ -349,12 +349,12 @@ pub struct RuntimeParameter<T: Parameter> {
     value: Value,
 }
 
-impl RuntimeParameter<TextParameter> {
+impl RuntimeParameter<Text> {
     // Type-specific methods
     pub fn as_text(&self) -> Option<&str>;
 }
 
-impl RuntimeParameter<NumberParameter> {
+impl RuntimeParameter<Number> {
     // Type-specific methods
     pub fn as_f64(&self) -> Option<f64>;
 }
@@ -560,7 +560,7 @@ pub enum Value {
     Number(f64),
 }
 
-pub struct TextParameter {
+pub struct Text {
     subtype: TextSubtype,  // ← In schema
 }
 ```
@@ -587,7 +587,7 @@ impl Value {
 **Correct Design:**
 ```rust
 // ✅ CORRECT
-impl TextParameter {
+impl Text {
     pub fn validate(&self, value: &str) -> ValidationResult<()> {
         for validator in &self.validators {
             validator.validate(value)?;
@@ -605,7 +605,7 @@ impl TextParameter {
 
 ```rust
 // ❌ REJECTED
-pub struct TextParameter {
+pub struct Text {
     widget: Widget,  // egui::TextEdit, iced::TextInput, etc.
 }
 ```
@@ -619,7 +619,7 @@ pub struct TextParameter {
 **Correct Design:**
 ```rust
 // ✅ CORRECT: UI hints, not widgets
-pub struct TextParameter {
+pub struct Text {
     ui_hints: Option<UIHints>,  // Optional, feature-gated
 }
 
@@ -645,7 +645,7 @@ pub trait Transformable {
     fn transform(&self, value: Value) -> Value;
 }
 
-pub struct TextParameter: Validatable + Transformable + ... {
+pub struct Text: Validatable + Transformable + ... {
     // Multiple trait implementations
 }
 ```
@@ -659,7 +659,7 @@ pub struct TextParameter: Validatable + Transformable + ... {
 **Correct Design:**
 ```rust
 // ✅ CORRECT: Composition
-pub struct TextParameter {
+pub struct Text {
     validators: Vec<Arc<dyn Validator>>,      // Composition
     transformers: Vec<Arc<dyn Transformer>>,  // Composition
 }

@@ -27,7 +27,7 @@ use paramdef::prelude::*;
 fn create_contact_form() -> Schema {
     Schema::new()
         .with_parameter(
-            TextParameter::builder("name")
+            Text::builder("name")
                 .label("Full Name")
                 .required()
                 .min_length(2)
@@ -36,21 +36,21 @@ fn create_contact_form() -> Schema {
                 .build()
         )
         .with_parameter(
-            TextParameter::email("email")
+            Text::email("email")
                 .label("Email Address")
                 .required()
                 .placeholder("john@example.com")
                 .build()
         )
         .with_parameter(
-            TextParameter::builder("phone")
+            Text::builder("phone")
                 .subtype(TextSubtype::PhoneNumber)
                 .label("Phone Number")
                 .placeholder("+1-555-123-4567")
                 .build()
         )
         .with_parameter(
-            TextParameter::builder("message")
+            Text::builder("message")
                 .subtype(TextSubtype::MultiLine)
                 .label("Message")
                 .required()
@@ -108,7 +108,7 @@ use paramdef::prelude::*;
 fn create_registration_form() -> Schema {
     Schema::new()
         .with_parameter(
-            TextParameter::builder("username")
+            Text::builder("username")
                 .label("Username")
                 .required()
                 .min_length(3)
@@ -119,13 +119,13 @@ fn create_registration_form() -> Schema {
                 .build()
         )
         .with_parameter(
-            TextParameter::email("email")
+            Text::email("email")
                 .label("Email")
                 .required()
                 .build()
         )
         .with_parameter(
-            TextParameter::password("password")
+            Text::password("password")
                 .label("Password")
                 .required()
                 .min_length(8)
@@ -134,7 +134,7 @@ fn create_registration_form() -> Schema {
                 .build()
         )
         .with_parameter(
-            TextParameter::password("confirm_password")
+            Text::password("confirm_password")
                 .label("Confirm Password")
                 .required()
                 .with_display(
@@ -144,7 +144,7 @@ fn create_registration_form() -> Schema {
                 .build()
         )
         .with_parameter(
-            BoolParameter::builder("agree_terms")
+            Boolean::builder("agree_terms")
                 .label("I agree to the Terms of Service")
                 .required()
                 .build()
@@ -235,7 +235,7 @@ use paramdef::prelude::*;
 fn create_http_request_node() -> Schema {
     Schema::new()
         .with_parameter(
-            ChoiceParameter::single("method")
+            Select::single("method")
                 .label("HTTP Method")
                 .option("GET", "GET")
                 .option("POST", "POST")
@@ -245,14 +245,14 @@ fn create_http_request_node() -> Schema {
                 .build()
         )
         .with_parameter(
-            TextParameter::url("url")
+            Text::url("url")
                 .label("URL")
                 .required()
                 .placeholder("https://api.example.com/endpoint")
                 .build()
         )
         .with_parameter(
-            ChoiceParameter::single("auth_type")
+            Select::single("auth_type")
                 .label("Authentication")
                 .option("none", "None")
                 .option("basic", "Basic Auth")
@@ -262,7 +262,7 @@ fn create_http_request_node() -> Schema {
                 .build()
         )
         .with_parameter(
-            TextParameter::builder("api_key")
+            Text::builder("api_key")
                 .subtype(TextSubtype::Secret)
                 .label("API Key")
                 .with_display(
@@ -272,7 +272,7 @@ fn create_http_request_node() -> Schema {
                 .build()
         )
         .with_parameter(
-            TextParameter::builder("bearer_token")
+            Text::builder("bearer_token")
                 .subtype(TextSubtype::Secret)
                 .label("Bearer Token")
                 .with_display(
@@ -282,7 +282,7 @@ fn create_http_request_node() -> Schema {
                 .build()
         )
         .with_parameter(
-            TextParameter::builder("request_body")
+            Text::builder("request_body")
                 .subtype(TextSubtype::Json)
                 .label("Request Body")
                 .with_display(
@@ -295,7 +295,7 @@ fn create_http_request_node() -> Schema {
                 .build()
         )
         .with_parameter(
-            NumberParameter::integer("timeout")
+            Number::integer("timeout")
                 .subtype(NumberSubtype::DurationMillis)
                 .label("Timeout (ms)")
                 .min(0)
@@ -360,14 +360,14 @@ fn create_transform_editor() -> Schema {
     Schema::new()
         .group("Transform")
         .with_parameter(
-            VectorParameter::vector3("position")
+            Vector::vector3("position")
                 .label("Position")
                 .default_vec3([0.0, 0.0, 0.0])
                 .help("Object position in world space")
                 .build()
         )
         .with_parameter(
-            VectorParameter::builder("rotation")
+            Vector::builder("rotation")
                 .subtype(VectorSubtype::EulerAngles)
                 .label("Rotation")
                 .default_vec3([0.0, 0.0, 0.0])
@@ -375,7 +375,7 @@ fn create_transform_editor() -> Schema {
                 .build()
         )
         .with_parameter(
-            VectorParameter::builder("scale")
+            Vector::builder("scale")
                 .subtype(VectorSubtype::Scale3D)
                 .label("Scale")
                 .default_vec3([1.0, 1.0, 1.0])
@@ -386,13 +386,13 @@ fn create_transform_editor() -> Schema {
         
         .group("Material")
         .with_parameter(
-            VectorParameter::color_rgba("base_color")
+            Vector::color_rgba("base_color")
                 .label("Base Color")
                 .default_vec4([1.0, 1.0, 1.0, 1.0])
                 .build()
         )
         .with_parameter(
-            NumberParameter::float("metallic")
+            Number::float("metallic")
                 .subtype(NumberSubtype::Percentage)
                 .label("Metallic")
                 .min(0.0)
@@ -401,7 +401,7 @@ fn create_transform_editor() -> Schema {
                 .build()
         )
         .with_parameter(
-            NumberParameter::float("roughness")
+            Number::float("roughness")
                 .subtype(NumberSubtype::Percentage)
                 .label("Roughness")
                 .min(0.0)
@@ -481,7 +481,7 @@ fn create_graphics_settings() -> Schema {
     Schema::new()
         .group("Display")
         .with_parameter(
-            ChoiceParameter::single("resolution")
+            Select::single("resolution")
                 .label("Resolution")
                 .option("1920x1080", "1920×1080 (Full HD)")
                 .option("2560x1440", "2560×1440 (2K)")
@@ -490,7 +490,7 @@ fn create_graphics_settings() -> Schema {
                 .build()
         )
         .with_parameter(
-            ChoiceParameter::single("window_mode")
+            Select::single("window_mode")
                 .label("Window Mode")
                 .option("fullscreen", "Fullscreen")
                 .option("windowed", "Windowed")
@@ -499,7 +499,7 @@ fn create_graphics_settings() -> Schema {
                 .build()
         )
         .with_parameter(
-            BoolParameter::builder("vsync")
+            Boolean::builder("vsync")
                 .label("V-Sync")
                 .default_value(true)
                 .build()
@@ -508,7 +508,7 @@ fn create_graphics_settings() -> Schema {
         
         .group("Graphics Quality")
         .with_parameter(
-            ChoiceParameter::single("quality_preset")
+            Select::single("quality_preset")
                 .label("Quality Preset")
                 .option("low", "Low")
                 .option("medium", "Medium")
@@ -519,7 +519,7 @@ fn create_graphics_settings() -> Schema {
                 .build()
         )
         .with_parameter(
-            ChoiceParameter::single("texture_quality")
+            Select::single("texture_quality")
                 .label("Texture Quality")
                 .option("low", "Low")
                 .option("medium", "Medium")
@@ -532,7 +532,7 @@ fn create_graphics_settings() -> Schema {
                 .build()
         )
         .with_parameter(
-            ChoiceParameter::single("shadow_quality")
+            Select::single("shadow_quality")
                 .label("Shadow Quality")
                 .option("off", "Off")
                 .option("low", "Low")
@@ -545,13 +545,13 @@ fn create_graphics_settings() -> Schema {
                 .build()
         )
         .with_parameter(
-            BoolParameter::builder("anti_aliasing")
+            Boolean::builder("anti_aliasing")
                 .label("Anti-Aliasing (MSAA)")
                 .default_value(true)
                 .build()
         )
         .with_parameter(
-            NumberParameter::integer("render_distance")
+            Number::integer("render_distance")
                 .subtype(NumberSubtype::Distance)
                 .label("Render Distance")
                 .min(5)
@@ -564,7 +564,7 @@ fn create_graphics_settings() -> Schema {
         
         .group("Performance")
         .with_parameter(
-            NumberParameter::integer("max_fps")
+            Number::integer("max_fps")
                 .label("Max FPS")
                 .min(30)
                 .max(240)
@@ -621,14 +621,14 @@ enum Commands {
 fn create_cli_config() -> Schema {
     Schema::new()
         .with_parameter(
-            TextParameter::builder("project_name")
+            Text::builder("project_name")
                 .label("Project Name")
                 .required()
                 .pattern(r"^[a-z0-9-]+$")
                 .build()
         )
         .with_parameter(
-            ChoiceParameter::single("language")
+            Select::single("language")
                 .label("Programming Language")
                 .option("rust", "Rust")
                 .option("python", "Python")
@@ -637,26 +637,26 @@ fn create_cli_config() -> Schema {
                 .build()
         )
         .with_parameter(
-            TextParameter::builder("output_dir")
+            Text::builder("output_dir")
                 .subtype(TextSubtype::DirectoryPath)
                 .label("Output Directory")
                 .default_value("./output")
                 .build()
         )
         .with_parameter(
-            BoolParameter::builder("use_git")
+            Boolean::builder("use_git")
                 .label("Initialize Git Repository")
                 .default_value(true)
                 .build()
         )
         .with_parameter(
-            BoolParameter::builder("use_ci")
+            Boolean::builder("use_ci")
                 .label("Set up CI/CD")
                 .default_value(false)
                 .build()
         )
         .with_parameter(
-            ChoiceParameter::single("ci_provider")
+            Select::single("ci_provider")
                 .label("CI Provider")
                 .option("github", "GitHub Actions")
                 .option("gitlab", "GitLab CI")
@@ -728,14 +728,14 @@ use paramdef::prelude::*;
 fn create_csv_import_config() -> Schema {
     Schema::new()
         .with_parameter(
-            TextParameter::builder("file_path")
+            Text::builder("file_path")
                 .subtype(TextSubtype::FilePath)
                 .label("CSV File")
                 .required()
                 .build()
         )
         .with_parameter(
-            ChoiceParameter::single("delimiter")
+            Select::single("delimiter")
                 .label("Delimiter")
                 .option(",", "Comma (,)")
                 .option(";", "Semicolon (;)")
@@ -745,13 +745,13 @@ fn create_csv_import_config() -> Schema {
                 .build()
         )
         .with_parameter(
-            BoolParameter::builder("has_header")
+            Boolean::builder("has_header")
                 .label("First Row is Header")
                 .default_value(true)
                 .build()
         )
         .with_parameter(
-            ChoiceParameter::single("encoding")
+            Select::single("encoding")
                 .label("Text Encoding")
                 .option("utf8", "UTF-8")
                 .option("latin1", "Latin-1")
@@ -760,7 +760,7 @@ fn create_csv_import_config() -> Schema {
                 .build()
         )
         .with_parameter(
-            NumberParameter::integer("skip_rows")
+            Number::integer("skip_rows")
                 .label("Skip Rows")
                 .min(0)
                 .default_value(0)
@@ -768,7 +768,7 @@ fn create_csv_import_config() -> Schema {
                 .build()
         )
         .with_parameter(
-            BoolParameter::builder("auto_detect_types")
+            Boolean::builder("auto_detect_types")
                 .label("Auto-Detect Column Types")
                 .default_value(true)
                 .build()
@@ -818,14 +818,14 @@ fn create_api_client_config() -> Schema {
     Schema::new()
         .group("Connection")
         .with_parameter(
-            TextParameter::url("base_url")
+            Text::url("base_url")
                 .label("Base URL")
                 .required()
                 .placeholder("https://api.example.com")
                 .build()
         )
         .with_parameter(
-            NumberParameter::integer("timeout")
+            Number::integer("timeout")
                 .subtype(NumberSubtype::DurationSeconds)
                 .label("Request Timeout")
                 .min(1)
@@ -834,7 +834,7 @@ fn create_api_client_config() -> Schema {
                 .build()
         )
         .with_parameter(
-            NumberParameter::integer("max_retries")
+            Number::integer("max_retries")
                 .label("Max Retries")
                 .min(0)
                 .max(10)
@@ -845,7 +845,7 @@ fn create_api_client_config() -> Schema {
         
         .group("Authentication")
         .with_parameter(
-            ChoiceParameter::single("auth_method")
+            Select::single("auth_method")
                 .label("Authentication Method")
                 .option("none", "None")
                 .option("api_key", "API Key")
@@ -855,7 +855,7 @@ fn create_api_client_config() -> Schema {
                 .build()
         )
         .with_parameter(
-            TextParameter::builder("api_key")
+            Text::builder("api_key")
                 .subtype(TextSubtype::Secret)
                 .label("API Key")
                 .with_display(
@@ -865,7 +865,7 @@ fn create_api_client_config() -> Schema {
                 .build()
         )
         .with_parameter(
-            TextParameter::builder("api_key_header")
+            Text::builder("api_key_header")
                 .label("API Key Header Name")
                 .default_value("X-API-Key")
                 .with_display(
@@ -875,7 +875,7 @@ fn create_api_client_config() -> Schema {
                 .build()
         )
         .with_parameter(
-            TextParameter::builder("bearer_token")
+            Text::builder("bearer_token")
                 .subtype(TextSubtype::Secret)
                 .label("Bearer Token")
                 .with_display(
@@ -888,13 +888,13 @@ fn create_api_client_config() -> Schema {
         
         .group("Headers")
         .with_parameter(
-            BoolParameter::builder("accept_json")
+            Boolean::builder("accept_json")
                 .label("Accept JSON Responses")
                 .default_value(true)
                 .build()
         )
         .with_parameter(
-            TextParameter::builder("user_agent")
+            Text::builder("user_agent")
                 .label("User Agent")
                 .default_value("ParamdefCli/1.0")
                 .build()

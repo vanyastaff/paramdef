@@ -114,7 +114,7 @@ pub enum ValidationError {
 
 ```rust
 // Enabled via Flags::REQUIRED
-TextParameter::builder("username")
+Text::builder("username")
     .required()  // Sets REQUIRED flag
     .build()
 ```
@@ -122,7 +122,7 @@ TextParameter::builder("username")
 ### Range Validator
 
 ```rust
-NumberParameter::builder::<f64>("opacity")
+Number::builder::<f64>("opacity")
     .hard_min(0.0)   // Fails if < 0.0
     .hard_max(1.0)   // Fails if > 1.0
     .build()
@@ -131,7 +131,7 @@ NumberParameter::builder::<f64>("opacity")
 ### Length Validator
 
 ```rust
-TextParameter::builder("username")
+Text::builder("username")
     .min_length(3)   // Fails if < 3 chars
     .max_length(50)  // Fails if > 50 chars
     .build()
@@ -140,7 +140,7 @@ TextParameter::builder("username")
 ### Pattern Validator
 
 ```rust
-TextParameter::builder("slug")
+Text::builder("slug")
     .pattern(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
     .build()
 ```
@@ -150,11 +150,11 @@ TextParameter::builder("slug")
 Each TextSubtype has built-in validation:
 
 ```rust
-TextParameter::builder("email")
+Text::builder("email")
     .subtype(TextSubtype::Email)  // Validates email format
     .build()
 
-TextParameter::builder("url")
+Text::builder("url")
     .subtype(TextSubtype::Url)    // Validates URL format
     .build()
 ```
@@ -181,7 +181,7 @@ impl Validator<i64> for EvenNumberValidator {
 }
 
 // Usage
-NumberParameter::builder::<i64>("port")
+Number::builder::<i64>("port")
     .validator(Arc::new(EvenNumberValidator))
     .build()
 ```
@@ -207,7 +207,7 @@ impl AsyncValidator<String> for UsernameAvailabilityValidator {
 }
 
 // Usage
-TextParameter::builder("username")
+Text::builder("username")
     .async_validator(Arc::new(UsernameAvailabilityValidator::new(db)))
     .build()
 ```
@@ -363,7 +363,7 @@ pub enum Condition {
 **Example:**
 ```rust
 // Show SSL options only for HTTPS
-TextParameter::builder("ssl_cert")
+Text::builder("ssl_cert")
     .display_when(DisplayRule::And(vec![
         DisplayRule::Show(Condition::Equals {
             key: "protocol".into(),

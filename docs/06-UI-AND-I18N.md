@@ -358,7 +358,7 @@ pub fn get_localized_placeholder(meta: &Metadata) -> Option<String> {
 ## Usage in Parameters
 
 ```rust
-TextParameter::builder("host")
+Text::builder("host")
     .label("Database Host")      // English fallback
     .fluent_id("db-host")        // User will translate this
     .placeholder("localhost")
@@ -476,14 +476,14 @@ pub struct ParameterLocation {
 }
 
 // Usage
-NumberParameter::builder::<f64>("pos_x")
+Number::builder::<f64>("pos_x")
     .label("X Position")
     .page("Transform")
     .group("Position")
     .order(0)
     .build()
 
-NumberParameter::builder::<f64>("pos_y")
+Number::builder::<f64>("pos_y")
     .label("Y Position")
     .page("Transform")
     .group("Position")
@@ -499,7 +499,7 @@ NumberParameter::builder::<f64>("pos_y")
 // Parameter definition
 let schema = Schema::new()
     .with_parameter(
-        TextParameter::builder("host")
+        Text::builder("host")
             .label("Database Host")
             .fluent_id("db-host")
             .page("Connection")
@@ -510,7 +510,7 @@ let schema = Schema::new()
             .build()
     )
     .with_parameter(
-        NumberParameter::builder::<i64>("port")
+        Number::builder::<i64>("port")
             .label("Port")
             .fluent_id("db-port")
             .page("Connection")
@@ -563,13 +563,13 @@ let schema = Schema::new()
 
 | Type | Suggested Widget |
 |------|------------------|
-| `TextParameter` | Input, TextArea, Password |
-| `NumberParameter` | Input, Slider, Stepper |
-| `BoolParameter` | Checkbox, Toggle, Switch |
-| `EnumParameter` | Dropdown, RadioButtons, Tabs |
-| `VectorParameter` | Vector2D, Vector3D, ColorPicker |
-| `TextParameter::file()` | FilePicker |
-| `TextParameter::datetime()` | DateTimePicker |
+| `Text` | Input, TextArea, Password |
+| `Number` | Input, Slider, Stepper |
+| `Boolean` | Checkbox, Toggle, Switch |
+| `Select` | Dropdown, RadioButtons, Tabs |
+| `Vector` | Vector2D, Vector3D, ColorPicker |
+| `Text` + `subtype: FilePath` | FilePicker |
+| `Text` + `subtype: DateTime` | DateTimePicker |
 
 ### Suffix by Subtype
 

@@ -106,7 +106,7 @@ Output: ━━━━━━━━━━━━━━━━━━━━━━━━
 
 **Example:**
 ```rust
-NumberParameter::builder::<f64>("opacity")
+Number::builder::<f64>("opacity")
     .transformer(ClampTransformer { min: 0.0, max: 1.0 })
     .build()
 
@@ -141,7 +141,7 @@ Output: ━━━━━━━━━━━━━━━━━━━━━━━━
 
 **Example:**
 ```rust
-NumberParameter::builder::<f64>("angle")
+Number::builder::<f64>("angle")
     .transformer(RoundTransformer { step: 15.0 })
     .build()
 
@@ -182,7 +182,7 @@ Output:  180° 270°  0°   90°  180° 270°  0°  90°  180°
 
 **Example:**
 ```rust
-NumberParameter::builder::<f64>("rotation")
+Number::builder::<f64>("rotation")
     .transformer(ModuloTransformer { modulo: 360.0 })
     .build()
 
@@ -225,7 +225,7 @@ Output: ━━━━━━━━━━━━━━━━━━━━━━━━
 
 **Example:**
 ```rust
-NumberParameter::builder::<f64>("quality")
+Number::builder::<f64>("quality")
     .transformer(SnapTransformer {
         values: vec![0.0, 0.25, 0.5, 0.75, 1.0],
         threshold: Some(0.1),
@@ -273,7 +273,7 @@ Output: [0.6, 0.8, 0]
 
 **Example:**
 ```rust
-VectorParameter::<f64, 3>::direction("forward")
+Vector::<f64, 3>::direction("forward")
     .transformer(NormalizeTransformer)
     .build()
 
@@ -321,7 +321,7 @@ Output: [3840, 2160]
 
 **Example:**
 ```rust
-VectorParameter::<f64, 2>::builder("size")
+Vector::<f64, 2>::builder("size")
     .transformer(AspectRatioTransformer {
         locked: true,
         reference_ratio: [16.0, 9.0],
@@ -362,7 +362,7 @@ Output: 0   2   2   4   4   6   6   8   8  10  10
 
 **Example:**
 ```rust
-NumberParameter::builder::<i64>("even_port")
+Number::builder::<i64>("even_port")
     .transformer(CustomTransformer {
         transform_fn: Arc::new(|v: i64| if v % 2 == 0 { v } else { v + 1 }),
         description: "Round to even number".into(),
@@ -399,7 +399,7 @@ Output: 15.0 ✅
 
 **Code:**
 ```rust
-NumberParameter::builder::<f64>("angle")
+Number::builder::<f64>("angle")
     .transformer(RoundTransformer { step: 15.0 })      // 1. Round to 15°
     .transformer(ModuloTransformer { modulo: 360.0 })  // 2. Wrap to 0-360°
     .build()
@@ -429,23 +429,23 @@ NumberParameter::builder::<f64>("angle")
 
 ```rust
 // 1. Opacity slider
-NumberParameter::builder("opacity")
+Number::builder("opacity")
     .range(0.0, 1.0)
     .transformer(ClampTransformer { min: 0.0, max: 1.0 })
     // User types "1.5" → transformed to "1.0" ✅
 
 // 2. Rotation angle
-NumberParameter::builder("rotation")
+Number::builder("rotation")
     .transformer(ModuloTransformer { modulo: 360.0 })
     // User types "450°" → transformed to "90°" ✅
 
 // 3. Direction vector
-VectorParameter::direction("forward")
+Vector::direction("forward")
     .transformer(NormalizeTransformer)
     // User enters [10, 0, 0] → transformed to [1, 0, 0] ✅
 
 // 4. Discount percentage
-NumberParameter::builder("discount")
+Number::builder("discount")
     .transformer(RoundTransformer { step: 5.0 })
     .transformer(ClampTransformer { min: 0.0, max: 100.0 })
     // User types "47.3%" → transformed to "45%" ✅
@@ -455,7 +455,7 @@ NumberParameter::builder("discount")
 
 ```rust
 // ❌ Don't transform when user intent unclear
-NumberParameter::builder("port")
+Number::builder("port")
     .transformer(CustomTransformer {
         // User types 99999
         // Should we use 8080? 80? 443? 3000?
@@ -464,7 +464,7 @@ NumberParameter::builder("port")
     })
 
 // ✅ Better: Clamp to valid range
-NumberParameter::builder("port")
+Number::builder("port")
     .range(1024, 65535)
     .transformer(ClampTransformer { min: 1024, max: 65535 })
     // User types 99999 → transformed to 65535 ✅
@@ -478,7 +478,7 @@ NumberParameter::builder("port")
 ### Slider with Overshoot Protection
 
 ```rust
-NumberParameter::builder::<f64>("quality")
+Number::builder::<f64>("quality")
     .soft_max(100.0)       // Slider ends at 100
     .hard_max(10000.0)     // API allows up to 10000
     .transformer(ClampTransformer { min: 0.0, max: 10000.0 })
@@ -488,7 +488,7 @@ NumberParameter::builder::<f64>("quality")
 ### Angle with Wrapping
 
 ```rust
-NumberParameter::builder::<f64>("rotation")
+Number::builder::<f64>("rotation")
     .subtype(NumberSubtype::Angle)
     .transformer(ModuloTransformer { modulo: 360.0 })
     .build()
@@ -497,7 +497,7 @@ NumberParameter::builder::<f64>("rotation")
 ### Percentage with Rounding
 
 ```rust
-NumberParameter::builder::<f64>("discount")
+Number::builder::<f64>("discount")
     .subtype(NumberSubtype::Percentage)
     .transformer(RoundTransformer { step: 5.0 })
     .transformer(ClampTransformer { min: 0.0, max: 100.0 })
@@ -510,7 +510,7 @@ NumberParameter::builder::<f64>("discount")
 ### Direction Vector (Always Normalized)
 
 ```rust
-VectorParameter::<f64, 3>::direction("look_at")
+Vector::<f64, 3>::direction("look_at")
     .transformer(NormalizeTransformer)
     .default([0.0, 0.0, 1.0])
     .build()
@@ -519,7 +519,7 @@ VectorParameter::<f64, 3>::direction("look_at")
 ### Color Channels (0-1 Clamped)
 
 ```rust
-VectorParameter::<f64, 3>::color_rgb("color")
+Vector::<f64, 3>::color_rgb("color")
     .component_transformer(ClampTransformer { min: 0.0, max: 1.0 })
     .build()
 
@@ -529,7 +529,7 @@ VectorParameter::<f64, 3>::color_rgb("color")
 ### Image Size with Aspect Lock
 
 ```rust
-VectorParameter::<f64, 2>::builder("size")
+Vector::<f64, 2>::builder("size")
     .subtype(VectorSubtype::Size2D)
     .default([1920.0, 1080.0])
     .transformer(AspectRatioTransformer {
@@ -571,7 +571,7 @@ VectorParameter::<f64, 2>::builder("size")
 ### Fast Path
 
 ```rust
-impl<T: Numeric> NumberParameter<T> {
+impl Number {
     pub fn transform(&self, value: T) -> T {
         // Fast path: no transformers
         if self.transformers.is_empty() {

@@ -211,54 +211,54 @@ Unit::Currency(CurrencyCode)
 
 ## Builder Patterns
 
-### TextParameter Examples
+### Text Examples
 
 ```rust
 // Email
-TextParameter::email("email")
+Text::email("email")
     .label("Email Address")
     .required()
     .placeholder("user@example.com")
     .build()
 
 // URL
-TextParameter::url("website")
+Text::url("website")
     .label("Website URL")
     .placeholder("https://example.com")
     .build()
 
 // Password
-TextParameter::password("password")
+Text::password("password")
     .label("Password")
     .required()
     .min_length(8)
     .build()
 
 // Code with language
-TextParameter::builder("script")
+Text::builder("script")
     .subtype(TextSubtype::code_with_language(CodeLanguage::Python))
     .label("Python Script")
     .build()
 
 // File path
-TextParameter::builder("config_file")
+Text::builder("config_file")
     .subtype(TextSubtype::FilePath)
     .label("Configuration File")
     .build()
 ```
 
-### NumberParameter Examples
+### Number Examples
 
 ```rust
 // Integer
-NumberParameter::integer("count")
+Number::integer("count")
     .label("Item Count")
     .min(0)
     .max(100)
     .build()
 
 // Percentage
-NumberParameter::percentage("opacity")
+Number::percentage("opacity")
     .label("Opacity")
     .min(0.0)
     .max(100.0)
@@ -266,14 +266,14 @@ NumberParameter::percentage("opacity")
     .build()
 
 // Temperature
-NumberParameter::builder("temperature")
+Number::builder("temperature")
     .subtype(NumberSubtype::Temperature)
     .unit(Unit::Temperature(TemperatureUnit::Celsius))
     .label("Temperature")
     .build()
 
 // Currency
-NumberParameter::builder("price")
+Number::builder("price")
     .subtype(NumberSubtype::Currency)
     .unit(Unit::Currency(CurrencyCode::USD))
     .label("Price")
@@ -281,7 +281,7 @@ NumberParameter::builder("price")
     .build()
 
 // Port number
-NumberParameter::builder("port")
+Number::builder("port")
     .subtype(NumberSubtype::Port)
     .label("Port")
     .min(0)
@@ -290,56 +290,56 @@ NumberParameter::builder("port")
     .build()
 ```
 
-### VectorParameter Examples
+### Vector Examples
 
 ```rust
 // 3D position
-VectorParameter::vector3("position")
+Vector::vector3("position")
     .label("Position")
     .default_vec3([0.0, 0.0, 0.0])
     .build()
 
 // RGB color
-VectorParameter::color_rgb("color")
+Vector::color_rgb("color")
     .label("Color")
     .default_vec3([1.0, 1.0, 1.0])
     .build()
 
 // RGBA color with alpha
-VectorParameter::color_rgba("tint")
+Vector::color_rgba("tint")
     .label("Tint Color")
     .default_vec4([1.0, 1.0, 1.0, 1.0])
     .build()
 
 // Quaternion rotation
-VectorParameter::builder("rotation")
+Vector::builder("rotation")
     .subtype(VectorSubtype::Quaternion)
     .label("Rotation")
     .default_vec4([0.0, 0.0, 0.0, 1.0])
     .build()
 ```
 
-### BoolParameter Examples
+### Boolean Examples
 
 ```rust
 // Simple checkbox
-BoolParameter::builder("enabled")
+Boolean::builder("enabled")
     .label("Enabled")
     .default_value(true)
     .build()
 
 // Toggle switch
-BoolParameter::builder("show_advanced")
+Boolean::builder("show_advanced")
     .label("Show Advanced Options")
     .default_value(false)
     .build()
 ```
 
-### ChoiceParameter Examples
+### Select Examples
 
 ```rust
 // Single selection dropdown
-ChoiceParameter::single("theme")
+Select::single("theme")
     .label("Theme")
     .option("light", "Light Theme")
     .option("dark", "Dark Theme")
@@ -348,7 +348,7 @@ ChoiceParameter::single("theme")
     .build()
 
 // Multiple selection
-ChoiceParameter::multi("tags")
+Select::multi("tags")
     .label("Tags")
     .option("rust", "Rust")
     .option("web", "Web Development")
@@ -364,29 +364,29 @@ ChoiceParameter::multi("tags")
 
 ```rust
 // Required
-TextParameter::email("email")
+Text::email("email")
     .required()
 
 // Length constraints
-TextParameter::builder("username")
+Text::builder("username")
     .min_length(3)
     .max_length(20)
 
 // Pattern matching
-TextParameter::builder("slug")
+Text::builder("slug")
     .pattern(r"^[a-z0-9-]+$")
 
 // Allowed values
-TextParameter::builder("status")
+Text::builder("status")
     .allowed_values(["draft", "published", "archived"])
 
 // Numeric range
-NumberParameter::integer("age")
+Number::integer("age")
     .min(0)
     .max(150)
 
 // Custom validator
-TextParameter::email("email")
+Text::email("email")
     .with_validator(MyCustomValidator)
 ```
 
@@ -516,7 +516,7 @@ impl Observer for MyObserver {
 .show_when_invalid("email")
 
 // Show confirm password only when password is valid
-TextParameter::password("confirm_password")
+Text::password("confirm_password")
     .with_display(
         ParameterDisplay::new()
             .show_when_valid("password")
@@ -532,20 +532,20 @@ TextParameter::password("confirm_password")
 ```rust
 let schema = Schema::new()
     .with_parameter(
-        TextParameter::builder("name")
+        Text::builder("name")
             .label("Full Name")
             .required()
             .min_length(2)
             .build()
     )
     .with_parameter(
-        TextParameter::email("email")
+        Text::email("email")
             .label("Email")
             .required()
             .build()
     )
     .with_parameter(
-        TextParameter::password("password")
+        Text::password("password")
             .label("Password")
             .required()
             .min_length(8)
@@ -571,7 +571,7 @@ if context.validate_all() {
 // API Key field shown only when auth_type = "api_key"
 let schema = Schema::new()
     .with_parameter(
-        ChoiceParameter::single("auth_type")
+        Select::single("auth_type")
             .label("Authentication Type")
             .option("oauth", "OAuth 2.0")
             .option("api_key", "API Key")
@@ -579,7 +579,7 @@ let schema = Schema::new()
             .build()
     )
     .with_parameter(
-        TextParameter::builder("api_key")
+        Text::builder("api_key")
             .subtype(TextSubtype::Secret)
             .label("API Key")
             .with_display(
@@ -589,7 +589,7 @@ let schema = Schema::new()
             .build()
     )
     .with_parameter(
-        TextParameter::builder("oauth_token")
+        Text::builder("oauth_token")
             .label("OAuth Token")
             .with_display(
                 ParameterDisplay::new()
@@ -636,20 +636,20 @@ context.undo()?;
 ```rust
 let schema = Schema::new()
     .with_parameter(
-        VectorParameter::vector3("position")
+        Vector::vector3("position")
             .label("Position")
             .default_vec3([0.0, 0.0, 0.0])
             .build()
     )
     .with_parameter(
-        VectorParameter::builder("rotation")
+        Vector::builder("rotation")
             .subtype(VectorSubtype::EulerAngles)
             .label("Rotation")
             .default_vec3([0.0, 0.0, 0.0])
             .build()
     )
     .with_parameter(
-        VectorParameter::vector3("scale")
+        Vector::vector3("scale")
             .subtype(VectorSubtype::Scale3D)
             .label("Scale")
             .default_vec3([1.0, 1.0, 1.0])

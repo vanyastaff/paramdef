@@ -78,17 +78,17 @@ bitflags! {
 
 ```rust
 // Required email field
-TextParameter::email("email")
+Text::email("email")
     .required()
     .build()
 
 // Read-only computed value
-TextParameter::builder("full_name")
+Text::builder("full_name")
     .readonly()
     .build()
 
 // Hidden internal parameter
-TextParameter::builder("session_id")
+Text::builder("session_id")
     .hidden()
     .build()
 ```
@@ -102,12 +102,12 @@ TextParameter::builder("session_id")
 
 ```rust
 // Password field (masked, write-only)
-TextParameter::password("password")
+Text::password("password")
     .flags(Flags::REQUIRED | Flags::SENSITIVE | Flags::WRITE_ONLY)
     .build()
 
 // API key (sensitive, not saved)
-TextParameter::api_key("api_token")
+Text::api_key("api_token")
     .flags(Flags::SENSITIVE | Flags::WRITE_ONLY | Flags::SKIP_SAVE)
     .build()
 ```
@@ -122,13 +122,13 @@ TextParameter::api_key("api_token")
 
 ```rust
 // Deprecated parameter (shows warning)
-TextParameter::builder("old_api_url")
+Text::builder("old_api_url")
     .deprecated()
     .description("Use 'api_url' instead")
     .build()
 
 // Experimental feature
-NumberParameter::builder::<f64>("new_algorithm_threshold")
+Number::builder::<f64>("new_algorithm_threshold")
     .experimental()
     .build()
 ```
@@ -142,13 +142,13 @@ NumberParameter::builder::<f64>("new_algorithm_threshold")
 
 ```rust
 // Animatable position (3D editor)
-NumberParameter::builder::<f64>("position_x")
+Number::builder::<f64>("position_x")
     .animatable()
     .realtime()
     .build()
 
 // Realtime preview updates
-VectorParameter::<f64, 3>::color_rgb("preview_color")
+Vector::<f64, 3>::color_rgb("preview_color")
     .realtime()
     .build()
 ```
@@ -162,13 +162,13 @@ VectorParameter::<f64, 3>::color_rgb("preview_color")
 
 ```rust
 // Workflow node input with expression support
-TextParameter::builder("input")
+Text::builder("input")
     .expression()
     .placeholder("{{ $json.data }}")
     .build()
 
 // Email template
-TextParameter::builder("email_body")
+Text::builder("email_body")
     .templatable()
     .placeholder("Dear {{ customer.name }},")
     .build()
@@ -184,19 +184,19 @@ TextParameter::builder("email_body")
 
 ```rust
 // Computed display value (not saved)
-TextParameter::builder("display_name")
+Text::builder("display_name")
     .runtime()
     .readonly()
     .skip_save()
     .build()
 
 // Cache (transient)
-TextParameter::builder("cached_result")
+Text::builder("cached_result")
     .skip_save()
     .build()
 
 // Constant ID
-TextParameter::builder("node_id")
+Text::builder("node_id")
     .constant()
     .build()
 ```
@@ -209,7 +209,7 @@ TextParameter::builder("node_id")
 
 ```rust
 // Synced player position
-NumberParameter::builder::<f64>("player_x")
+Number::builder::<f64>("player_x")
     .replicated()
     .realtime()
     .build()
@@ -253,12 +253,12 @@ impl Flags {
 **Usage:**
 ```rust
 // Using preset
-TextParameter::password("password")
+Text::password("password")
     .flags(Flags::password_field())
     .build()
 
 // Or convenience constructor (same result)
-TextParameter::password("password").build()
+Text::password("password").build()
 ```
 
 ---
@@ -305,7 +305,7 @@ impl Flags {
 
 **Usage:**
 ```rust
-let param = TextParameter::password("password").build();
+let param = Text::password("password").build();
 
 if param.flags().is_sensitive() {
     println!("Handle with care!");
@@ -329,7 +329,7 @@ if param.is_editable() {
 ### Individual Flag Methods
 
 ```rust
-impl TextParameterBuilder {
+impl TextBuilder {
     pub fn required(mut self) -> Self {
         self.flags |= Flags::REQUIRED;
         self
@@ -406,12 +406,12 @@ impl TextParameterBuilder {
 
 ```rust
 // Set flags directly
-TextParameter::builder("custom")
+Text::builder("custom")
     .flags(Flags::REQUIRED | Flags::EXPRESSION)
     .build()
 
 // Add flags to existing
-TextParameter::builder("combined")
+Text::builder("combined")
     .required()
     .with_flags(Flags::EXPRESSION | Flags::REALTIME)
     .build()
@@ -446,21 +446,21 @@ let flags = Flags::from_bits(bits).unwrap_or_default();
 
 ```rust
 // Username: required, unique validation
-TextParameter::builder("username")
+Text::builder("username")
     .required()
     .build()
 
 // Password: required, sensitive, write-only
-TextParameter::password("password")
+Text::password("password")
     .required()
     .build()
 
 // Remember me: optional
-BoolParameter::builder("remember")
+Boolean::builder("remember")
     .build()
 
 // Hidden CSRF token
-TextParameter::builder("csrf_token")
+Text::builder("csrf_token")
     .hidden()
     .required()
     .build()
@@ -470,14 +470,14 @@ TextParameter::builder("csrf_token")
 
 ```rust
 // Animatable transform
-NumberParameter::builder::<f64>("position_x")
+Number::builder::<f64>("position_x")
     .animatable()
     .realtime()
     .replicated()
     .build()
 
 // Computed world matrix (not saved)
-TextParameter::builder("world_matrix")
+Text::builder("world_matrix")
     .runtime()
     .readonly()
     .skip_save()
@@ -488,19 +488,19 @@ TextParameter::builder("world_matrix")
 
 ```rust
 // Input with expression support
-TextParameter::builder("url")
+Text::builder("url")
     .required()
     .expression()
     .placeholder("{{ $json.api_url }}")
     .build()
 
 // API key (sensitive)
-TextParameter::api_key("api_key")
+Text::api_key("api_key")
     .required()
     .build()
 
 // Output (runtime computed)
-TextParameter::builder("response")
+Text::builder("response")
     .runtime()
     .readonly()
     .build()
@@ -510,19 +510,19 @@ TextParameter::builder("response")
 
 ```rust
 // Player health (replicated, realtime)
-NumberParameter::builder::<f64>("health")
+Number::builder::<f64>("health")
     .realtime()
     .replicated()
     .range(0.0, 100.0)
     .build()
 
 // Debug mode (internal)
-BoolParameter::builder("debug_mode")
+Boolean::builder("debug_mode")
     .flags(Flags::internal())
     .build()
 
 // Deprecated old setting
-NumberParameter::builder::<f64>("old_sensitivity")
+Number::builder::<f64>("old_sensitivity")
     .deprecated()
     .description("Use 'mouse_sensitivity' instead")
     .build()
@@ -536,7 +536,7 @@ NumberParameter::builder::<f64>("old_sensitivity")
 
 **Before:**
 ```rust
-struct TextParameter {
+struct Text {
     is_required: bool,
     is_readonly: bool,
     is_hidden: bool,
@@ -544,7 +544,7 @@ struct TextParameter {
     // ... more bools
 }
 
-let param = TextParameter {
+let param = Text {
     is_required: true,
     is_readonly: false,
     is_hidden: false,
@@ -554,17 +554,17 @@ let param = TextParameter {
 
 **After:**
 ```rust
-struct TextParameter {
+struct Text {
     flags: Flags,
 }
 
-let param = TextParameter::builder("key")
+let param = Text::builder("key")
     .required()
     .sensitive()
     .build();
 
 // Or with flags directly
-let param = TextParameter::builder("key")
+let param = Text::builder("key")
     .flags(Flags::REQUIRED | Flags::SENSITIVE)
     .build();
 ```

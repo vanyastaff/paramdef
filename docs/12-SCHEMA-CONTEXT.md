@@ -57,7 +57,7 @@ This separation is a fundamental design pattern used by:
 /// Text parameter definition (schema).
 /// Immutable and can be shared between multiple contexts.
 #[derive(Debug, Clone)]
-pub struct TextParameter {
+pub struct Text {
     /// Parameter metadata
     metadata: Arc<Metadata>,
     
@@ -144,7 +144,7 @@ One schema, multiple contexts:
 ```rust
 // Define schema once
 let schema = Arc::new(Schema::new()
-    .with_parameter(TextParameter::builder("name")
+    .with_parameter(Text::builder("name")
         .required()
         .build())
 );
@@ -440,20 +440,20 @@ impl Context {
 fn user_form_schema() -> Schema {
     Schema::new()
         .with_parameter(
-            TextParameter::builder("username")
+            Text::builder("username")
                 .label("Username")
                 .required()
                 .min_length(3)
                 .build()
         )
         .with_parameter(
-            TextParameter::email("email")
+            Text::email("email")
                 .label("Email")
                 .required()
                 .build()
         )
         .with_parameter(
-            TextParameter::password("password")
+            Text::password("password")
                 .label("Password")
                 .required()
                 .build()
@@ -496,14 +496,14 @@ fn render_form() {
 // HTTP Request node schema
 let http_schema = Arc::new(Schema::new()
     .with_parameter(
-        TextParameter::url("url")
+        Text::url("url")
             .label("URL")
             .required()
             .expression()  // Supports {{ expressions }}
             .build()
     )
     .with_parameter(
-        EnumParameter::builder("method")
+        Select::builder("method")
             .label("Method")
             .options(["GET", "POST", "PUT", "DELETE"])
             .default("GET")
@@ -531,21 +531,21 @@ if node_context.validate_all() {
 // Transform property schema
 let transform_schema = Arc::new(Schema::new()
     .with_parameter(
-        NumberParameter::builder::<f64>("position_x")
+        Number::builder::<f64>("position_x")
             .label("X")
             .animatable()
             .realtime()
             .build()
     )
     .with_parameter(
-        NumberParameter::builder::<f64>("position_y")
+        Number::builder::<f64>("position_y")
             .label("Y")
             .animatable()
             .realtime()
             .build()
     )
     .with_parameter(
-        NumberParameter::builder::<f64>("position_z")
+        Number::builder::<f64>("position_z")
             .label("Z")
             .animatable()
             .realtime()
@@ -571,7 +571,7 @@ sphere_context.set_value("position_x", 20.0.into())?;
 
 ```rust
 // DON'T DO THIS!
-struct TextParameter {
+struct Text {
     metadata: Metadata,
     flags: Flags,
     
@@ -593,7 +593,7 @@ struct TextParameter {
 
 ```rust
 // DON'T DO THIS!
-impl TextParameter {
+impl Text {
     pub fn set_value(&mut self, value: String) { ... }  // ❌ Mutation!
     pub fn mark_dirty(&mut self) { ... }                // ❌ State management!
 }
