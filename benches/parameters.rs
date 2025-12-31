@@ -1,8 +1,9 @@
 //! Benchmarks for parameter creation and access.
 
-use criterion::{Criterion, black_box, criterion_group, criterion_main};
+use criterion::{Criterion, criterion_group, criterion_main};
 use paramdef::node::{Leaf, Node};
 use paramdef::parameter::{Boolean, Number, Select, SelectOption, Text, Vector};
+use std::hint::black_box;
 
 fn bench_text_creation(c: &mut Criterion) {
     c.bench_function("text_minimal", |b| {

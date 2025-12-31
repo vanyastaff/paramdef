@@ -22,21 +22,21 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
+      - name: Install cargo-criterion
+        uses: taiki-e/install-action@cargo-criterion
+
       - name: Run benchmarks
-        run: cargo bench -- --output-format bencher | tee output.txt
+        run: cargo criterion --message-format json | tee output.json
 
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1
         with:
           name: Rust Benchmarks
-          tool: "cargo"
-          output-file-path: output.txt
-          # Push results to gh-pages branch (only on main)
+          tool: "criterionrs"
+          output-file-path: output.json
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: ${{ github.ref == 'refs/heads/main' }}
-          # Alert if performance regresses by more than 150%
           alert-threshold: "150%"
           comment-on-alert: true
           fail-on-alert: false
-          # Compare against previous results
           alert-comment-cc-users: "@${{ github.repository_owner }}"

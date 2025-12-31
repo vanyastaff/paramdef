@@ -1,7 +1,8 @@
 //! Benchmarks for Value creation and operations.
 
-use criterion::{Criterion, black_box, criterion_group, criterion_main};
+use criterion::{Criterion, criterion_group, criterion_main};
 use paramdef::core::Value;
+use std::hint::black_box;
 
 fn bench_value_creation(c: &mut Criterion) {
     c.bench_function("value_null", |b| {
