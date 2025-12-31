@@ -149,7 +149,7 @@ impl_numeric_float!(
 
 /// Marker trait for integer types.
 ///
-/// Used to constrain integer-only subtypes like [`Port`] or [`Count`].
+/// Used to constrain integer-only subtypes like `Port` or `Count`.
 #[allow(dead_code)]
 pub trait Integer: Numeric {}
 
@@ -168,7 +168,7 @@ impl Integer for usize {}
 
 /// Marker trait for floating-point types.
 ///
-/// Used to constrain float-only subtypes like [`Factor`] or [`Percentage`].
+/// Used to constrain float-only subtypes like `Factor` or `Percentage`.
 #[allow(dead_code)]
 pub trait Float: Numeric {}
 
