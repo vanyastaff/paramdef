@@ -55,3 +55,19 @@ harness = false
 [[bench]]
 name = "value"
 harness = false
+
+[[bench]]
+name = "schema_context"
+harness = false
+
+[[bench]]
+name = "runtime"
+harness = false
+
+[[bench]]
+name = "core_types"
+harness = false
+
+[[bench]]
+name = "containers"
+harness = false
