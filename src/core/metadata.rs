@@ -130,6 +130,34 @@ impl Metadata {
     pub fn display_label(&self) -> &str {
         self.label.as_deref().unwrap_or(&self.key)
     }
+
+    /// Returns a new Metadata with the given label.
+    #[must_use]
+    pub fn with_label(mut self, label: impl Into<Key>) -> Self {
+        self.label = Some(label.into());
+        self
+    }
+
+    /// Returns a new Metadata with the given description.
+    #[must_use]
+    pub fn with_description(mut self, description: impl Into<Key>) -> Self {
+        self.description = Some(description.into());
+        self
+    }
+
+    /// Returns a new Metadata with the given group.
+    #[must_use]
+    pub fn with_group(mut self, group: impl Into<Key>) -> Self {
+        self.group = Some(group.into());
+        self
+    }
+
+    /// Returns a new Metadata with the given tag added.
+    #[must_use]
+    pub fn with_tag(mut self, tag: impl Into<Key>) -> Self {
+        self.tags.push(tag.into());
+        self
+    }
 }
 
 /// Builder for constructing [`Metadata`].

@@ -80,6 +80,10 @@ impl Node for Vector {
     fn kind(&self) -> NodeKind {
         NodeKind::Leaf
     }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
 }
 
 impl Leaf for Vector {

@@ -81,12 +81,10 @@ impl fmt::Display for NodeKind {
     }
 }
 
-/// The type of a decoration node.
-///
-/// Used by Notice to indicate the semantic meaning of the message.
+/// The semantic type of a Notice decoration.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 #[non_exhaustive]
-pub enum DecorationType {
+pub enum NoticeType {
     /// Informational message (blue).
     #[default]
     Info,
@@ -99,10 +97,13 @@ pub enum DecorationType {
 
     /// Success message (green).
     Success,
+
+    /// Tip or hint message (purple).
+    Tip,
 }
 
-impl DecorationType {
-    /// Returns the name of this decoration type.
+impl NoticeType {
+    /// Returns the name of this notice type.
     #[must_use]
     pub const fn name(&self) -> &'static str {
         match self {
@@ -110,11 +111,96 @@ impl DecorationType {
             Self::Warning => "warning",
             Self::Error => "error",
             Self::Success => "success",
+            Self::Tip => "tip",
         }
     }
 }
 
-impl fmt::Display for DecorationType {
+impl fmt::Display for NoticeType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.name())
+    }
+}
+
+/// The visual style of a Separator decoration.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[non_exhaustive]
+pub enum SeparatorStyle {
+    /// Thin line (default).
+    #[default]
+    Thin,
+    /// Thick/bold line.
+    Thick,
+    /// Dashed line.
+    Dashed,
+    /// Dotted line.
+    Dotted,
+    /// Just whitespace, no visible line.
+    Space,
+}
+
+impl SeparatorStyle {
+    /// Returns the name of this separator style.
+    #[must_use]
+    pub const fn name(&self) -> &'static str {
+        match self {
+            Self::Thin => "thin",
+            Self::Thick => "thick",
+            Self::Dashed => "dashed",
+            Self::Dotted => "dotted",
+            Self::Space => "space",
+        }
+    }
+}
+
+impl fmt::Display for SeparatorStyle {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.name())
+    }
+}
+
+/// The type of a Link decoration.
+///
+/// This enum categorizes links by their **content type** for UI purposes
+/// (e.g., showing appropriate icons). The `External` variant is a catch-all
+/// for links that don't fit other semantic categories.
+///
+/// Note: Use the `open_in_new_tab` field on [`Link`](crate::decoration::Link)
+/// to control whether links open in a new tab, regardless of their type.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[non_exhaustive]
+pub enum LinkType {
+    /// Documentation link (e.g., API docs, user guides).
+    #[default]
+    Documentation,
+    /// Tutorial or how-to guide link.
+    Tutorial,
+    /// Video content link (for video hosting platforms).
+    Video,
+    /// General external link that doesn't fit other categories.
+    ///
+    /// Use this for links that aren't documentation, tutorials, videos, or API references.
+    /// The `open_in_new_tab` field on the Link struct controls external behavior.
+    External,
+    /// API reference link (e.g., REST API docs, SDK reference).
+    Api,
+}
+
+impl LinkType {
+    /// Returns the name of this link type.
+    #[must_use]
+    pub const fn name(&self) -> &'static str {
+        match self {
+            Self::Documentation => "documentation",
+            Self::Tutorial => "tutorial",
+            Self::Video => "video",
+            Self::External => "external",
+            Self::Api => "api",
+        }
+    }
+}
+
+impl fmt::Display for LinkType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.name())
     }
@@ -167,21 +253,44 @@ mod tests {
     }
 
     #[test]
-    fn test_decoration_type_variants() {
-        assert_eq!(DecorationType::Info.name(), "info");
-        assert_eq!(DecorationType::Warning.name(), "warning");
-        assert_eq!(DecorationType::Error.name(), "error");
-        assert_eq!(DecorationType::Success.name(), "success");
+    fn test_notice_type_variants() {
+        assert_eq!(NoticeType::Info.name(), "info");
+        assert_eq!(NoticeType::Warning.name(), "warning");
+        assert_eq!(NoticeType::Error.name(), "error");
+        assert_eq!(NoticeType::Success.name(), "success");
+        assert_eq!(NoticeType::Tip.name(), "tip");
     }
 
     #[test]
-    fn test_decoration_type_default() {
-        assert_eq!(DecorationType::default(), DecorationType::Info);
+    fn test_notice_type_default() {
+        assert_eq!(NoticeType::default(), NoticeType::Info);
     }
 
     #[test]
-    fn test_decoration_type_display() {
-        assert_eq!(format!("{}", DecorationType::Warning), "warning");
-        assert_eq!(format!("{}", DecorationType::Error), "error");
+    fn test_separator_style_variants() {
+        assert_eq!(SeparatorStyle::Thin.name(), "thin");
+        assert_eq!(SeparatorStyle::Thick.name(), "thick");
+        assert_eq!(SeparatorStyle::Dashed.name(), "dashed");
+        assert_eq!(SeparatorStyle::Dotted.name(), "dotted");
+        assert_eq!(SeparatorStyle::Space.name(), "space");
+    }
+
+    #[test]
+    fn test_separator_style_default() {
+        assert_eq!(SeparatorStyle::default(), SeparatorStyle::Thin);
+    }
+
+    #[test]
+    fn test_link_type_variants() {
+        assert_eq!(LinkType::Documentation.name(), "documentation");
+        assert_eq!(LinkType::Tutorial.name(), "tutorial");
+        assert_eq!(LinkType::Video.name(), "video");
+        assert_eq!(LinkType::External.name(), "external");
+        assert_eq!(LinkType::Api.name(), "api");
+    }
+
+    #[test]
+    fn test_link_type_default() {
+        assert_eq!(LinkType::default(), LinkType::Documentation);
     }
 }

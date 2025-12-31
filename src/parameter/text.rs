@@ -106,7 +106,7 @@ impl Text<crate::subtypes::Json> {
     }
 }
 
-impl<S: TextSubtype> Node for Text<S> {
+impl<S: TextSubtype + 'static> Node for Text<S> {
     fn metadata(&self) -> &Metadata {
         &self.metadata
     }
@@ -117,6 +117,10 @@ impl<S: TextSubtype> Node for Text<S> {
 
     fn kind(&self) -> NodeKind {
         NodeKind::Leaf
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
     }
 }
 

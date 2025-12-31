@@ -80,6 +80,13 @@ pub enum Error {
         key: String,
     },
 
+    /// Schema is immutable - cannot modify.
+    #[error("schema is immutable: {message}")]
+    SchemaImmutable {
+        /// Description of what was attempted.
+        message: String,
+    },
+
     /// Generic error with custom message.
     #[error("{0}")]
     Custom(String),
@@ -156,6 +163,14 @@ impl Error {
     #[must_use]
     pub fn not_found(key: impl Into<String>) -> Self {
         Self::NotFound { key: key.into() }
+    }
+
+    /// Creates a schema immutable error.
+    #[must_use]
+    pub fn schema_immutable(message: impl Into<String>) -> Self {
+        Self::SchemaImmutable {
+            message: message.into(),
+        }
     }
 
     /// Creates a custom error.

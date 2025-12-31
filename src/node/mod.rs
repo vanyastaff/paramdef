@@ -13,22 +13,25 @@
 //!
 //! ```text
 //! Node (base trait)
-//! ├── GroupNode: Node + ValueAccess
-//! ├── Layout: Node + ValueAccess
-//! ├── Decoration: Node (no ValueAccess, no own value)
-//! ├── Container: Node + ValueAccess (has own value)
-//! └── Leaf: Node (has own value, no ValueAccess)
+//! ├── GroupNode: Node (schema definition, no own value)
+//! ├── Layout: Node (schema definition, no own value)
+//! ├── Decoration: Node (display-only, no value, no children)
+//! ├── Container: Node (schema definition, has own value)
+//! └── Leaf: Node (terminal values, has own value)
 //! ```
+//!
+//! Note: `ValueAccess` is a **runtime-only** trait implemented by `RuntimeParameter<T>`
+//! and `Context`, not by schema types. Schema types are immutable.
 //!
 //! # Key Invariants
 //!
-//! | Category | Own Value | `ValueAccess` | Can Contain |
-//! |----------|-----------|-------------|-------------|
-//! | Group | NO | YES | Layout, Decoration, Container, Leaf |
-//! | Layout | NO | YES | Decoration, Container, Leaf |
-//! | Decoration | NO | NO | nothing |
-//! | Container | YES | YES | Decoration, Container, Leaf |
-//! | Leaf | YES | NO | nothing |
+//! | Category | Own Value | Children | Runtime `ValueAccess` |
+//! |----------|-----------|----------|----------------------|
+//! | Group | NO | YES | via Context |
+//! | Layout | NO | YES | via Context |
+//! | Decoration | NO | NO | N/A |
+//! | Container | YES | YES | via `RuntimeParameter` |
+//! | Leaf | YES | NO | via `RuntimeParameter` |
 //!
 //! # Feature Gates
 //!
@@ -38,7 +41,7 @@
 mod kind;
 mod traits;
 
-pub use kind::{DecorationType, NodeKind};
+pub use kind::{LinkType, NodeKind, NoticeType, SeparatorStyle};
 pub use traits::{Container, Decoration, GroupNode, Layout, Leaf, Node, ValueAccess};
 
 #[cfg(feature = "visibility")]

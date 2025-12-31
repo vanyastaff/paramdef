@@ -422,8 +422,16 @@ mod serde_impl {
                 Value::Null => serde_json::Value::Null,
                 Value::Bool(b) => serde_json::Value::Bool(b),
                 Value::Int(i) => serde_json::Value::Number(i.into()),
-                Value::Float(f) => serde_json::Number::from_f64(f)
-                    .map_or(serde_json::Value::Null, serde_json::Value::Number),
+                Value::Float(f) => {
+                    // Handle non-finite floats by converting to string representation
+                    // to preserve information (NaN, Infinity, -Infinity)
+                    if let Some(n) = serde_json::Number::from_f64(f) {
+                        serde_json::Value::Number(n)
+                    } else {
+                        // Non-finite float: use string representation to preserve value
+                        serde_json::Value::String(f.to_string())
+                    }
+                }
                 Value::Text(s) => serde_json::Value::String(s.to_string()),
                 Value::Array(arr) => {
                     serde_json::Value::Array(arr.iter().cloned().map(Into::into).collect())
@@ -453,10 +461,20 @@ mod serde_impl {
                     } else if let Some(f) = n.as_f64() {
                         Value::Float(f)
                     } else {
-                        Value::Null
+                        // Large u64 values that don't fit in i64 or f64
+                        // Store as text to preserve the value
+                        Value::text(n.to_string())
                     }
                 }
-                serde_json::Value::String(s) => Value::text(s),
+                serde_json::Value::String(s) => {
+                    // Check if this might be a non-finite float that was serialized as string
+                    match s.as_str() {
+                        "NaN" => Value::Float(f64::NAN),
+                        "inf" | "Infinity" => Value::Float(f64::INFINITY),
+                        "-inf" | "-Infinity" => Value::Float(f64::NEG_INFINITY),
+                        _ => Value::text(s),
+                    }
+                }
                 serde_json::Value::Array(arr) => Value::array(arr.into_iter().map(Value::from)),
                 serde_json::Value::Object(obj) => {
                     Value::object(obj.into_iter().map(|(k, v)| (k, Value::from(v))))

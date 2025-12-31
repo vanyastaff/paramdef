@@ -107,7 +107,7 @@ impl Number<crate::subtypes::Factor> {
     }
 }
 
-impl<S: NumberSubtype> Node for Number<S> {
+impl<S: NumberSubtype + 'static> Node for Number<S> {
     fn metadata(&self) -> &Metadata {
         &self.metadata
     }
@@ -118,6 +118,10 @@ impl<S: NumberSubtype> Node for Number<S> {
 
     fn kind(&self) -> NodeKind {
         NodeKind::Leaf
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
     }
 }
 

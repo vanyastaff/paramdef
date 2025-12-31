@@ -45,7 +45,10 @@
 #![warn(clippy::pedantic)]
 #![allow(clippy::module_name_repetitions)]
 
+pub mod container;
 pub mod core;
+pub mod decoration;
+pub mod group;
 pub mod node;
 pub mod parameter;
 pub mod subtypes;

@@ -1,11 +1,13 @@
 //! Core traits for the node system.
 
+use std::any::Any;
 use std::collections::HashMap;
+use std::fmt::Debug;
 use std::sync::Arc;
 
 use crate::core::{Key, Metadata, Value};
 
-use super::kind::{DecorationType, NodeKind};
+use super::kind::NodeKind;
 
 // =============================================================================
 // Base Node Trait
@@ -24,7 +26,7 @@ use super::kind::{DecorationType, NodeKind};
 /// - Decoration: Notice (1)
 /// - Container: Object, List, Mode, Routing, Expirable, Ref (6)
 /// - Leaf: Text, Number, Boolean, Vector, Select (5)
-pub trait Node: Send + Sync {
+pub trait Node: Send + Sync + Debug {
     /// Returns the node's metadata.
     fn metadata(&self) -> &Metadata;
 
@@ -33,16 +35,20 @@ pub trait Node: Send + Sync {
 
     /// Returns the node's kind (category).
     fn kind(&self) -> NodeKind;
+
+    /// Returns a reference to the underlying type for downcasting.
+    fn as_any(&self) -> &dyn Any;
 }
 
 // =============================================================================
-// ValueAccess Trait
+// ValueAccess Trait (Runtime Only)
 // =============================================================================
 
-/// Trait for nodes that can access child values.
+/// Trait for runtime nodes that can access child values.
 ///
-/// Implemented by Group, Layout, and Container nodes. Provides methods to
-/// collect values from children and set values by key path.
+/// This trait is for **runtime** use only, not for schema definitions.
+/// Schema types (Group, Layout, Container) do NOT implement this trait.
+/// It will be implemented by `RuntimeParameter<T>` and `Context`.
 ///
 /// # Invariants
 ///
@@ -61,32 +67,22 @@ pub trait ValueAccess: Node {
 
     /// Sets a value by key in this node or its children.
     ///
-    /// Returns `true` if the value was set, `false` if key not found.
-    fn set_value(&mut self, key: &str, value: Value) -> bool;
-
-    /// Sets multiple values at once.
+    /// # Errors
     ///
-    /// Returns the number of values successfully set.
-    fn set_values(&mut self, values: HashMap<String, Value>) -> usize {
-        let mut count = 0;
-        for (key, value) in values {
-            if self.set_value(&key, value) {
-                count += 1;
-            }
-        }
-        count
-    }
+    /// Returns an error if the key is not found or the value type is incompatible.
+    fn set_value(&mut self, key: &str, value: Value) -> crate::core::Result<()>;
 }
 
 // =============================================================================
 // GroupNode Trait
 // =============================================================================
 
-/// Trait for the Group node type.
+/// Trait for the Group node type (schema definition).
 ///
 /// Group is the root aggregator that can contain Layout, Decoration,
-/// Container, and Leaf nodes. It provides `ValueAccess` but has no own value.
-pub trait GroupNode: Node + ValueAccess {
+/// Container, and Leaf nodes. This is a schema-only trait; runtime
+/// value access is provided by `RuntimeParameter<T>` or `Context`.
+pub trait GroupNode: Node {
     /// Returns all child nodes.
     fn children(&self) -> &[Arc<dyn Node>];
 
@@ -105,11 +101,13 @@ pub trait GroupNode: Node + ValueAccess {
 // Layout Trait
 // =============================================================================
 
-/// Trait for the Layout node type (Panel).
+/// Trait for the Layout node type (Panel) - schema definition.
 ///
 /// Layout organizes UI elements without its own value. Can contain
 /// Decoration, Container, and Leaf nodes (but NOT Group or other Layout).
-pub trait Layout: Node + ValueAccess {
+/// This is a schema-only trait; runtime value access is provided by
+/// `RuntimeParameter<T>` or `Context`.
+pub trait Layout: Node {
     /// Returns all child nodes.
     fn children(&self) -> &[Arc<dyn Node>];
 
@@ -124,26 +122,68 @@ pub trait Layout: Node + ValueAccess {
 // Decoration Trait
 // =============================================================================
 
-/// Trait for the Decoration node type (Notice).
+/// Marker trait for Decoration node types.
 ///
-/// Decoration is display-only with no value and no children.
-/// Used for informational messages, warnings, and notices.
+/// Decorations are display-only with no value and no children.
+/// This is an open trait - anyone can implement their own decoration types.
+///
+/// # Invariants
+///
+/// All types implementing `Decoration` MUST satisfy these invariants:
+///
+/// 1. **No own value**: Decorations have no runtime value and don't participate
+///    in value serialization. They exist purely for UI/display purposes.
+///
+/// 2. **No children**: Decorations cannot contain other nodes. They are always
+///    leaf elements in the node hierarchy (though distinct from `Leaf` nodes
+///    which do have values).
+///
+/// 3. **`NodeKind::Decoration`**: The `kind()` method MUST return
+///    `NodeKind::Decoration`. This is verified by the test suite.
+///
+/// 4. **Immutable content**: Once constructed, decoration content should be
+///    treated as immutable. UI state (like collapsed panels) is separate.
+///
+/// # Built-in Decorations
+///
+/// - `Notice` - Info, warning, error, success messages
+/// - `Separator` - Visual dividers between sections
+/// - `Link` - Clickable references to docs/external resources
+/// - `Code` - Syntax-highlighted code snippets
+/// - `Image` - Static image display
+///
+/// # Custom Decorations
+///
+/// You can create your own decoration types by implementing this trait:
+///
+/// ```ignore
+/// use paramdef::node::{Node, Decoration, NodeKind};
+///
+/// pub struct MyBadge {
+///     metadata: Metadata,
+///     text: String,
+///     color: String,
+/// }
+///
+/// impl Node for MyBadge {
+///     fn kind(&self) -> NodeKind { NodeKind::Decoration }
+///     // ... other Node methods
+/// }
+///
+/// impl Decoration for MyBadge {
+///     // Marker trait - no required methods
+/// }
+/// ```
 pub trait Decoration: Node {
-    /// Returns the decoration type (Info, Warning, Error, Success).
-    fn decoration_type(&self) -> DecorationType;
-
-    /// Returns whether the decoration can be dismissed by the user.
-    fn is_dismissible(&self) -> bool;
-
-    /// Returns the message content.
-    fn message(&self) -> &str;
+    // Marker trait - no required methods.
+    // Each decoration type defines its own specific interface.
 }
 
 // =============================================================================
 // Container Trait
 // =============================================================================
 
-/// Trait for Container node types.
+/// Trait for Container node types (schema definition).
 ///
 /// Container nodes have both their own value AND children. This includes:
 /// - Object: Named fields
@@ -152,17 +192,10 @@ pub trait Decoration: Node {
 /// - Routing: Connection wrapper
 /// - Expirable: TTL wrapper
 /// - Ref: Reference to template
-pub trait Container: Node + ValueAccess {
-    /// Converts the container's data to a Value.
-    fn to_value(&self) -> Value;
-
-    /// Populates the container from a Value.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the value structure doesn't match the expected format.
-    fn set_from_value(&mut self, value: Value) -> crate::core::Result<()>;
-
+///
+/// This trait defines the **schema** for container parameters. Runtime values
+/// are managed separately in `RuntimeParameter<T>` or `Context`.
+pub trait Container: Node {
     /// Returns all child nodes.
     fn children(&self) -> &[Arc<dyn Node>];
 }
@@ -273,6 +306,7 @@ mod tests {
     use crate::core::Metadata;
 
     // Test implementation of Node for testing
+    #[derive(Debug)]
     struct TestNode {
         metadata: Metadata,
         kind: NodeKind,
@@ -298,6 +332,10 @@ mod tests {
 
         fn kind(&self) -> NodeKind {
             self.kind
+        }
+
+        fn as_any(&self) -> &dyn Any {
+            self
         }
     }
 
@@ -343,6 +381,7 @@ mod tests {
     }
 
     // Test implementation of Leaf for testing
+    #[derive(Debug)]
     struct TestLeaf {
         metadata: Metadata,
         default: Option<Value>,
@@ -376,6 +415,10 @@ mod tests {
         fn kind(&self) -> NodeKind {
             NodeKind::Leaf
         }
+
+        fn as_any(&self) -> &dyn Any {
+            self
+        }
     }
 
     impl Leaf for TestLeaf {
@@ -397,25 +440,26 @@ mod tests {
     }
 
     // Test implementation of Decoration for testing
-    struct TestNotice {
+    #[derive(Debug)]
+    struct TestDecoration {
         metadata: Metadata,
-        decoration_type: DecorationType,
-        dismissible: bool,
         message: String,
     }
 
-    impl TestNotice {
+    impl TestDecoration {
         fn new(key: &str, message: &str) -> Self {
             Self {
                 metadata: Metadata::new(key),
-                decoration_type: DecorationType::Info,
-                dismissible: false,
                 message: message.to_string(),
             }
         }
+
+        fn message(&self) -> &str {
+            &self.message
+        }
     }
 
-    impl Node for TestNotice {
+    impl Node for TestDecoration {
         fn metadata(&self) -> &Metadata {
             &self.metadata
         }
@@ -427,33 +471,33 @@ mod tests {
         fn kind(&self) -> NodeKind {
             NodeKind::Decoration
         }
-    }
 
-    impl Decoration for TestNotice {
-        fn decoration_type(&self) -> DecorationType {
-            self.decoration_type
-        }
-
-        fn is_dismissible(&self) -> bool {
-            self.dismissible
-        }
-
-        fn message(&self) -> &str {
-            &self.message
+        fn as_any(&self) -> &dyn Any {
+            self
         }
     }
+
+    // Decoration is now a marker trait - no required methods
+    impl Decoration for TestDecoration {}
 
     #[test]
     fn test_decoration_trait() {
-        let notice = TestNotice::new("notice", "Hello world");
+        let decoration = TestDecoration::new("notice", "Hello world");
 
-        assert_eq!(notice.kind(), NodeKind::Decoration);
-        assert_eq!(notice.decoration_type(), DecorationType::Info);
-        assert!(!notice.is_dismissible());
-        assert_eq!(notice.message(), "Hello world");
+        // Decoration has correct NodeKind
+        assert_eq!(decoration.kind(), NodeKind::Decoration);
+
+        // Decoration invariants
+        assert!(!decoration.kind().has_own_value());
+        assert!(!decoration.kind().has_value_access());
+        assert!(!decoration.kind().can_have_children());
+
+        // Custom methods on concrete type
+        assert_eq!(decoration.message(), "Hello world");
     }
 
     // Test ValueAccess with a simple implementation
+    #[derive(Debug)]
     struct TestContainer {
         metadata: Metadata,
         values: HashMap<String, Value>,
@@ -480,6 +524,10 @@ mod tests {
         fn kind(&self) -> NodeKind {
             NodeKind::Container
         }
+
+        fn as_any(&self) -> &dyn Any {
+            self
+        }
     }
 
     impl ValueAccess for TestContainer {
@@ -491,17 +539,17 @@ mod tests {
             self.values.get(key).cloned()
         }
 
-        fn set_value(&mut self, key: &str, value: Value) -> bool {
+        fn set_value(&mut self, key: &str, value: Value) -> crate::core::Result<()> {
             self.values.insert(key.to_string(), value);
-            true
+            Ok(())
         }
     }
 
     #[test]
     fn test_value_access_collect() {
         let mut container = TestContainer::new("container");
-        container.set_value("a", Value::Int(1));
-        container.set_value("b", Value::Int(2));
+        container.set_value("a", Value::Int(1)).unwrap();
+        container.set_value("b", Value::Int(2)).unwrap();
 
         let values = container.collect_values();
         assert_eq!(values.len(), 2);
@@ -513,21 +561,8 @@ mod tests {
     fn test_value_access_set_value() {
         let mut container = TestContainer::new("container");
 
-        assert!(container.set_value("key", Value::text("value")));
+        assert!(container.set_value("key", Value::text("value")).is_ok());
         assert_eq!(container.get_value("key"), Some(Value::text("value")));
-    }
-
-    #[test]
-    fn test_value_access_set_values() {
-        let mut container = TestContainer::new("container");
-        let mut values = HashMap::new();
-        values.insert("a".to_string(), Value::Int(1));
-        values.insert("b".to_string(), Value::Int(2));
-        values.insert("c".to_string(), Value::Int(3));
-
-        let count = container.set_values(values);
-        assert_eq!(count, 3);
-        assert_eq!(container.collect_values().len(), 3);
     }
 }
 
@@ -536,6 +571,7 @@ mod validation_tests {
     use super::*;
     use crate::core::Metadata;
 
+    #[derive(Debug)]
     struct ValidatableLeaf {
         metadata: Metadata,
     }
@@ -559,6 +595,10 @@ mod validation_tests {
 
         fn kind(&self) -> NodeKind {
             NodeKind::Leaf
+        }
+
+        fn as_any(&self) -> &dyn Any {
+            self
         }
     }
 
@@ -599,6 +639,7 @@ mod visibility_tests {
     use super::*;
     use crate::core::Metadata;
 
+    #[derive(Debug)]
     struct VisibleNode {
         metadata: Metadata,
         visibility_expr: Option<Value>,
@@ -624,6 +665,10 @@ mod visibility_tests {
 
         fn kind(&self) -> NodeKind {
             NodeKind::Leaf
+        }
+
+        fn as_any(&self) -> &dyn Any {
+            self
         }
     }
 

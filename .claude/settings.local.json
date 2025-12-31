@@ -12,7 +12,8 @@
       "Skill(rust-ms-libraries)",
       "Skill(rust-patterns)",
       "Skill(rust-ms-universal)",
-      "Skill(rust-docs)"
+      "Skill(rust-docs)",
+      "SlashCommand(/pr-review-toolkit:review-pr)"
     ]
   }
 }
