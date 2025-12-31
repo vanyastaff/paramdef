@@ -1,0 +1,17 @@
+# Local Cargo configuration for faster builds
+# Copy this file to config.local.toml to enable LLD linker
+#
+# Requires LLD to be installed:
+#   - Linux: sudo apt install lld
+#   - macOS: brew install llvm
+#   - Windows: comes with Rust toolchain (rust-lld.exe)
+
+[target.x86_64-unknown-linux-gnu]
+rustflags = ["-C", "link-arg=-fuse-ld=lld"]
+
+[target.x86_64-pc-windows-msvc]
+linker = "rust-lld.exe"
+rustflags = ["-C", "link-arg=-fuse-ld=lld"]
+
+[target.aarch64-apple-darwin]
+rustflags = ["-C", "link-arg=-fuse-ld=lld"]
