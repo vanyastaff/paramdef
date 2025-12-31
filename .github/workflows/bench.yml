@@ -22,18 +22,15 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
-      - name: Install cargo-criterion
-        uses: taiki-e/install-action@cargo-criterion
-
       - name: Run benchmarks
-        run: cargo criterion --message-format json | tee output.json
+        run: cargo bench --bench parameters --bench value -- --noplot 2>&1 | tee output.txt
 
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1
         with:
           name: Rust Benchmarks
-          tool: "criterionrs"
-          output-file-path: output.json
+          tool: "cargo"
+          output-file-path: output.txt
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: ${{ github.ref == 'refs/heads/main' }}
           alert-threshold: "150%"
