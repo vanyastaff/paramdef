@@ -495,10 +495,14 @@ mod serde_impl {
     impl fmt::Display for Value {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             let json: serde_json::Value = self.clone().into();
-            if f.alternate() {
-                write!(f, "{}", serde_json::to_string_pretty(&json).unwrap())
+            let result = if f.alternate() {
+                serde_json::to_string_pretty(&json)
             } else {
-                write!(f, "{}", serde_json::to_string(&json).unwrap())
+                serde_json::to_string(&json)
+            };
+            match result {
+                Ok(s) => write!(f, "{s}"),
+                Err(_) => write!(f, "<serialization error>"),
             }
         }
     }

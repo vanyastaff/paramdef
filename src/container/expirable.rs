@@ -45,21 +45,27 @@ impl ExpirableOptions {
     }
 
     /// Creates options with TTL in minutes.
+    ///
+    /// Uses saturating multiplication to prevent overflow.
     #[must_use]
     pub fn minutes(minutes: u64) -> Self {
-        Self::new(minutes * 60)
+        Self::new(minutes.saturating_mul(60))
     }
 
     /// Creates options with TTL in hours.
+    ///
+    /// Uses saturating multiplication to prevent overflow.
     #[must_use]
     pub fn hours(hours: u64) -> Self {
-        Self::new(hours * 3600)
+        Self::new(hours.saturating_mul(3600))
     }
 
     /// Creates options with TTL in days.
+    ///
+    /// Uses saturating multiplication to prevent overflow.
     #[must_use]
     pub fn days(days: u64) -> Self {
-        Self::new(days * 86400)
+        Self::new(days.saturating_mul(86400))
     }
 }
 
@@ -236,23 +242,29 @@ impl ExpirableBuilder {
     }
 
     /// Sets the TTL in minutes.
+    ///
+    /// Uses saturating multiplication to prevent overflow.
     #[must_use]
     pub fn ttl_minutes(mut self, minutes: u64) -> Self {
-        self.options.ttl = minutes * 60;
+        self.options.ttl = minutes.saturating_mul(60);
         self
     }
 
     /// Sets the TTL in hours.
+    ///
+    /// Uses saturating multiplication to prevent overflow.
     #[must_use]
     pub fn ttl_hours(mut self, hours: u64) -> Self {
-        self.options.ttl = hours * 3600;
+        self.options.ttl = hours.saturating_mul(3600);
         self
     }
 
     /// Sets the TTL in days.
+    ///
+    /// Uses saturating multiplication to prevent overflow.
     #[must_use]
     pub fn ttl_days(mut self, days: u64) -> Self {
-        self.options.ttl = days * 86400;
+        self.options.ttl = days.saturating_mul(86400);
         self
     }
 
