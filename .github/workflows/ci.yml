@@ -24,6 +24,7 @@ jobs:
       - run: cargo check --workspace --all-targets
 
   test:
+    needs: [fmt, check]
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
@@ -37,6 +38,7 @@ jobs:
       - run: cargo test --workspace
 
   test-features:
+    needs: [fmt, check]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -61,6 +63,7 @@ jobs:
       - run: cargo fmt --all -- --check
 
   clippy:
+    needs: [fmt, check]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -94,9 +97,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: EmbarkStudios/cargo-deny-action@v2
+      - uses: taiki-e/install-action@cargo-deny
+      - run: cargo deny check
 
   coverage:
+    needs: [test]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
