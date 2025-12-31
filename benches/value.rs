@@ -1,6 +1,10 @@
 //! Benchmarks for Value creation and operations.
 
+#[cfg(codspeed)]
+use codspeed_criterion_compat::{Criterion, criterion_group, criterion_main};
+#[cfg(not(codspeed))]
 use criterion::{Criterion, criterion_group, criterion_main};
+
 use paramdef::core::Value;
 use std::hint::black_box;
 

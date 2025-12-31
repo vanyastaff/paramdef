@@ -4,14 +4,15 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
   RUST_VERSION: "1.85"
 
 jobs:
-  benchmark:
+  benchmarks:
+    name: Run benchmarks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -23,17 +24,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
 
       - name: Run benchmarks
-        run: cargo bench --bench parameters --bench value -- --noplot 2>&1 | tee output.txt
-
-      - name: Store benchmark result
-        uses: benchmark-action/github-action-benchmark@v1
+        uses: CodSpeedHQ/action@v3
         with:
-          name: Rust Benchmarks
-          tool: "cargo"
-          output-file-path: output.txt
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          auto-push: ${{ github.ref == 'refs/heads/main' }}
-          alert-threshold: "150%"
-          comment-on-alert: true
-          fail-on-alert: false
-          alert-comment-cc-users: "@${{ github.repository_owner }}"
+          run: cargo codspeed run
+          token: ${{ secrets.CODSPEED_TOKEN }}
