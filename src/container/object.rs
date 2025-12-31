@@ -8,6 +8,8 @@ use std::any::Any;
 use std::fmt;
 use std::sync::Arc;
 
+use smartstring::{LazyCompact, SmartString};
+
 use crate::core::{Flags, Key, Metadata};
 use crate::node::{Container, Node, NodeKind};
 
@@ -136,8 +138,8 @@ impl Container for Object {
 /// Builder for [`Object`].
 pub struct ObjectBuilder {
     key: Key,
-    label: Option<String>,
-    description: Option<String>,
+    label: Option<SmartString<LazyCompact>>,
+    description: Option<SmartString<LazyCompact>>,
     flags: Flags,
     fields: Vec<(Key, Arc<dyn Node>)>,
 }
@@ -181,14 +183,14 @@ impl ObjectBuilder {
 
     /// Sets the label for this object.
     #[must_use]
-    pub fn label(mut self, label: impl Into<String>) -> Self {
+    pub fn label(mut self, label: impl Into<SmartString<LazyCompact>>) -> Self {
         self.label = Some(label.into());
         self
     }
 
     /// Sets the description for this object.
     #[must_use]
-    pub fn description(mut self, description: impl Into<String>) -> Self {
+    pub fn description(mut self, description: impl Into<SmartString<LazyCompact>>) -> Self {
         self.description = Some(description.into());
         self
     }

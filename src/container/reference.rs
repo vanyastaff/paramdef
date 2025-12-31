@@ -6,6 +6,8 @@
 use std::any::Any;
 use std::sync::Arc;
 
+use smartstring::{LazyCompact, SmartString};
+
 use crate::core::{Flags, Key, Metadata};
 use crate::node::{Container, Node, NodeKind};
 
@@ -101,8 +103,8 @@ impl Container for Reference {
 #[derive(Debug)]
 pub struct ReferenceBuilder {
     key: Key,
-    label: Option<String>,
-    description: Option<String>,
+    label: Option<SmartString<LazyCompact>>,
+    description: Option<SmartString<LazyCompact>>,
     flags: Flags,
     target: Option<Key>,
 }
@@ -122,14 +124,14 @@ impl ReferenceBuilder {
 
     /// Sets the label.
     #[must_use]
-    pub fn label(mut self, label: impl Into<String>) -> Self {
+    pub fn label(mut self, label: impl Into<SmartString<LazyCompact>>) -> Self {
         self.label = Some(label.into());
         self
     }
 
     /// Sets the description.
     #[must_use]
-    pub fn description(mut self, description: impl Into<String>) -> Self {
+    pub fn description(mut self, description: impl Into<SmartString<LazyCompact>>) -> Self {
         self.description = Some(description.into());
         self
     }

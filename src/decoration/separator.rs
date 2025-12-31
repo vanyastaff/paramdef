@@ -6,6 +6,7 @@ use std::any::Any;
 
 use crate::core::{Flags, Key, Metadata};
 use crate::node::{Decoration, Node, NodeKind, SeparatorStyle};
+use smartstring::{LazyCompact, SmartString};
 
 /// A visual separator decoration.
 ///
@@ -39,7 +40,7 @@ pub struct Separator {
     metadata: Metadata,
     flags: Flags,
     style: SeparatorStyle,
-    label: Option<String>,
+    label: Option<SmartString<LazyCompact>>,
     spacing: Option<f32>,
 }
 
@@ -126,7 +127,7 @@ pub struct SeparatorBuilder {
     key: Key,
     flags: Flags,
     style: SeparatorStyle,
-    label: Option<String>,
+    label: Option<SmartString<LazyCompact>>,
     spacing: Option<f32>,
 }
 
@@ -159,7 +160,7 @@ impl SeparatorBuilder {
 
     /// Sets the section label.
     #[must_use]
-    pub fn label(mut self, label: impl Into<String>) -> Self {
+    pub fn label(mut self, label: impl Into<SmartString<LazyCompact>>) -> Self {
         self.label = Some(label.into());
         self
     }

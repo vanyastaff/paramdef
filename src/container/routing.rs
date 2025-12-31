@@ -7,6 +7,8 @@ use std::any::Any;
 use std::fmt;
 use std::sync::Arc;
 
+use smartstring::{LazyCompact, SmartString};
+
 use crate::core::{Flags, Key, Metadata};
 use crate::node::{Container, Node, NodeKind};
 
@@ -14,7 +16,7 @@ use crate::node::{Container, Node, NodeKind};
 #[derive(Debug, Clone, Default)]
 pub struct RoutingOptions {
     /// Label for the connection point.
-    pub connection_label: Option<String>,
+    pub connection_label: Option<SmartString<LazyCompact>>,
     /// Whether a connection is required.
     pub connection_required: bool,
     /// Maximum number of connections (None = unlimited).
@@ -30,7 +32,7 @@ impl RoutingOptions {
 
     /// Sets the connection label.
     #[must_use]
-    pub fn connection_label(mut self, label: impl Into<String>) -> Self {
+    pub fn connection_label(mut self, label: impl Into<SmartString<LazyCompact>>) -> Self {
         self.connection_label = Some(label.into());
         self
     }
@@ -150,8 +152,8 @@ impl Container for Routing {
 /// Builder for [`Routing`].
 pub struct RoutingBuilder {
     key: Key,
-    label: Option<String>,
-    description: Option<String>,
+    label: Option<SmartString<LazyCompact>>,
+    description: Option<SmartString<LazyCompact>>,
     flags: Flags,
     child: Option<Arc<dyn Node>>,
     options: RoutingOptions,
@@ -186,14 +188,14 @@ impl RoutingBuilder {
 
     /// Sets the label.
     #[must_use]
-    pub fn label(mut self, label: impl Into<String>) -> Self {
+    pub fn label(mut self, label: impl Into<SmartString<LazyCompact>>) -> Self {
         self.label = Some(label.into());
         self
     }
 
     /// Sets the description.
     #[must_use]
-    pub fn description(mut self, description: impl Into<String>) -> Self {
+    pub fn description(mut self, description: impl Into<SmartString<LazyCompact>>) -> Self {
         self.description = Some(description.into());
         self
     }
@@ -214,7 +216,7 @@ impl RoutingBuilder {
 
     /// Sets the connection label.
     #[must_use]
-    pub fn connection_label(mut self, label: impl Into<String>) -> Self {
+    pub fn connection_label(mut self, label: impl Into<SmartString<LazyCompact>>) -> Self {
         self.options.connection_label = Some(label.into());
         self
     }
@@ -289,7 +291,7 @@ mod tests {
             .max_connections(1)
             .build();
 
-        assert_eq!(routing.options().connection_label, Some("In".to_string()));
+        assert_eq!(routing.options().connection_label.as_deref(), Some("In"));
         assert!(routing.options().connection_required);
         assert_eq!(routing.options().max_connections, Some(1));
     }

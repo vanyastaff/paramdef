@@ -7,6 +7,8 @@ use std::any::Any;
 use std::fmt;
 use std::sync::Arc;
 
+use smartstring::{LazyCompact, SmartString};
+
 use crate::core::{Flags, Key, Metadata};
 use crate::node::{Container, Node, NodeKind};
 
@@ -18,9 +20,9 @@ pub struct ModeVariant {
     /// Unique key for this variant.
     pub key: Key,
     /// Display label for this variant.
-    pub label: String,
+    pub label: SmartString<LazyCompact>,
     /// Optional description.
-    pub description: Option<String>,
+    pub description: Option<SmartString<LazyCompact>>,
     /// The content node for this variant.
     pub content: Arc<dyn Node>,
 }
@@ -40,7 +42,7 @@ impl ModeVariant {
     #[must_use]
     pub fn new(
         key: impl Into<Key>,
-        label: impl Into<String>,
+        label: impl Into<SmartString<LazyCompact>>,
         content: impl Node + 'static,
     ) -> Self {
         Self {
@@ -55,8 +57,8 @@ impl ModeVariant {
     #[must_use]
     pub fn with_description(
         key: impl Into<Key>,
-        label: impl Into<String>,
-        description: impl Into<String>,
+        label: impl Into<SmartString<LazyCompact>>,
+        description: impl Into<SmartString<LazyCompact>>,
         content: impl Node + 'static,
     ) -> Self {
         Self {
@@ -190,8 +192,8 @@ impl Container for Mode {
 #[derive(Debug)]
 pub struct ModeBuilder {
     key: Key,
-    label: Option<String>,
-    description: Option<String>,
+    label: Option<SmartString<LazyCompact>>,
+    description: Option<SmartString<LazyCompact>>,
     flags: Flags,
     variants: Vec<ModeVariant>,
     default_variant: Option<Key>,
@@ -213,14 +215,14 @@ impl ModeBuilder {
 
     /// Sets the label for this mode.
     #[must_use]
-    pub fn label(mut self, label: impl Into<String>) -> Self {
+    pub fn label(mut self, label: impl Into<SmartString<LazyCompact>>) -> Self {
         self.label = Some(label.into());
         self
     }
 
     /// Sets the description for this mode.
     #[must_use]
-    pub fn description(mut self, description: impl Into<String>) -> Self {
+    pub fn description(mut self, description: impl Into<SmartString<LazyCompact>>) -> Self {
         self.description = Some(description.into());
         self
     }
@@ -244,7 +246,7 @@ impl ModeBuilder {
     pub fn variant(
         mut self,
         key: impl Into<Key>,
-        label: impl Into<String>,
+        label: impl Into<SmartString<LazyCompact>>,
         content: impl Node + 'static,
     ) -> Self {
         self.variants.push(ModeVariant::new(key, label, content));
@@ -256,8 +258,8 @@ impl ModeBuilder {
     pub fn variant_with_description(
         mut self,
         key: impl Into<Key>,
-        label: impl Into<String>,
-        description: impl Into<String>,
+        label: impl Into<SmartString<LazyCompact>>,
+        description: impl Into<SmartString<LazyCompact>>,
         content: impl Node + 'static,
     ) -> Self {
         self.variants.push(ModeVariant::with_description(
@@ -427,7 +429,7 @@ mod tests {
             .unwrap();
 
         let variant = mode.get_variant("option").unwrap();
-        assert_eq!(variant.description, Some("This is an option".to_string()));
+        assert_eq!(variant.description.as_deref(), Some("This is an option"));
     }
 
     #[test]

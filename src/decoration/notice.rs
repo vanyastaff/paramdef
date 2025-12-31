@@ -4,6 +4,8 @@
 
 use std::any::Any;
 
+use smartstring::{LazyCompact, SmartString};
+
 use crate::core::{Flags, Key, Metadata};
 use crate::node::{Decoration, Node, NodeKind, NoticeType};
 
@@ -42,7 +44,7 @@ pub struct Notice {
     metadata: Metadata,
     flags: Flags,
     kind: NoticeType,
-    message: String,
+    message: SmartString<LazyCompact>,
     dismissible: bool,
 }
 
@@ -55,7 +57,7 @@ impl Notice {
 
     /// Creates an info notice.
     #[must_use]
-    pub fn info(key: impl Into<Key>, message: impl Into<String>) -> Self {
+    pub fn info(key: impl Into<Key>, message: impl Into<SmartString<LazyCompact>>) -> Self {
         Self::builder(key)
             .notice_type(NoticeType::Info)
             .message(message)
@@ -64,7 +66,7 @@ impl Notice {
 
     /// Creates a warning notice.
     #[must_use]
-    pub fn warning(key: impl Into<Key>, message: impl Into<String>) -> Self {
+    pub fn warning(key: impl Into<Key>, message: impl Into<SmartString<LazyCompact>>) -> Self {
         Self::builder(key)
             .notice_type(NoticeType::Warning)
             .message(message)
@@ -73,7 +75,7 @@ impl Notice {
 
     /// Creates an error notice.
     #[must_use]
-    pub fn error(key: impl Into<Key>, message: impl Into<String>) -> Self {
+    pub fn error(key: impl Into<Key>, message: impl Into<SmartString<LazyCompact>>) -> Self {
         Self::builder(key)
             .notice_type(NoticeType::Error)
             .message(message)
@@ -82,7 +84,7 @@ impl Notice {
 
     /// Creates a success notice.
     #[must_use]
-    pub fn success(key: impl Into<Key>, message: impl Into<String>) -> Self {
+    pub fn success(key: impl Into<Key>, message: impl Into<SmartString<LazyCompact>>) -> Self {
         Self::builder(key)
             .notice_type(NoticeType::Success)
             .message(message)
@@ -91,7 +93,7 @@ impl Notice {
 
     /// Creates a tip notice.
     #[must_use]
-    pub fn tip(key: impl Into<Key>, message: impl Into<String>) -> Self {
+    pub fn tip(key: impl Into<Key>, message: impl Into<SmartString<LazyCompact>>) -> Self {
         Self::builder(key)
             .notice_type(NoticeType::Tip)
             .message(message)
@@ -113,7 +115,7 @@ impl Notice {
     /// Returns the message content.
     #[must_use]
     pub fn message(&self) -> &str {
-        &self.message
+        self.message.as_str()
     }
 
     /// Returns whether the notice can be dismissed.
@@ -151,11 +153,11 @@ impl Decoration for Notice {}
 #[derive(Debug)]
 pub struct NoticeBuilder {
     key: Key,
-    label: Option<String>,
-    description: Option<String>,
+    label: Option<SmartString<LazyCompact>>,
+    description: Option<SmartString<LazyCompact>>,
     flags: Flags,
     notice_type: NoticeType,
-    message: String,
+    message: SmartString<LazyCompact>,
     dismissible: bool,
 }
 
@@ -169,21 +171,21 @@ impl NoticeBuilder {
             description: None,
             flags: Flags::empty(),
             notice_type: NoticeType::Info,
-            message: String::new(),
+            message: SmartString::new(),
             dismissible: false,
         }
     }
 
     /// Sets the label.
     #[must_use]
-    pub fn label(mut self, label: impl Into<String>) -> Self {
+    pub fn label(mut self, label: impl Into<SmartString<LazyCompact>>) -> Self {
         self.label = Some(label.into());
         self
     }
 
     /// Sets the description.
     #[must_use]
-    pub fn description(mut self, description: impl Into<String>) -> Self {
+    pub fn description(mut self, description: impl Into<SmartString<LazyCompact>>) -> Self {
         self.description = Some(description.into());
         self
     }
@@ -204,7 +206,7 @@ impl NoticeBuilder {
 
     /// Sets the message.
     #[must_use]
-    pub fn message(mut self, message: impl Into<String>) -> Self {
+    pub fn message(mut self, message: impl Into<SmartString<LazyCompact>>) -> Self {
         self.message = message.into();
         self
     }
