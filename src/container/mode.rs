@@ -301,12 +301,12 @@ impl ModeBuilder {
         }
 
         // Validate default_variant references an existing key
-        if let Some(ref default) = self.default_variant
-            && !self.variants.iter().any(|v| &v.key == default)
-        {
-            return Err(crate::core::Error::not_found(format!(
-                "default_variant '{default}'"
-            )));
+        if let Some(ref default) = self.default_variant {
+            if !self.variants.iter().any(|v| &v.key == default) {
+                return Err(crate::core::Error::not_found(format!(
+                    "default_variant '{default}'"
+                )));
+            }
         }
 
         let mut metadata = Metadata::new(self.key);
