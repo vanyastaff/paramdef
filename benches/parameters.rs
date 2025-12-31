@@ -1,9 +1,9 @@
 //! Benchmarks for parameter creation and access.
 
-#[cfg(not(codspeed))]
-use criterion::{Criterion, criterion_group, criterion_main};
 #[cfg(codspeed)]
 use codspeed_criterion_compat::{Criterion, criterion_group, criterion_main};
+#[cfg(not(codspeed))]
+use criterion::{Criterion, criterion_group, criterion_main};
 
 use paramdef::node::{Leaf, Node};
 use paramdef::parameter::{Boolean, Number, Select, SelectOption, Text, Vector};
