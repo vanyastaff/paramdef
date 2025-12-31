@@ -8,7 +8,7 @@ use thiserror::Error;
 pub type Result<T> = std::result::Result<T, Error>;
 
 /// Errors that can occur during parameter operations.
-#[derive(Debug, Error)]
+#[derive(Debug, Clone, Error)]
 pub enum Error {
     /// Type mismatch when accessing a value.
     #[error("type mismatch: expected {expected}, got {actual}")]

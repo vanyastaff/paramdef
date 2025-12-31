@@ -46,11 +46,14 @@
 #![allow(clippy::module_name_repetitions)]
 
 pub mod container;
+pub mod context;
 pub mod core;
 pub mod decoration;
 pub mod group;
 pub mod node;
 pub mod parameter;
+pub mod runtime;
+pub mod schema;
 pub mod subtypes;
 
 // Re-export commonly used types at crate root
