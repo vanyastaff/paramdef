@@ -1,9 +1,8 @@
 //! Text parameter type for string values.
 
-use crate::core::{Flags, Key, Metadata};
+use crate::core::{Flags, Key, Metadata, SmartStr};
 use crate::node::{Leaf, Node, NodeKind};
 use crate::subtypes::TextSubtype;
-use smartstring::{LazyCompact, SmartString};
 
 /// A text parameter schema for string values.
 ///
@@ -29,7 +28,7 @@ pub struct Text<S: TextSubtype = crate::subtypes::Plain> {
     metadata: Metadata,
     flags: Flags,
     subtype: S,
-    default: Option<SmartString<LazyCompact>>,
+    default: Option<SmartStr>,
 }
 
 impl<S: TextSubtype> Text<S> {
@@ -135,12 +134,12 @@ impl<S: TextSubtype> Leaf for Text<S> {
 #[derive(Debug, Clone)]
 pub struct TextBuilder<S: TextSubtype = crate::subtypes::Plain> {
     key: Key,
-    label: Option<Key>,
-    description: Option<Key>,
+    label: Option<SmartStr>,
+    description: Option<SmartStr>,
     group: Option<Key>,
     flags: Flags,
     subtype: S,
-    default: Option<SmartString<LazyCompact>>,
+    default: Option<SmartStr>,
 }
 
 impl TextBuilder<crate::subtypes::Plain> {
@@ -174,14 +173,14 @@ impl<S: TextSubtype> TextBuilder<S> {
 
     /// Sets the display label.
     #[must_use]
-    pub fn label(mut self, label: impl Into<Key>) -> Self {
+    pub fn label(mut self, label: impl Into<SmartStr>) -> Self {
         self.label = Some(label.into());
         self
     }
 
     /// Sets the description.
     #[must_use]
-    pub fn description(mut self, description: impl Into<Key>) -> Self {
+    pub fn description(mut self, description: impl Into<SmartStr>) -> Self {
         self.description = Some(description.into());
         self
     }
@@ -195,7 +194,7 @@ impl<S: TextSubtype> TextBuilder<S> {
 
     /// Sets the default value.
     #[must_use]
-    pub fn default(mut self, value: impl Into<SmartString<LazyCompact>>) -> Self {
+    pub fn default(mut self, value: impl Into<SmartStr>) -> Self {
         self.default = Some(value.into());
         self
     }

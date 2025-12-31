@@ -4,9 +4,7 @@
 
 use std::any::Any;
 
-use smartstring::{LazyCompact, SmartString};
-
-use crate::core::{Flags, Key, Metadata};
+use crate::core::{Flags, Key, Metadata, SmartStr};
 use crate::node::{Decoration, LinkType, Node, NodeKind};
 
 /// A clickable link decoration.
@@ -42,8 +40,8 @@ use crate::node::{Decoration, LinkType, Node, NodeKind};
 pub struct Link {
     metadata: Metadata,
     flags: Flags,
-    text: SmartString<LazyCompact>,
-    url: SmartString<LazyCompact>,
+    text: SmartStr,
+    url: SmartStr,
     kind: LinkType,
     open_in_new_tab: bool,
 }
@@ -57,10 +55,7 @@ impl Link {
 
     /// Creates a documentation link builder.
     #[must_use]
-    pub fn documentation(
-        key: impl Into<Key>,
-        text: impl Into<SmartString<LazyCompact>>,
-    ) -> LinkBuilder {
+    pub fn documentation(key: impl Into<Key>, text: impl Into<SmartStr>) -> LinkBuilder {
         Self::builder(key)
             .text(text)
             .link_type(LinkType::Documentation)
@@ -68,19 +63,19 @@ impl Link {
 
     /// Creates a tutorial link builder.
     #[must_use]
-    pub fn tutorial(key: impl Into<Key>, text: impl Into<SmartString<LazyCompact>>) -> LinkBuilder {
+    pub fn tutorial(key: impl Into<Key>, text: impl Into<SmartStr>) -> LinkBuilder {
         Self::builder(key).text(text).link_type(LinkType::Tutorial)
     }
 
     /// Creates a video link builder.
     #[must_use]
-    pub fn video(key: impl Into<Key>, text: impl Into<SmartString<LazyCompact>>) -> LinkBuilder {
+    pub fn video(key: impl Into<Key>, text: impl Into<SmartStr>) -> LinkBuilder {
         Self::builder(key).text(text).link_type(LinkType::Video)
     }
 
     /// Creates an external link builder.
     #[must_use]
-    pub fn external(key: impl Into<Key>, text: impl Into<SmartString<LazyCompact>>) -> LinkBuilder {
+    pub fn external(key: impl Into<Key>, text: impl Into<SmartStr>) -> LinkBuilder {
         Self::builder(key)
             .text(text)
             .link_type(LinkType::External)
@@ -89,7 +84,7 @@ impl Link {
 
     /// Creates an API reference link builder.
     #[must_use]
-    pub fn api(key: impl Into<Key>, text: impl Into<SmartString<LazyCompact>>) -> LinkBuilder {
+    pub fn api(key: impl Into<Key>, text: impl Into<SmartStr>) -> LinkBuilder {
         Self::builder(key).text(text).link_type(LinkType::Api)
     }
 
@@ -153,8 +148,8 @@ impl Decoration for Link {}
 pub struct LinkBuilder {
     key: Key,
     flags: Flags,
-    text: SmartString<LazyCompact>,
-    url: Option<SmartString<LazyCompact>>,
+    text: SmartStr,
+    url: Option<SmartStr>,
     kind: LinkType,
     open_in_new_tab: bool,
 }
@@ -166,7 +161,7 @@ impl LinkBuilder {
         Self {
             key: key.into(),
             flags: Flags::empty(),
-            text: SmartString::new(),
+            text: SmartStr::new(),
             url: None,
             kind: LinkType::Documentation,
             open_in_new_tab: false,
@@ -182,14 +177,14 @@ impl LinkBuilder {
 
     /// Sets the link text.
     #[must_use]
-    pub fn text(mut self, text: impl Into<SmartString<LazyCompact>>) -> Self {
+    pub fn text(mut self, text: impl Into<SmartStr>) -> Self {
         self.text = text.into();
         self
     }
 
     /// Sets the URL (required).
     #[must_use]
-    pub fn url(mut self, url: impl Into<SmartString<LazyCompact>>) -> Self {
+    pub fn url(mut self, url: impl Into<SmartStr>) -> Self {
         self.url = Some(url.into());
         self
     }

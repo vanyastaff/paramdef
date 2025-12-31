@@ -2,6 +2,7 @@
 //!
 //! This module contains the foundational types that all other components depend on:
 //! - [`Key`] - Parameter identifier using stack-optimized strings
+//! - [`SmartStr`] - Stack-optimized string for display text (labels, descriptions)
 //! - [`Metadata`] - Parameter display information (label, description, group, tags)
 //! - [`Flags`] - Schema-level parameter attributes (REQUIRED, READONLY, etc.)
 //! - [`StateFlags`] - Runtime parameter state (DIRTY, TOUCHED, VALID, etc.)
@@ -19,3 +20,9 @@ pub use flags::{Flags, StateFlags};
 pub use key::Key;
 pub use metadata::{Metadata, MetadataBuilder};
 pub use value::Value;
+
+/// Stack-optimized string for display text (labels, descriptions, messages).
+///
+/// Strings shorter than 23 bytes are stored inline on the stack,
+/// avoiding heap allocation. Use [`Key`] for parameter identifiers.
+pub type SmartStr = smartstring::SmartString<smartstring::LazyCompact>;

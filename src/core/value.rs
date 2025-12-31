@@ -6,9 +6,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use smartstring::{LazyCompact, SmartString};
-
-use super::Key;
+use super::{Key, SmartStr};
 
 /// Unified runtime representation for all parameter values.
 ///
@@ -48,7 +46,7 @@ pub enum Value {
     Float(f64),
 
     /// Text string using stack-optimized storage.
-    Text(SmartString<LazyCompact>),
+    Text(SmartStr),
 
     /// Ordered array of values.
     Array(Arc<[Value]>),
@@ -71,7 +69,7 @@ impl Value {
     /// let value = Value::text("hello");
     /// assert_eq!(value.as_text(), Some("hello"));
     /// ```
-    pub fn text(s: impl Into<SmartString<LazyCompact>>) -> Self {
+    pub fn text(s: impl Into<SmartStr>) -> Self {
         Self::Text(s.into())
     }
 

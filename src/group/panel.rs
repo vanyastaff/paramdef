@@ -8,9 +8,8 @@ use std::any::Any;
 use std::fmt;
 use std::sync::Arc;
 
-use crate::core::{Flags, Key, Metadata};
+use crate::core::{Flags, Key, Metadata, SmartStr};
 use crate::node::{Layout, Node, NodeKind};
-use smartstring::{LazyCompact, SmartString};
 
 /// Display type for a Panel.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
@@ -152,8 +151,8 @@ impl Layout for Panel {
 /// Builder for [`Panel`].
 pub struct PanelBuilder {
     key: Key,
-    label: Option<SmartString<LazyCompact>>,
-    description: Option<SmartString<LazyCompact>>,
+    label: Option<SmartStr>,
+    description: Option<SmartStr>,
     flags: Flags,
     children: Vec<Arc<dyn Node>>,
     display_type: PanelDisplayType,
@@ -191,14 +190,14 @@ impl PanelBuilder {
 
     /// Sets the label.
     #[must_use]
-    pub fn label(mut self, label: impl Into<SmartString<LazyCompact>>) -> Self {
+    pub fn label(mut self, label: impl Into<SmartStr>) -> Self {
         self.label = Some(label.into());
         self
     }
 
     /// Sets the description.
     #[must_use]
-    pub fn description(mut self, description: impl Into<SmartString<LazyCompact>>) -> Self {
+    pub fn description(mut self, description: impl Into<SmartStr>) -> Self {
         self.description = Some(description.into());
         self
     }

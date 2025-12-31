@@ -1,6 +1,6 @@
 //! Select parameter type for single/multiple selection.
 
-use crate::core::{Flags, Key, Metadata, Value};
+use crate::core::{Flags, Key, Metadata, SmartStr, Value};
 use crate::node::{Leaf, Node, NodeKind};
 
 /// Selection mode for the select parameter.
@@ -29,9 +29,9 @@ pub struct SelectOption {
     /// Unique identifier for the option.
     pub value: Key,
     /// Display label for the option.
-    pub label: Key,
+    pub label: SmartStr,
     /// Optional description/tooltip.
-    pub description: Option<Key>,
+    pub description: Option<SmartStr>,
     /// Optional icon identifier.
     pub icon: Option<Key>,
     /// Optional group for categorization.
@@ -41,7 +41,7 @@ pub struct SelectOption {
 impl SelectOption {
     /// Creates a new select option with the given value and label.
     #[must_use]
-    pub fn new(value: impl Into<Key>, label: impl Into<Key>) -> Self {
+    pub fn new(value: impl Into<Key>, label: impl Into<SmartStr>) -> Self {
         Self {
             value: value.into(),
             label: label.into(),
@@ -55,9 +55,10 @@ impl SelectOption {
     #[must_use]
     pub fn simple(value: impl Into<Key>) -> Self {
         let v: Key = value.into();
+        let label: SmartStr = v.as_str().into();
         Self {
-            value: v.clone(),
-            label: v,
+            value: v,
+            label,
             description: None,
             icon: None,
             group: None,
@@ -66,7 +67,7 @@ impl SelectOption {
 
     /// Sets the description for this option.
     #[must_use]
-    pub fn with_description(mut self, description: impl Into<Key>) -> Self {
+    pub fn with_description(mut self, description: impl Into<SmartStr>) -> Self {
         self.description = Some(description.into());
         self
     }
