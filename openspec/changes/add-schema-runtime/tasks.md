@@ -30,7 +30,7 @@
 ## 4. RuntimeNode Implementation
 
 - [ ] 4.1 Write failing test: `test_runtime_node_create`
-- [ ] 4.2 Implement RuntimeNode<T: Node> with node: Arc<T>, state: ParameterState
+- [ ] 4.2 Implement RuntimeNode<T: Node> with node: Arc<T>, state: State
 - [ ] 4.3 Run test to verify it passes
 - [ ] 4.4 Write failing test: `test_runtime_node_set_value`
 - [ ] 4.5 Implement set_value with transform → validate → store → mark dirty

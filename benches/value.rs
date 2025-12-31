@@ -85,6 +85,30 @@ fn bench_value_object(c: &mut Criterion) {
             black_box(Value::object(pairs_ref));
         });
     });
+
+    c.bench_function("object_large", |b| {
+        let pairs: Vec<(String, Value)> = (0..200)
+            .map(|i| (format!("key_{i}"), Value::Int(i)))
+            .collect();
+
+        b.iter(|| {
+            let pairs_ref: Vec<(&str, Value)> =
+                pairs.iter().map(|(k, v)| (k.as_str(), v.clone())).collect();
+            black_box(Value::object(pairs_ref));
+        });
+    });
+
+    c.bench_function("object_large_with_capacity", |b| {
+        let pairs: Vec<(String, Value)> = (0..200)
+            .map(|i| (format!("key_{i}"), Value::Int(i)))
+            .collect();
+
+        b.iter(|| {
+            let pairs_ref: Vec<(&str, Value)> =
+                pairs.iter().map(|(k, v)| (k.as_str(), v.clone())).collect();
+            black_box(Value::object_with_capacity(200, pairs_ref));
+        });
+    });
 }
 
 fn bench_value_clone(c: &mut Criterion) {

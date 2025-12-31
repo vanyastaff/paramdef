@@ -7,7 +7,7 @@ The paramdef library needs to separate immutable schema definitions from mutable
 - Add `Schema` struct with SchemaBuilder for parameter registration
 - Add `RuntimeNode<T>` wrapper combining immutable node with mutable state
 - Add `Context` struct managing values, states, and event bus
-- Add `ParameterState` struct tracking per-parameter state
+- Add `State` struct tracking per-parameter state
 
 ## Impact
 - Affected specs: schema-runtime (new capability)

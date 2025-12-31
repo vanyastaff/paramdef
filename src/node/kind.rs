@@ -45,24 +45,28 @@ pub enum NodeKind {
 
 impl NodeKind {
     /// Returns whether this kind has its own value.
+    #[inline]
     #[must_use]
     pub const fn has_own_value(&self) -> bool {
         matches!(self, Self::Container | Self::Leaf)
     }
 
     /// Returns whether this kind can access child values.
+    #[inline]
     #[must_use]
     pub const fn has_value_access(&self) -> bool {
         matches!(self, Self::Group | Self::Layout | Self::Container)
     }
 
     /// Returns whether this kind can contain children.
+    #[inline]
     #[must_use]
     pub const fn can_have_children(&self) -> bool {
         matches!(self, Self::Group | Self::Layout | Self::Container)
     }
 
     /// Returns the name of this kind.
+    #[inline]
     #[must_use]
     pub const fn name(&self) -> &'static str {
         match self {
@@ -104,6 +108,7 @@ pub enum NoticeType {
 
 impl NoticeType {
     /// Returns the name of this notice type.
+    #[inline]
     #[must_use]
     pub const fn name(&self) -> &'static str {
         match self {
@@ -141,6 +146,7 @@ pub enum SeparatorStyle {
 
 impl SeparatorStyle {
     /// Returns the name of this separator style.
+    #[inline]
     #[must_use]
     pub const fn name(&self) -> &'static str {
         match self {
@@ -188,6 +194,7 @@ pub enum LinkType {
 
 impl LinkType {
     /// Returns the name of this link type.
+    #[inline]
     #[must_use]
     pub const fn name(&self) -> &'static str {
         match self {

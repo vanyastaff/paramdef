@@ -44,4 +44,4 @@ The system SHALL execute transformers before validators, then store value, then 
 
 #### Scenario: Emit change event on success
 - **WHEN** successfully setting a value
-- **THEN** Context emits ParameterEvent::ValueChanged to EventBus
+- **THEN** Context emits Event::ValueChanged to EventBus

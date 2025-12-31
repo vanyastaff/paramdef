@@ -22,8 +22,9 @@ pub enum NumericKind {
 
 impl NumericKind {
     /// Returns the name of this numeric kind.
+    #[inline]
     #[must_use]
-    pub fn name(&self) -> &'static str {
+    pub const fn name(&self) -> &'static str {
         match self {
             Self::I32 => "i32",
             Self::I64 => "i64",
@@ -33,14 +34,16 @@ impl NumericKind {
     }
 
     /// Returns true if this is an integer type.
+    #[inline]
     #[must_use]
-    pub fn is_integer(&self) -> bool {
+    pub const fn is_integer(&self) -> bool {
         matches!(self, Self::I32 | Self::I64)
     }
 
     /// Returns true if this is a floating-point type.
+    #[inline]
     #[must_use]
-    pub fn is_float(&self) -> bool {
+    pub const fn is_float(&self) -> bool {
         matches!(self, Self::F32 | Self::F64)
     }
 }

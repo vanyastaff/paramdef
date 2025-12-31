@@ -13,7 +13,9 @@
       "Skill(rust-patterns)",
       "Skill(rust-ms-universal)",
       "Skill(rust-docs)",
-      "SlashCommand(/pr-review-toolkit:review-pr)"
+      "SlashCommand(/pr-review-toolkit:review-pr)",
+      "Bash(cargo check:*)",
+      "Skill(rust-performance)"
     ]
   }
 }

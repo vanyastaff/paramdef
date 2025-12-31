@@ -67,36 +67,42 @@ impl List {
     }
 
     /// Returns the flags for this list.
+    #[inline]
     #[must_use]
     pub fn flags(&self) -> Flags {
         self.flags
     }
 
     /// Returns the item template.
+    #[inline]
     #[must_use]
     pub fn item_template(&self) -> &Arc<dyn Node> {
         &self.item_template
     }
 
     /// Returns the minimum number of items, if set.
+    #[inline]
     #[must_use]
     pub fn min_items(&self) -> Option<usize> {
         self.min_items
     }
 
     /// Returns the maximum number of items, if set.
+    #[inline]
     #[must_use]
     pub fn max_items(&self) -> Option<usize> {
         self.max_items
     }
 
     /// Returns whether items must be unique.
+    #[inline]
     #[must_use]
     pub fn is_unique(&self) -> bool {
         self.unique
     }
 
     /// Returns whether the list is sortable.
+    #[inline]
     #[must_use]
     pub fn is_sortable(&self) -> bool {
         self.sortable

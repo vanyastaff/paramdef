@@ -117,24 +117,28 @@ impl Expirable {
     }
 
     /// Returns the flags for this expirable.
+    #[inline]
     #[must_use]
     pub fn flags(&self) -> Flags {
         self.flags
     }
 
     /// Returns the child node, if any.
+    #[inline]
     #[must_use]
     pub fn child(&self) -> Option<&Arc<dyn Node>> {
         self.child.as_ref()
     }
 
     /// Returns the expirable options.
+    #[inline]
     #[must_use]
     pub fn options(&self) -> &ExpirableOptions {
         &self.options
     }
 
     /// Returns the TTL in seconds.
+    #[inline]
     #[must_use]
     pub fn ttl(&self) -> u64 {
         self.options.ttl

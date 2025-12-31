@@ -77,6 +77,9 @@ impl Value {
 
     /// Creates an array value from an iterator.
     ///
+    /// Uses the iterator's `size_hint()` to pre-allocate the Vec,
+    /// avoiding reallocation during construction.
+    ///
     /// # Examples
     ///
     /// ```
@@ -86,10 +89,44 @@ impl Value {
     /// assert_eq!(value.as_array().map(|a| a.len()), Some(3));
     /// ```
     pub fn array(values: impl IntoIterator<Item = Value>) -> Self {
-        Self::Array(values.into_iter().collect())
+        let iter = values.into_iter();
+        let (lower_bound, _) = iter.size_hint();
+
+        let mut vec = Vec::with_capacity(lower_bound);
+        vec.extend(iter);
+
+        Self::Array(Arc::from(vec.into_boxed_slice()))
+    }
+
+    /// Creates an array value with pre-allocated capacity.
+    ///
+    /// Use this when you know the number of elements in advance
+    /// to avoid reallocation. For dynamic sizes, use [`Value::array`] which
+    /// uses the iterator's `size_hint()`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use paramdef::core::Value;
+    ///
+    /// // Pre-allocate for 1000 elements
+    /// let mut values = Vec::with_capacity(1000);
+    /// for i in 0..1000 {
+    ///     values.push(Value::Int(i));
+    /// }
+    /// let value = Value::array_with_capacity(1000, values);
+    /// ```
+    pub fn array_with_capacity(capacity: usize, values: impl IntoIterator<Item = Value>) -> Self {
+        let mut vec = Vec::with_capacity(capacity);
+        vec.extend(values);
+
+        Self::Array(Arc::from(vec.into_boxed_slice()))
     }
 
     /// Creates an object value from key-value pairs.
+    ///
+    /// Uses the iterator's `size_hint()` to pre-allocate the `HashMap`,
+    /// avoiding rehashing during construction.
     ///
     /// # Examples
     ///
@@ -102,9 +139,41 @@ impl Value {
     /// ]);
     /// ```
     pub fn object(pairs: impl IntoIterator<Item = (impl Into<Key>, Value)>) -> Self {
-        Self::Object(Arc::new(
-            pairs.into_iter().map(|(k, v)| (k.into(), v)).collect(),
-        ))
+        let iter = pairs.into_iter();
+        let (lower_bound, _) = iter.size_hint();
+
+        let mut map = HashMap::with_capacity(lower_bound);
+        map.extend(iter.map(|(k, v)| (k.into(), v)));
+
+        Self::Object(Arc::new(map))
+    }
+
+    /// Creates an object value with pre-allocated capacity.
+    ///
+    /// Use this when you know the number of key-value pairs in advance
+    /// to avoid rehashing. For dynamic sizes, use [`Value::object`] which
+    /// uses the iterator's `size_hint()`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use paramdef::core::Value;
+    ///
+    /// // Pre-allocate for 100 entries
+    /// let mut pairs = Vec::with_capacity(100);
+    /// for i in 0..100 {
+    ///     pairs.push((format!("key_{i}"), Value::Int(i)));
+    /// }
+    /// let value = Value::object_with_capacity(100, pairs);
+    /// ```
+    pub fn object_with_capacity(
+        capacity: usize,
+        pairs: impl IntoIterator<Item = (impl Into<Key>, Value)>,
+    ) -> Self {
+        let mut map = HashMap::with_capacity(capacity);
+        map.extend(pairs.into_iter().map(|(k, v)| (k.into(), v)));
+
+        Self::Object(Arc::new(map))
     }
 
     /// Creates a binary value from bytes.
@@ -386,6 +455,7 @@ mod serde_impl {
     use serde::{Deserialize, Serialize};
     use std::fmt;
     use std::str::FromStr;
+    use std::sync::Arc;
 
     impl Serialize for Value {
         fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -434,13 +504,17 @@ mod serde_impl {
                 }
                 Value::Text(s) => serde_json::Value::String(s.to_string()),
                 Value::Array(arr) => {
-                    serde_json::Value::Array(arr.iter().cloned().map(Into::into).collect())
+                    // Pre-allocate with known size
+                    let mut vec = Vec::with_capacity(arr.len());
+                    vec.extend(arr.iter().cloned().map(Into::into));
+                    serde_json::Value::Array(vec)
                 }
-                Value::Object(obj) => serde_json::Value::Object(
-                    obj.iter()
-                        .map(|(k, v)| (k.to_string(), v.clone().into()))
-                        .collect(),
-                ),
+                Value::Object(obj) => {
+                    // Pre-allocate with known size to avoid rehashing
+                    let mut map = serde_json::Map::with_capacity(obj.len());
+                    map.extend(obj.iter().map(|(k, v)| (k.to_string(), v.clone().into())));
+                    serde_json::Value::Object(map)
+                }
                 Value::Binary(bytes) => {
                     use base64::Engine;
                     let encoded = base64::engine::general_purpose::STANDARD.encode(&*bytes);
@@ -475,7 +549,12 @@ mod serde_impl {
                         _ => Value::text(s),
                     }
                 }
-                serde_json::Value::Array(arr) => Value::array(arr.into_iter().map(Value::from)),
+                serde_json::Value::Array(arr) => {
+                    // Pre-allocate with known size
+                    let mut vec = Vec::with_capacity(arr.len());
+                    vec.extend(arr.into_iter().map(Value::from));
+                    Value::Array(Arc::from(vec.into_boxed_slice()))
+                }
                 serde_json::Value::Object(obj) => {
                     Value::object(obj.into_iter().map(|(k, v)| (k, Value::from(v))))
                 }
@@ -704,6 +783,85 @@ mod tests {
         let original = Value::object([("key", Value::array([Value::Int(1), Value::Int(2)]))]);
         let cloned = original.clone();
         assert_eq!(original, cloned);
+    }
+
+    // === Capacity optimization tests ===
+
+    #[test]
+    fn test_array_with_capacity() {
+        // Create array with explicit capacity
+        let values: Vec<Value> = (0..100).map(Value::Int).collect();
+        let array = Value::array_with_capacity(100, values);
+
+        assert!(array.is_array());
+        assert_eq!(array.as_array().map(|a| a.len()), Some(100));
+
+        // Verify values are correct
+        let arr = array.as_array().unwrap();
+        assert_eq!(arr[0].as_int(), Some(0));
+        assert_eq!(arr[99].as_int(), Some(99));
+    }
+
+    #[test]
+    fn test_array_with_capacity_small() {
+        // Test with small array
+        let array = Value::array_with_capacity(3, [Value::Int(1), Value::Int(2), Value::Int(3)]);
+
+        assert_eq!(array.as_array().map(|a| a.len()), Some(3));
+    }
+
+    #[test]
+    fn test_object_with_capacity() {
+        // Create object with explicit capacity
+        let pairs: Vec<(String, Value)> = (0..50)
+            .map(|i| (format!("key_{i}"), Value::Int(i)))
+            .collect();
+
+        let object = Value::object_with_capacity(50, pairs);
+
+        assert!(object.is_object());
+        let obj = object.as_object().unwrap();
+        assert_eq!(obj.len(), 50);
+
+        // Verify values are correct
+        assert_eq!(obj.get("key_0").and_then(|v| v.as_int()), Some(0));
+        assert_eq!(obj.get("key_49").and_then(|v| v.as_int()), Some(49));
+    }
+
+    #[test]
+    fn test_object_with_capacity_small() {
+        // Test with small object
+        let object = Value::object_with_capacity(
+            2,
+            [("name", Value::text("Alice")), ("age", Value::Int(30))],
+        );
+
+        let obj = object.as_object().unwrap();
+        assert_eq!(obj.len(), 2);
+        assert_eq!(obj.get("name").and_then(|v| v.as_text()), Some("Alice"));
+    }
+
+    #[test]
+    fn test_array_size_hint_optimization() {
+        // Verify that array() uses size_hint correctly
+        // Vec has exact size_hint, so this should pre-allocate correctly
+        let values: Vec<Value> = (0..1000).map(Value::Int).collect();
+        let array = Value::array(values);
+
+        assert_eq!(array.as_array().map(|a| a.len()), Some(1000));
+    }
+
+    #[test]
+    fn test_object_size_hint_optimization() {
+        // Verify that object() uses size_hint correctly
+        // Vec has exact size_hint, so this should pre-allocate correctly
+        let pairs: Vec<(String, Value)> = (0..100)
+            .map(|i| (format!("key_{i}"), Value::Int(i)))
+            .collect();
+
+        let object = Value::object(pairs);
+
+        assert_eq!(object.as_object().map(|o| o.len()), Some(100));
     }
 }
 

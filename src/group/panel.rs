@@ -372,6 +372,6 @@ mod tests {
     #[should_panic(expected = "Panel cannot contain Layout (Panel) nodes")]
     fn test_panel_cannot_contain_panel() {
         let inner = Panel::builder("inner").build();
-        Panel::builder("outer").child(inner).build();
+        let _ = Panel::builder("outer").child(inner).build();
     }
 }

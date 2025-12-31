@@ -67,18 +67,21 @@ impl Object {
     }
 
     /// Returns the flags for this object.
+    #[inline]
     #[must_use]
     pub fn flags(&self) -> Flags {
         self.flags
     }
 
     /// Returns a slice of all fields.
+    #[inline]
     #[must_use]
     pub fn fields(&self) -> &[(Key, Arc<dyn Node>)] {
         &self.fields
     }
 
     /// Returns the number of fields.
+    #[inline]
     #[must_use]
     pub fn field_count(&self) -> usize {
         self.fields.len()
