@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::core::{Key, Value};
-use crate::runtime::RuntimeNode;
+use crate::runtime::ErasedRuntimeNode;
 use crate::schema::Schema;
 
 /// Runtime manager for a parameter tree.
@@ -39,7 +39,7 @@ pub struct Context {
     /// Shared schema definition.
     schema: Arc<Schema>,
     /// Runtime nodes indexed by key.
-    nodes: HashMap<Key, RuntimeNode>,
+    nodes: HashMap<Key, ErasedRuntimeNode>,
 }
 
 impl Context {
@@ -52,7 +52,7 @@ impl Context {
 
         for node in schema.iter() {
             let key = node.key().clone();
-            nodes.insert(key, RuntimeNode::new(Arc::clone(node)));
+            nodes.insert(key, ErasedRuntimeNode::from_arc(Arc::clone(node)));
         }
 
         Self { schema, nodes }
@@ -108,13 +108,13 @@ impl Context {
 
     /// Returns a runtime node by key.
     #[must_use]
-    pub fn node(&self, key: &str) -> Option<&RuntimeNode> {
+    pub fn node(&self, key: &str) -> Option<&ErasedRuntimeNode> {
         self.nodes.get(key)
     }
 
     /// Returns a mutable runtime node by key.
     #[must_use]
-    pub fn node_mut(&mut self, key: &str) -> Option<&mut RuntimeNode> {
+    pub fn node_mut(&mut self, key: &str) -> Option<&mut ErasedRuntimeNode> {
         self.nodes.get_mut(key)
     }
 
@@ -164,7 +164,7 @@ impl Context {
     }
 
     /// Returns an iterator over all runtime nodes.
-    pub fn iter(&self) -> impl Iterator<Item = (&Key, &RuntimeNode)> {
+    pub fn iter(&self) -> impl Iterator<Item = (&Key, &ErasedRuntimeNode)> {
         self.nodes.iter()
     }
 
