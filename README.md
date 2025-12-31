@@ -1,5 +1,7 @@
 # paramdef
 
+[![CodSpeed](https://img.shields.io/endpoint?url=https://codspeed.io/badge.json)](https://codspeed.io/vanyastaff/paramdef?utm_source=badge)
+
 Type-safe parameter definition system.
 
 ## License

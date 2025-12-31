@@ -1,6 +1,6 @@
 //! Benchmarks for parameter creation and access.
 
-use criterion::{Criterion, criterion_group, criterion_main};
+use codspeed_criterion_compat::{Criterion, criterion_group, criterion_main};
 use paramdef::node::{Leaf, Node};
 use paramdef::parameter::{Boolean, Number, Select, SelectOption, Text, Vector};
 use std::hint::black_box;
