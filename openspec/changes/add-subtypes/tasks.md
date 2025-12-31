@@ -135,6 +135,6 @@
 - [x] 12.2 Run `cargo clippy --workspace --all-features -- -D warnings`
 - [x] 12.3 Run `cargo test --workspace`
 - [x] 12.4 Run `cargo doc --no-deps --all-features`
-- [ ] 12.5 Run `cargo +1.85 check --workspace` (MSRV)
-- [ ] 12.6 Verify test coverage is 90%+
-- [ ] 12.7 Commit: `feat(subtypes): add Phase 2 subtypes system`
+- [x] 12.5 Run `cargo +1.85 check --workspace` (MSRV)
+- [x] 12.6 Verify test coverage is 90%+
+- [x] 12.7 Commit: `feat(subtypes): add Phase 2 subtypes system`
