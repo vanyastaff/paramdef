@@ -3,6 +3,7 @@
 use crate::core::{Flags, Key, Metadata};
 use crate::node::{Leaf, Node, NodeKind};
 use crate::subtypes::TextSubtype;
+use smartstring::{LazyCompact, SmartString};
 
 /// A text parameter schema for string values.
 ///
@@ -28,7 +29,7 @@ pub struct Text<S: TextSubtype = crate::subtypes::Plain> {
     metadata: Metadata,
     flags: Flags,
     subtype: S,
-    default: Option<String>,
+    default: Option<SmartString<LazyCompact>>,
 }
 
 impl<S: TextSubtype> Text<S> {
@@ -126,7 +127,7 @@ impl<S: TextSubtype + 'static> Node for Text<S> {
 
 impl<S: TextSubtype> Leaf for Text<S> {
     fn default_value(&self) -> Option<crate::core::Value> {
-        self.default.as_ref().map(crate::core::Value::text)
+        self.default.clone().map(crate::core::Value::Text)
     }
 }
 
@@ -139,7 +140,7 @@ pub struct TextBuilder<S: TextSubtype = crate::subtypes::Plain> {
     group: Option<Key>,
     flags: Flags,
     subtype: S,
-    default: Option<String>,
+    default: Option<SmartString<LazyCompact>>,
 }
 
 impl TextBuilder<crate::subtypes::Plain> {
@@ -194,7 +195,7 @@ impl<S: TextSubtype> TextBuilder<S> {
 
     /// Sets the default value.
     #[must_use]
-    pub fn default(mut self, value: impl Into<String>) -> Self {
+    pub fn default(mut self, value: impl Into<SmartString<LazyCompact>>) -> Self {
         self.default = Some(value.into());
         self
     }
