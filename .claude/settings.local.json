@@ -15,7 +15,10 @@
       "Skill(rust-docs)",
       "SlashCommand(/pr-review-toolkit:review-pr)",
       "Bash(cargo check:*)",
-      "Skill(rust-performance)"
+      "Skill(rust-performance)",
+      "Skill(rust-error-handling)",
+      "Skill(rust-safety)",
+      "Skill(rust-security)"
     ]
   }
 }
