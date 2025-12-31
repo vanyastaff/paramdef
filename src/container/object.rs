@@ -206,33 +206,19 @@ impl ObjectBuilder {
 
     /// Adds a field to the object.
     ///
-    /// # Panics
-    ///
-    /// Panics in debug mode if a field with the same key already exists.
+    /// Duplicate keys are detected at build time and will return an error.
     #[must_use]
     pub fn field(mut self, key: impl Into<Key>, node: impl Node + 'static) -> Self {
-        let key = key.into();
-        debug_assert!(
-            !self.fields.iter().any(|(k, _)| k == &key),
-            "duplicate field key: {key}"
-        );
-        self.fields.push((key, Arc::new(node)));
+        self.fields.push((key.into(), Arc::new(node)));
         self
     }
 
     /// Adds a field with an already-wrapped Arc.
     ///
-    /// # Panics
-    ///
-    /// Panics in debug mode if a field with the same key already exists.
+    /// Duplicate keys are detected at build time and will return an error.
     #[must_use]
     pub fn field_arc(mut self, key: impl Into<Key>, node: Arc<dyn Node>) -> Self {
-        let key = key.into();
-        debug_assert!(
-            !self.fields.iter().any(|(k, _)| k == &key),
-            "duplicate field key: {key}"
-        );
-        self.fields.push((key, node));
+        self.fields.push((key.into(), node));
         self
     }
 
@@ -386,5 +372,15 @@ mod tests {
             .unwrap();
 
         assert_eq!(obj.children().len(), 2);
+    }
+
+    #[test]
+    fn test_object_duplicate_key_error() {
+        let result = Object::builder("config")
+            .field("host", Text::builder("host").build())
+            .field("host", Text::builder("host2").build()) // duplicate key
+            .build();
+
+        assert!(result.is_err());
     }
 }

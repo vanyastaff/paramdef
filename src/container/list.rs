@@ -251,7 +251,9 @@ impl ListBuilder {
     ///
     /// # Errors
     ///
-    /// Returns an error if no item template was provided.
+    /// Returns an error if:
+    /// - No item template was provided
+    /// - `min_items` is greater than `max_items`
     pub fn build(self) -> crate::core::Result<List> {
         let mut metadata = Metadata::new(self.key);
         if let Some(label) = self.label {
@@ -264,6 +266,16 @@ impl ListBuilder {
         let item_template = self
             .item_template
             .ok_or_else(|| crate::core::Error::missing_required("item_template"))?;
+
+        // Validate min_items <= max_items
+        if let (Some(min), Some(max)) = (self.min_items, self.max_items) {
+            if min > max {
+                return Err(crate::core::Error::validation(
+                    "invalid_bounds",
+                    format!("min_items ({min}) cannot be greater than max_items ({max})"),
+                ));
+            }
+        }
 
         // Build children cache (contains item_template)
         let children_cache: Arc<[Arc<dyn Node>]> = Arc::from([Arc::clone(&item_template)]);
@@ -358,6 +370,33 @@ mod tests {
     #[test]
     fn test_list_requires_template() {
         let result = List::builder("no_template").build();
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_list_min_max_validation() {
+        // Valid: min < max
+        let result = List::builder("valid")
+            .item_template(Text::builder("item").build())
+            .min_items(1)
+            .max_items(10)
+            .build();
+        assert!(result.is_ok());
+
+        // Valid: min == max
+        let result = List::builder("equal")
+            .item_template(Text::builder("item").build())
+            .min_items(5)
+            .max_items(5)
+            .build();
+        assert!(result.is_ok());
+
+        // Invalid: min > max
+        let result = List::builder("invalid")
+            .item_template(Text::builder("item").build())
+            .min_items(10)
+            .max_items(5)
+            .build();
         assert!(result.is_err());
     }
 }

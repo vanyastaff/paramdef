@@ -278,8 +278,11 @@ impl ExpirableBuilder {
     }
 
     /// Builds the Expirable container.
-    #[must_use]
-    pub fn build(self) -> Expirable {
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if `warning_threshold` is greater than or equal to `ttl`.
+    pub fn build(self) -> crate::core::Result<Expirable> {
         let mut metadata = Metadata::new(self.key);
         if let Some(label) = self.label {
             metadata = metadata.with_label(label);
@@ -288,19 +291,32 @@ impl ExpirableBuilder {
             metadata = metadata.with_description(description);
         }
 
+        // Validate warning_threshold < ttl
+        if let Some(threshold) = self.options.warning_threshold {
+            if threshold >= self.options.ttl {
+                return Err(crate::core::Error::validation(
+                    "invalid_threshold",
+                    format!(
+                        "warning_threshold ({threshold}s) must be less than ttl ({}s)",
+                        self.options.ttl
+                    ),
+                ));
+            }
+        }
+
         // Build children cache
         let children_cache: Arc<[Arc<dyn Node>]> = match &self.child {
             Some(child) => Arc::from([Arc::clone(child)]),
             None => Arc::from([]),
         };
 
-        Expirable {
+        Ok(Expirable {
             metadata,
             flags: self.flags,
             child: self.child,
             options: self.options,
             children_cache,
-        }
+        })
     }
 }
 
@@ -315,7 +331,11 @@ mod tests {
 
     #[test]
     fn test_expirable_basic() {
-        let expirable = Expirable::builder("token").label("Token").ttl(3600).build();
+        let expirable = Expirable::builder("token")
+            .label("Token")
+            .ttl(3600)
+            .build()
+            .unwrap();
 
         assert_eq!(expirable.key().as_str(), "token");
         assert_eq!(expirable.metadata().label(), Some("Token"));
@@ -329,7 +349,8 @@ mod tests {
             .ttl_hours(2)
             .auto_refresh(true)
             .warning_threshold(300)
-            .build();
+            .build()
+            .unwrap();
 
         assert_eq!(expirable.options().ttl, 7200);
         assert!(expirable.options().auto_refresh);
@@ -338,13 +359,13 @@ mod tests {
 
     #[test]
     fn test_expirable_ttl_helpers() {
-        let minutes = Expirable::builder("a").ttl_minutes(30).build();
+        let minutes = Expirable::builder("a").ttl_minutes(30).build().unwrap();
         assert_eq!(minutes.ttl(), 1800);
 
-        let hours = Expirable::builder("b").ttl_hours(2).build();
+        let hours = Expirable::builder("b").ttl_hours(2).build().unwrap();
         assert_eq!(hours.ttl(), 7200);
 
-        let days = Expirable::builder("c").ttl_days(1).build();
+        let days = Expirable::builder("c").ttl_days(1).build().unwrap();
         assert_eq!(days.ttl(), 86400);
     }
 
@@ -352,7 +373,8 @@ mod tests {
     fn test_expirable_with_child() {
         let expirable = Expirable::builder("cached_value")
             .child(Text::builder("value").build())
-            .build();
+            .build()
+            .unwrap();
 
         assert!(expirable.child().is_some());
         assert_eq!(expirable.child().unwrap().key().as_str(), "value");
@@ -368,5 +390,29 @@ mod tests {
 
         let opts = ExpirableOptions::days(1);
         assert_eq!(opts.ttl, 86400);
+    }
+
+    #[test]
+    fn test_expirable_warning_threshold_validation() {
+        // Valid: warning_threshold < ttl
+        let result = Expirable::builder("valid")
+            .ttl(3600)
+            .warning_threshold(300)
+            .build();
+        assert!(result.is_ok());
+
+        // Invalid: warning_threshold == ttl
+        let result = Expirable::builder("equal")
+            .ttl(3600)
+            .warning_threshold(3600)
+            .build();
+        assert!(result.is_err());
+
+        // Invalid: warning_threshold > ttl
+        let result = Expirable::builder("greater")
+            .ttl(3600)
+            .warning_threshold(7200)
+            .build();
+        assert!(result.is_err());
     }
 }

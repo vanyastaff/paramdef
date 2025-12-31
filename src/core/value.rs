@@ -764,4 +764,79 @@ mod serde_tests {
 
         assert_eq!(original, restored);
     }
+
+    #[test]
+    fn test_float_nan_to_json() {
+        let value = Value::Float(f64::NAN);
+        let json: serde_json::Value = value.into();
+        // NaN is converted to string "NaN"
+        assert_eq!(json, serde_json::Value::String("NaN".to_string()));
+    }
+
+    #[test]
+    fn test_float_infinity_to_json() {
+        let pos_inf = Value::Float(f64::INFINITY);
+        let json: serde_json::Value = pos_inf.into();
+        assert_eq!(json, serde_json::Value::String("inf".to_string()));
+
+        let neg_inf = Value::Float(f64::NEG_INFINITY);
+        let json: serde_json::Value = neg_inf.into();
+        assert_eq!(json, serde_json::Value::String("-inf".to_string()));
+    }
+
+    #[test]
+    fn test_json_nan_string_to_value() {
+        let json = serde_json::Value::String("NaN".to_string());
+        let value: Value = json.into();
+        assert!(value.is_float());
+        assert!(value.as_float().unwrap().is_nan());
+    }
+
+    #[test]
+    fn test_json_infinity_string_to_value() {
+        // "Infinity" format
+        let json = serde_json::Value::String("Infinity".to_string());
+        let value: Value = json.into();
+        assert!(value.is_float());
+        assert_eq!(value.as_float(), Some(f64::INFINITY));
+
+        // "inf" format
+        let json = serde_json::Value::String("inf".to_string());
+        let value: Value = json.into();
+        assert!(value.is_float());
+        assert_eq!(value.as_float(), Some(f64::INFINITY));
+
+        // "-Infinity" format
+        let json = serde_json::Value::String("-Infinity".to_string());
+        let value: Value = json.into();
+        assert!(value.is_float());
+        assert_eq!(value.as_float(), Some(f64::NEG_INFINITY));
+
+        // "-inf" format
+        let json = serde_json::Value::String("-inf".to_string());
+        let value: Value = json.into();
+        assert!(value.is_float());
+        assert_eq!(value.as_float(), Some(f64::NEG_INFINITY));
+    }
+
+    #[test]
+    fn test_non_finite_float_roundtrip() {
+        // NaN roundtrip
+        let original = Value::Float(f64::NAN);
+        let json: serde_json::Value = original.into();
+        let restored: Value = json.into();
+        assert!(restored.as_float().unwrap().is_nan());
+
+        // +Infinity roundtrip
+        let original = Value::Float(f64::INFINITY);
+        let json: serde_json::Value = original.into();
+        let restored: Value = json.into();
+        assert_eq!(restored.as_float(), Some(f64::INFINITY));
+
+        // -Infinity roundtrip
+        let original = Value::Float(f64::NEG_INFINITY);
+        let json: serde_json::Value = original.into();
+        let restored: Value = json.into();
+        assert_eq!(restored.as_float(), Some(f64::NEG_INFINITY));
+    }
 }

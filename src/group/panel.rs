@@ -210,17 +210,50 @@ impl PanelBuilder {
     }
 
     /// Adds a child node.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the child is a Panel (Layout) or Group node,
+    /// as these cannot be nested inside a Panel.
     #[must_use]
     pub fn child(mut self, node: impl Node + 'static) -> Self {
-        self.children.push(Arc::new(node));
+        let arc_node: Arc<dyn Node> = Arc::new(node);
+        Self::validate_child(&arc_node);
+        self.children.push(arc_node);
         self
     }
 
     /// Adds a child node with an already-wrapped Arc.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the child is a Panel (Layout) or Group node,
+    /// as these cannot be nested inside a Panel.
     #[must_use]
     pub fn child_arc(mut self, node: Arc<dyn Node>) -> Self {
+        Self::validate_child(&node);
         self.children.push(node);
         self
+    }
+
+    /// Validates that a child node is allowed inside a Panel.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the node is a Layout (Panel) or Group.
+    fn validate_child(node: &Arc<dyn Node>) {
+        match node.kind() {
+            NodeKind::Layout => {
+                panic!(
+                    "Panel cannot contain Layout (Panel) nodes: '{}'",
+                    node.key()
+                );
+            }
+            NodeKind::Group => {
+                panic!("Panel cannot contain Group nodes: '{}'", node.key());
+            }
+            _ => {}
+        }
     }
 
     /// Sets the display type.
@@ -333,5 +366,12 @@ mod tests {
 
         // Panel CAN have children
         assert!(panel.kind().can_have_children());
+    }
+
+    #[test]
+    #[should_panic(expected = "Panel cannot contain Layout (Panel) nodes")]
+    fn test_panel_cannot_contain_panel() {
+        let inner = Panel::builder("inner").build();
+        Panel::builder("outer").child(inner).build();
     }
 }
