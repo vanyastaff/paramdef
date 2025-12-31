@@ -38,6 +38,9 @@ pub trait Node: Send + Sync + Debug {
 
     /// Returns a reference to the underlying type for downcasting.
     fn as_any(&self) -> &dyn Any;
+
+    /// Returns a mutable reference to the underlying type for downcasting.
+    fn as_any_mut(&mut self) -> &mut dyn Any;
 }
 
 // =============================================================================
@@ -337,6 +340,10 @@ mod tests {
         fn as_any(&self) -> &dyn Any {
             self
         }
+
+        fn as_any_mut(&mut self) -> &mut dyn Any {
+            self
+        }
     }
 
     #[test]
@@ -419,6 +426,10 @@ mod tests {
         fn as_any(&self) -> &dyn Any {
             self
         }
+
+        fn as_any_mut(&mut self) -> &mut dyn Any {
+            self
+        }
     }
 
     impl Leaf for TestLeaf {
@@ -475,6 +486,10 @@ mod tests {
         fn as_any(&self) -> &dyn Any {
             self
         }
+
+        fn as_any_mut(&mut self) -> &mut dyn Any {
+            self
+        }
     }
 
     // Decoration is now a marker trait - no required methods
@@ -526,6 +541,10 @@ mod tests {
         }
 
         fn as_any(&self) -> &dyn Any {
+            self
+        }
+
+        fn as_any_mut(&mut self) -> &mut dyn Any {
             self
         }
     }
@@ -600,6 +619,10 @@ mod validation_tests {
         fn as_any(&self) -> &dyn Any {
             self
         }
+
+        fn as_any_mut(&mut self) -> &mut dyn Any {
+            self
+        }
     }
 
     impl Validatable for ValidatableLeaf {
@@ -668,6 +691,10 @@ mod visibility_tests {
         }
 
         fn as_any(&self) -> &dyn Any {
+            self
+        }
+
+        fn as_any_mut(&mut self) -> &mut dyn Any {
             self
         }
     }

@@ -46,6 +46,37 @@ impl NumericKind {
     pub const fn is_float(&self) -> bool {
         matches!(self, Self::F32 | Self::F64)
     }
+
+    /// Returns the size of this numeric type in bytes.
+    #[inline]
+    #[must_use]
+    pub const fn byte_size(&self) -> usize {
+        match self {
+            Self::I32 | Self::F32 => 4,
+            Self::I64 | Self::F64 => 8,
+        }
+    }
+
+    /// Returns the size of this numeric type in bits.
+    #[inline]
+    #[must_use]
+    pub const fn bit_size(&self) -> usize {
+        self.byte_size() * 8
+    }
+
+    /// Returns true if this is a 32-bit type.
+    #[inline]
+    #[must_use]
+    pub const fn is_32bit(&self) -> bool {
+        matches!(self, Self::I32 | Self::F32)
+    }
+
+    /// Returns true if this is a 64-bit type.
+    #[inline]
+    #[must_use]
+    pub const fn is_64bit(&self) -> bool {
+        matches!(self, Self::I64 | Self::F64)
+    }
 }
 
 /// Trait for numeric types that can be used with [`NumberSubtype`].

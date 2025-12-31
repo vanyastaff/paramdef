@@ -3,10 +3,9 @@
 //! Schema holds the structure of parameters shared via `Arc`.
 //! Multiple [`Context`](crate::context::Context) instances can share the same schema.
 
-use std::collections::HashMap;
 use std::sync::Arc;
 
-use crate::core::Key;
+use crate::core::{IndexMap, Key};
 use crate::node::Node;
 
 /// Immutable parameter definitions shared across contexts.
@@ -30,10 +29,9 @@ use crate::node::Node;
 /// ```
 #[derive(Debug, Clone)]
 pub struct Schema {
-    /// Root parameters indexed by key.
-    parameters: HashMap<Key, Arc<dyn Node>>,
-    /// Ordered list of parameter keys for iteration.
-    order: Vec<Key>,
+    /// Root parameters indexed by key, preserving insertion order.
+    /// `IndexMap` provides O(1) lookup while maintaining order.
+    parameters: IndexMap<Key, Arc<dyn Node>>,
 }
 
 impl Schema {
@@ -63,20 +61,19 @@ impl Schema {
 
     /// Returns an iterator over all parameters in insertion order.
     pub fn iter(&self) -> impl Iterator<Item = &Arc<dyn Node>> {
-        self.order.iter().filter_map(|k| self.parameters.get(k))
+        self.parameters.values()
     }
 
     /// Returns an iterator over parameter keys in insertion order.
     pub fn keys(&self) -> impl Iterator<Item = &Key> {
-        self.order.iter()
+        self.parameters.keys()
     }
 }
 
 /// Builder for constructing a [`Schema`].
 #[derive(Debug, Default)]
 pub struct SchemaBuilder {
-    parameters: HashMap<Key, Arc<dyn Node>>,
-    order: Vec<Key>,
+    parameters: IndexMap<Key, Arc<dyn Node>>,
 }
 
 impl SchemaBuilder {
@@ -92,10 +89,7 @@ impl SchemaBuilder {
     #[must_use]
     pub fn parameter(mut self, node: impl Node + 'static) -> Self {
         let key = node.key().clone();
-        self.parameters.insert(key.clone(), Arc::new(node));
-        if !self.order.contains(&key) {
-            self.order.push(key);
-        }
+        self.parameters.insert(key, Arc::new(node));
         self
     }
 
@@ -103,10 +97,7 @@ impl SchemaBuilder {
     #[must_use]
     pub fn parameter_arc(mut self, node: Arc<dyn Node>) -> Self {
         let key = node.key().clone();
-        self.parameters.insert(key.clone(), node);
-        if !self.order.contains(&key) {
-            self.order.push(key);
-        }
+        self.parameters.insert(key, node);
         self
     }
 
@@ -115,7 +106,6 @@ impl SchemaBuilder {
     pub fn build(self) -> Schema {
         Schema {
             parameters: self.parameters,
-            order: self.order,
         }
     }
 }

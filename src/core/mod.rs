@@ -8,6 +8,8 @@
 //! - [`StateFlags`] - Runtime parameter state (DIRTY, TOUCHED, VALID, etc.)
 //! - [`Value`] - Unified runtime representation for all parameter values
 //! - [`Error`] - Error types for parameter operations
+//! - [`FxHashMap`] / [`FxHashSet`] - Fast hash collections using `FxHash` algorithm
+//! - [`IndexMap`] - Insertion-ordered hash map
 
 mod error;
 mod flags;
@@ -26,3 +28,11 @@ pub use value::Value;
 /// Strings shorter than 23 bytes are stored inline on the stack,
 /// avoiding heap allocation. Use [`Key`] for parameter identifiers.
 pub type SmartStr = smartstring::SmartString<smartstring::LazyCompact>;
+
+// Re-export fast hash collections.
+// FxHash is ~2x faster than std HashMap for small keys like Key/SmartStr.
+pub use rustc_hash::{FxHashMap, FxHashSet};
+
+// Re-export IndexMap for ordered collections.
+// Preserves insertion order while maintaining O(1) lookup.
+pub use indexmap::IndexMap;

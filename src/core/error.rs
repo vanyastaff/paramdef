@@ -95,12 +95,14 @@ pub enum Error {
 impl Error {
     /// Creates a type mismatch error.
     #[must_use]
+    #[track_caller]
     pub const fn type_mismatch(expected: &'static str, actual: &'static str) -> Self {
         Self::TypeMismatch { expected, actual }
     }
 
     /// Creates a validation error.
     #[must_use]
+    #[track_caller]
     pub fn validation(code: impl Into<String>, message: impl Into<String>) -> Self {
         Self::Validation {
             code: code.into(),
@@ -111,6 +113,7 @@ impl Error {
 
     /// Creates a validation error with fields.
     #[must_use]
+    #[track_caller]
     pub fn validation_with_fields(
         code: impl Into<String>,
         message: impl Into<String>,
@@ -125,6 +128,7 @@ impl Error {
 
     /// Creates a missing required field error.
     #[must_use]
+    #[track_caller]
     pub fn missing_required(field: impl Into<String>) -> Self {
         Self::MissingRequired {
             field: field.into(),
@@ -133,18 +137,21 @@ impl Error {
 
     /// Creates an out of range error.
     #[must_use]
+    #[track_caller]
     pub const fn out_of_range(value: f64, min: f64, max: f64) -> Self {
         Self::OutOfRange { value, min, max }
     }
 
     /// Creates a length out of bounds error.
     #[must_use]
+    #[track_caller]
     pub const fn length_out_of_bounds(length: usize, min: usize, max: usize) -> Self {
         Self::LengthOutOfBounds { length, min, max }
     }
 
     /// Creates a pattern mismatch error.
     #[must_use]
+    #[track_caller]
     pub fn pattern_mismatch(pattern: impl Into<String>) -> Self {
         Self::PatternMismatch {
             pattern: pattern.into(),
@@ -153,6 +160,7 @@ impl Error {
 
     /// Creates a not in allowed values error.
     #[must_use]
+    #[track_caller]
     pub fn not_in_allowed_values(value: impl Into<String>) -> Self {
         Self::NotInAllowedValues {
             value: value.into(),
@@ -161,12 +169,14 @@ impl Error {
 
     /// Creates a not found error.
     #[must_use]
+    #[track_caller]
     pub fn not_found(key: impl Into<String>) -> Self {
         Self::NotFound { key: key.into() }
     }
 
     /// Creates a schema immutable error.
     #[must_use]
+    #[track_caller]
     pub fn schema_immutable(message: impl Into<String>) -> Self {
         Self::SchemaImmutable {
             message: message.into(),
@@ -175,6 +185,7 @@ impl Error {
 
     /// Creates a custom error.
     #[must_use]
+    #[track_caller]
     pub fn custom(message: impl Into<String>) -> Self {
         Self::Custom(message.into())
     }

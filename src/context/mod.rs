@@ -6,7 +6,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use crate::core::{Key, Value};
+use crate::core::{FxHashMap, Key, Value};
 use crate::runtime::ErasedRuntimeNode;
 use crate::schema::Schema;
 
@@ -39,7 +39,8 @@ pub struct Context {
     /// Shared schema definition.
     schema: Arc<Schema>,
     /// Runtime nodes indexed by key.
-    nodes: HashMap<Key, ErasedRuntimeNode>,
+    /// Uses `FxHashMap` for ~2x faster lookups with small keys.
+    nodes: FxHashMap<Key, ErasedRuntimeNode>,
 }
 
 impl Context {
@@ -48,7 +49,7 @@ impl Context {
     /// Instantiates a runtime node for each parameter in the schema.
     #[must_use]
     pub fn new(schema: Arc<Schema>) -> Self {
-        let mut nodes = HashMap::new();
+        let mut nodes = FxHashMap::default();
 
         for node in schema.iter() {
             let key = node.key().clone();
