@@ -81,15 +81,19 @@
 //!
 //! # Type System
 //!
-//! paramdef defines **14 node types** across **5 categories**:
+//! paramdef defines **23 node types** across **4 categories**:
 //!
 //! | Category   | Own Value | Children | Types | Module |
 //! |------------|-----------|----------|-------|--------|
-//! | **Group**      | ❌ | ✅ | 1 | [`types::group`] |
-//! | **Layout**     | ❌ | ✅ | 1 | [`types::group`] |
-//! | **Decoration** | ❌ | ❌ | 5 | [`types::decoration`] |
-//! | **Container**  | ✅ | ✅ | 6 | [`types::container`] |
-//! | **Leaf**       | ✅ | ❌ | 5 | [`types::leaf`] |
+//! | **Group**      | ❌ | ✅ | 2 | [`types::group`] |
+//! | **Decoration** | ❌ | ❌ | 8 | [`types::decoration`] |
+//! | **Container**  | ✅ | ✅ | 7 | [`types::container`] |
+//! | **Leaf**       | ✅ | ❌ | 6 | [`types::leaf`] |
+//!
+//! ### Group Types (Root Aggregators)
+//!
+//! - [`types::group::Group`] - Root parameter group
+//! - [`types::group::Panel`] - UI organization panel
 //!
 //! ### Leaf Types (Terminal Values)
 //!
@@ -98,20 +102,33 @@
 //! - [`types::leaf::Boolean`] - True/false toggles
 //! - [`types::leaf::Vector`] - Fixed-size numeric arrays
 //! - [`types::leaf::Select`] - Single or multiple selection
+//! - [`types::leaf::File`] - File uploads and references
 //!
 //! ### Container Types (Structured Data)
 //!
 //! - [`types::container::Object`] - Named field collection
 //! - [`types::container::List`] - Dynamic array with item template
 //! - [`types::container::Mode`] - Discriminated union (sum type)
+//! - [`types::container::Matrix`] - Table-based data entry
 //! - [`types::container::Routing`] - Connection/reference wrapper
 //! - [`types::container::Expirable`] - TTL-based wrapper
 //! - [`types::container::Reference`] - Template reference
 //!
+//! ### Decoration Types (Display-Only)
+//!
+//! - [`types::decoration::Notice`] - Info/warning/error messages
+//! - [`types::decoration::Separator`] - Visual dividers
+//! - [`types::decoration::Link`] - Clickable references
+//! - [`types::decoration::Code`] - Syntax-highlighted code
+//! - [`types::decoration::Image`] - Static images
+//! - [`types::decoration::Html`] - Rich HTML content
+//! - [`types::decoration::Video`] - Embedded video
+//! - [`types::decoration::Progress`] - Progress indicators
+//!
 //! # Module Organization
 //!
 //! - [`core`] - Foundation types (Key, Value, Metadata, Flags, Error)
-//! - [`types`] - All 14 node types organized by category
+//! - [`types`] - All 23 node types organized by category
 //! - [`subtype`] - Type-safe subtypes and units
 //! - [`schema`] - Schema and Context for managing parameters
 //! - [`runtime`] - Runtime state management

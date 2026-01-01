@@ -221,7 +221,7 @@ Uses `tokio::broadcast` for EventBus:
 
 Essential reading in `docs/`:
 - `01-ARCHITECTURE.md` - Core design decisions and philosophy
-- `02-TYPE-SYSTEM.md` - Complete reference for all 14 node types
+- `02-TYPE-SYSTEM.md` - Complete reference for all node types
 - `17-DESIGN-DECISIONS.md` - Rationale for major architectural choices
 - `18-ROADMAP.md` - Implementation plan and milestones
 

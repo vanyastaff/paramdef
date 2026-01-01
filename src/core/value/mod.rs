@@ -20,7 +20,8 @@ use std::sync::Arc;
 
 use super::{IndexMap, Key, SmartStr};
 
-// Re-export conversion traits (used by inherent methods and external users)
+// Modules contain inherent impl blocks for Value (no public items to export,
+// but re-exports kept for future extensibility)
 #[allow(unused_imports)]
 pub use convert::*;
 #[allow(unused_imports)]

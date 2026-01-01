@@ -1,28 +1,28 @@
-//! All 14 node types organized by category.
+//! All 23 node types organized by category.
 //!
 //! This module organizes the parameter type system into a clear hierarchy
-//! matching the five categories: Group, Layout, Decoration, Container, and Leaf.
+//! matching the four categories: Group, Decoration, Container, and Leaf.
 //!
 //! # Organization
 //!
-//! - **[`group`]** - Root aggregator (Group, Panel)
-//! - **[`leaf`]** - Terminal values (Text, Number, Boolean, Vector, Select)
-//! - **[`container`]** - Structured data (Object, List, Mode, Routing, Expirable, Reference)
-//! - **[`decoration`]** - Display-only (Notice, Separator, Link, Code, Image)
+//! - **[`group`]** - Root aggregators (Group, Panel)
+//! - **[`leaf`]** - Terminal values (Text, Number, Boolean, Vector, Select, File)
+//! - **[`container`]** - Structured data (Object, List, Mode, Matrix, Routing, Expirable, Reference)
+//! - **[`decoration`]** - Display-only (Notice, Separator, Link, Code, Image, Html, Video, Progress)
 //! - **[`traits`]** - Node trait system (Node, Leaf, Container, etc.)
 //! - **[`kind`]** - Node kind enumerations
 //!
 //! # Categories
 //!
-//! ## Group (1 type)
+//! ## Group (2 types)
 //!
-//! Root aggregator that can contain Layout, Decoration, Container, and Leaf nodes.
-//! Has NO own value, only delegates to children via `ValueAccess`.
+//! Root aggregators that can contain Decoration, Container, and Leaf nodes.
+//! Have NO own value, only delegate to children via `ValueAccess`.
 //!
 //! - [`group::Group`] - Root parameter group with layout
-//! - [`group::Panel`] - UI organization panel (technically Layout, grouped here)
+//! - [`group::Panel`] - UI organization panel
 //!
-//! ## Leaf (5 types)
+//! ## Leaf (6 types)
 //!
 //! Terminal values with NO children. These are the actual data-bearing parameters.
 //!
@@ -31,19 +31,21 @@
 //! - [`leaf::Boolean`] - True/false toggles
 //! - [`leaf::Vector`] - Fixed-size numeric arrays
 //! - [`leaf::Select`] - Single or multiple selection
+//! - [`leaf::File`] - File uploads and references
 //!
-//! ## Container (6 types)
+//! ## Container (7 types)
 //!
 //! Structured types that have BOTH own value AND children.
 //!
 //! - [`container::Object`] - Named field collection
 //! - [`container::List`] - Dynamic array with item template
 //! - [`container::Mode`] - Discriminated union (sum type)
+//! - [`container::Matrix`] - Table-based data entry
 //! - [`container::Routing`] - Connection/reference wrapper
 //! - [`container::Expirable`] - TTL-based wrapper
 //! - [`container::Reference`] - Template reference
 //!
-//! ## Decoration (5 types)
+//! ## Decoration (8 types)
 //!
 //! Display-only elements with NO value and NO children.
 //!
@@ -52,6 +54,9 @@
 //! - [`decoration::Link`] - Clickable references
 //! - [`decoration::Code`] - Syntax-highlighted code
 //! - [`decoration::Image`] - Static images
+//! - [`decoration::Html`] - Rich HTML content
+//! - [`decoration::Video`] - Embedded video
+//! - [`decoration::Progress`] - Progress indicators
 //!
 //! # Example
 //!

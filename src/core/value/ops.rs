@@ -21,6 +21,7 @@ impl Value {
     /// assert!(Value::array([]).is_empty());
     /// assert!(!Value::text("hello").is_empty());
     /// ```
+    #[inline]
     #[must_use]
     pub fn is_empty(&self) -> bool {
         match self {
@@ -45,6 +46,7 @@ impl Value {
     /// assert_eq!(Value::Int(42).type_name(), "int");
     /// assert_eq!(Value::text("hello").type_name(), "text");
     /// ```
+    #[inline]
     #[must_use]
     pub const fn type_name(&self) -> &'static str {
         match self {
