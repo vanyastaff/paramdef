@@ -411,6 +411,77 @@ Async validators for remote validation.
 
 ---
 
+## v1.3.0 - Convenience Containers
+
+**Status:** 📋 Future
+
+DX-friendly container helpers for common patterns.
+
+### Planned Features
+
+- **WithComment<T: Leaf>** - Field with optional comment
+  ```rust
+  let satisfaction = WithComment::new(
+      Select::single("satisfaction")
+          .options(["Good", "Bad", "Other"])
+          .build()
+  )
+  .placeholder("Explain your choice...")
+  .show_when(["Other", "Bad"])  // auto-generates visibility
+  .build();
+
+  // Produces: { "satisfaction": "Bad", "satisfaction_comment": "..." }
+  ```
+
+- **WithOther<Select>** - Select with "Other" text field
+  ```rust
+  let country = WithOther::new(
+      Select::single("country")
+          .options(["USA", "UK", "Other"])
+          .build()
+  )
+  .other_value("Other")
+  .other_placeholder("Enter country name")
+  .build();
+
+  // Produces: { "country": "Other", "country_other": "Canada" }
+  ```
+
+- **Nullable<T: Leaf>** - Enable checkbox + field
+  ```rust
+  let discount = Nullable::new(
+      Number::builder("discount")
+          .subtype(Percentage)
+          .build()
+  )
+  .checkbox_label("Apply discount")
+  .build();
+
+  // Produces: { "discount_enabled": true, "discount": 15 }
+  ```
+
+- **Confirmed<T: Leaf>** - Field with confirmation (e.g., password)
+  ```rust
+  let password = Confirmed::new(
+      Text::builder("password")
+          .subtype(Password)
+          .build()
+  )
+  .confirm_label("Confirm password")
+  .build();
+
+  // Auto-validates: password == password_confirm
+  ```
+
+### Design Philosophy
+
+These are **pure DX sugar** - convenient builders that generate appropriate structures (Object, Group, or other compositions) with visibility expressions. The underlying structure is an implementation detail; users get a clean, ergonomic API. Users can always build equivalent structures manually if needed.
+
+### Dependencies
+- Requires: v0.3.0 (Visibility), v0.6.0 (Validation for Confirmed)
+
+---
+
 ## v2.0.0 - Next Generation
 
 **Status:** 🔮 Future
