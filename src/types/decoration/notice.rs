@@ -5,8 +5,8 @@
 use std::any::Any;
 
 use crate::core::{Flags, Key, Metadata, SmartStr};
-use crate::types::kind::NoticeType;
 use crate::types::kind::NodeKind;
+use crate::types::kind::NoticeType;
 use crate::types::traits::{Decoration, Node};
 
 /// A display-only message decoration.

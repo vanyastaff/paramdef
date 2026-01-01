@@ -1,10 +1,10 @@
 //! Integration tests for leaf parameter types.
 
 use paramdef::core::{Flags, Value};
+use paramdef::subtype::{Email, NumericKind, Password, Percentage, Port, TextSubtype};
 use paramdef::types::kind::NodeKind;
 use paramdef::types::leaf::{Boolean, Number, Select, SelectOption, SelectionMode, Text, Vector};
 use paramdef::types::traits::{Leaf, Node};
-use paramdef::subtype::{Email, NumericKind, Password, Percentage, Port, TextSubtype};
 
 #[test]
 fn test_text_parameter_lifecycle() {

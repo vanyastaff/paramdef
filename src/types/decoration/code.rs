@@ -6,7 +6,7 @@ use std::any::Any;
 
 use crate::core::{Flags, Key, Metadata};
 use crate::types::kind::NodeKind;
-use crate::types::traits::{Decoration, Node, };
+use crate::types::traits::{Decoration, Node};
 
 /// A syntax-highlighted code decoration.
 ///

@@ -1,9 +1,9 @@
 //! Vector parameter type for fixed-size numeric arrays.
 
 use crate::core::{Flags, Key, Metadata, Value};
-use crate::types::kind::NodeKind;
-use crate::types::traits::{Leaf, Node, };
 use crate::subtype::{Numeric, NumericKind};
+use crate::types::kind::NodeKind;
+use crate::types::traits::{Leaf, Node};
 
 /// A vector parameter schema for fixed-size numeric arrays.
 ///

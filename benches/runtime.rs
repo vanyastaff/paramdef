@@ -6,9 +6,9 @@ use codspeed_criterion_compat::{Criterion, criterion_group, criterion_main};
 use criterion::{Criterion, criterion_group, criterion_main};
 
 use paramdef::core::Value;
-use paramdef::types::traits::Node;
-use paramdef::types::leaf::{Number, Text};
 use paramdef::runtime::{ErasedRuntimeNode, RuntimeNode};
+use paramdef::types::leaf::{Number, Text};
+use paramdef::types::traits::Node;
 use std::hint::black_box;
 use std::sync::Arc;
 
@@ -47,16 +47,14 @@ fn bench_erased_runtime_node(c: &mut Criterion) {
     });
 
     c.bench_function("erased_from_arc", |b| {
-        let schema: Arc<dyn paramdef::node::Node> =
-            Arc::new(Text::builder("name").build());
+        let schema: Arc<dyn Node> = Arc::new(Text::builder("name").build());
         b.iter(|| {
             black_box(ErasedRuntimeNode::from_arc(Arc::clone(&schema)));
         });
     });
 
     c.bench_function("erased_clone", |b| {
-        let schema: Arc<dyn paramdef::node::Node> =
-            Arc::new(Text::builder("name").build());
+        let schema: Arc<dyn Node> = Arc::new(Text::builder("name").build());
         let erased = ErasedRuntimeNode::from_arc(schema);
         b.iter(|| {
             black_box(erased.clone());

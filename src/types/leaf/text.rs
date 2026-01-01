@@ -1,9 +1,9 @@
 //! Text parameter type for string values.
 
 use crate::core::{Flags, Key, Metadata, SmartStr};
-use crate::types::kind::NodeKind;
-use crate::types::traits::{Leaf, Node, };
 use crate::subtype::TextSubtype;
+use crate::types::kind::NodeKind;
+use crate::types::traits::{Leaf, Node};
 
 /// A text parameter schema for string values.
 ///
@@ -64,9 +64,7 @@ impl Text<crate::subtype::Email> {
     /// Creates an email text parameter.
     #[must_use]
     pub fn email(key: impl Into<Key>) -> Self {
-        TextBuilder::new(key)
-            .subtype(crate::subtype::Email)
-            .build()
+        TextBuilder::new(key).subtype(crate::subtype::Email).build()
     }
 }
 

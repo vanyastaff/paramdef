@@ -1,9 +1,9 @@
 //! Number parameter type for numeric values.
 
 use crate::core::{Flags, Key, Metadata, Value};
-use crate::types::kind::NodeKind;
-use crate::types::traits::{Leaf, Node, };
 use crate::subtype::{NumberSubtype, NumberUnit};
+use crate::types::kind::NodeKind;
+use crate::types::traits::{Leaf, Node};
 
 /// A number parameter schema for numeric values.
 ///

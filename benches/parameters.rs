@@ -5,8 +5,8 @@ use codspeed_criterion_compat::{Criterion, criterion_group, criterion_main};
 #[cfg(not(codspeed))]
 use criterion::{Criterion, criterion_group, criterion_main};
 
-use paramdef::types::traits::{Leaf, Node};
 use paramdef::types::leaf::{Boolean, Number, Select, SelectOption, Text, Vector};
+use paramdef::types::traits::{Leaf, Node};
 use std::hint::black_box;
 
 fn bench_text_creation(c: &mut Criterion) {

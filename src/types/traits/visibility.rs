@@ -1,7 +1,5 @@
 //! Visibility trait for conditional display.
 
-#![cfg(feature = "visibility")]
-
 use crate::core::Value;
 use crate::types::traits::Node;
 

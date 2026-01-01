@@ -6,8 +6,8 @@ use codspeed_criterion_compat::{Criterion, criterion_group, criterion_main};
 use criterion::{Criterion, criterion_group, criterion_main};
 
 use paramdef::types::container::{List, Mode, Object};
-use paramdef::types::traits::Container;
 use paramdef::types::leaf::Text;
+use paramdef::types::traits::Container;
 use std::hint::black_box;
 
 // =============================================================================
@@ -39,7 +39,8 @@ fn bench_object_creation(c: &mut Criterion) {
         b.iter(|| {
             let mut builder = Object::builder("config").label("Configuration");
             for i in 0..10 {
-                builder = builder.field(format!("field_{i}"), Text::builder(format!("f{i}")).build());
+                builder =
+                    builder.field(format!("field_{i}"), Text::builder(format!("f{i}")).build());
             }
             black_box(builder.build().unwrap());
         });

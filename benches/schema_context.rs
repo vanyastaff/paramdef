@@ -7,8 +7,8 @@ use criterion::{Criterion, criterion_group, criterion_main};
 
 use paramdef::context::Context;
 use paramdef::core::Value;
-use paramdef::types::leaf::{Number, Text};
 use paramdef::schema::Schema;
+use paramdef::types::leaf::{Number, Text};
 use std::hint::black_box;
 use std::sync::Arc;
 

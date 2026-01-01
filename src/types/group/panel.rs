@@ -10,7 +10,7 @@ use std::sync::Arc;
 
 use crate::core::{Flags, Key, Metadata, SmartStr};
 use crate::types::kind::NodeKind;
-use crate::types::traits::{Layout, Node, };
+use crate::types::traits::{Layout, Node};
 
 /// Display type for a Panel.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]

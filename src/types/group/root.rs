@@ -9,7 +9,7 @@ use std::sync::Arc;
 
 use crate::core::{Flags, Key, Metadata, SmartStr};
 use crate::types::kind::NodeKind;
-use crate::types::traits::{GroupNode, Node, };
+use crate::types::traits::{GroupNode, Node};
 
 /// Layout style for a Group.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]

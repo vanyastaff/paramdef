@@ -178,18 +178,18 @@ pub mod context;
 pub mod runtime;
 pub mod schema;
 
-// Feature-gated modules (future)
-#[cfg(feature = "validation")]
-pub mod validation;
+// Feature-gated modules (TODO: implement these)
+// #[cfg(feature = "validation")]
+// pub mod validation;
 
-#[cfg(feature = "visibility")]
-pub mod visibility;
+// #[cfg(feature = "visibility")]
+// pub mod visibility;
 
-#[cfg(feature = "events")]
-pub mod event;
+// #[cfg(feature = "events")]
+// pub mod event;
 
-#[cfg(feature = "i18n")]
-pub mod i18n;
+// #[cfg(feature = "i18n")]
+// pub mod i18n;
 
 // Convenience re-exports
 pub mod prelude;

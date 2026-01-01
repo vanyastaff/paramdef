@@ -1,7 +1,5 @@
 //! Serde serialization support for Value.
 
-#![cfg(feature = "serde")]
-
 use std::fmt;
 use std::str::FromStr;
 use std::sync::Arc;

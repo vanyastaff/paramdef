@@ -5,8 +5,8 @@
 use std::any::Any;
 
 use crate::core::{Flags, Key, Metadata, SmartStr};
-use crate::types::kind::SeparatorStyle;
 use crate::types::kind::NodeKind;
+use crate::types::kind::SeparatorStyle;
 use crate::types::traits::{Decoration, Node};
 
 /// A visual separator decoration.

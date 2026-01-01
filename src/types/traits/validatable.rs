@@ -1,7 +1,5 @@
 //! Validatable trait for nodes that can be validated.
 
-#![cfg(feature = "validation")]
-
 use crate::core::Value;
 use crate::types::kind::NodeKind;
 use crate::types::traits::Node;

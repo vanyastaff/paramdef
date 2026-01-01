@@ -35,8 +35,8 @@
 //!
 //! ## Node Capabilities Matrix
 //!
-//! | Category   | Own Value | Children | ValueAccess | Count |
-//! |------------|-----------|----------|-------------|-------|
+//! | Category   | Own Value | Children | `ValueAccess` | Count |
+//! |------------|-----------|----------|---------------|-------|
 //! | Group      | ❌        | ✅       | ✅ (runtime)| 1     |
 //! | Layout     | ❌        | ✅       | ✅ (runtime)| 1     |
 //! | Decoration | ❌        | ❌       | ❌          | 5     |

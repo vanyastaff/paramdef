@@ -2,7 +2,7 @@
 
 use crate::core::{Flags, Key, Metadata, SmartStr, Value};
 use crate::types::kind::NodeKind;
-use crate::types::traits::{Leaf, Node, };
+use crate::types::traits::{Leaf, Node};
 
 /// Selection mode for the select parameter.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]

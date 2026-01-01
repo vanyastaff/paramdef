@@ -2,7 +2,7 @@
 
 use crate::core::{Flags, Key, Metadata, Value};
 use crate::types::kind::NodeKind;
-use crate::types::traits::{Leaf, Node, };
+use crate::types::traits::{Leaf, Node};
 
 /// A boolean parameter schema for true/false values.
 ///

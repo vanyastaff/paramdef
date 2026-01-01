@@ -10,7 +10,7 @@ use std::sync::Arc;
 
 use crate::core::{Flags, FxHashSet, Key, Metadata, SmartStr};
 use crate::types::kind::NodeKind;
-use crate::types::traits::{Container, Node, };
+use crate::types::traits::{Container, Node};
 
 /// A container with named fields.
 ///

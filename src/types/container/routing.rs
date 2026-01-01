@@ -9,7 +9,7 @@ use std::sync::Arc;
 
 use crate::core::{Flags, Key, Metadata, SmartStr};
 use crate::types::kind::NodeKind;
-use crate::types::traits::{Container, Node, };
+use crate::types::traits::{Container, Node};
 
 /// Options for routing connections.
 #[derive(Debug, Clone, Default)]
