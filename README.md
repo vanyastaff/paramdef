@@ -4,19 +4,23 @@
 [![Documentation](https://docs.rs/paramdef/badge.svg)](https://docs.rs/paramdef)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](LICENSE-MIT)
 
-**Type-safe parameter definition system for Rust** — The "serde of parameter schemas"
+**Universal Form Schema System for Rust** — Define once, use everywhere
 
-Inspired by Blender RNA, Unreal Engine UPROPERTY, Qt Property System, and Houdini Parameters.
+Like **Zod + React Hook Form** for TypeScript, but for Rust with compile-time safety.
+Inspired by **Blender RNA**, **Unreal UPROPERTY**, and **Qt Property System**.
+
+> The missing link between backend schemas and frontend forms in Rust.
 
 ## Overview
 
-`paramdef` provides a comprehensive system for defining, validating, and managing parameters in applications. Perfect for:
+`paramdef` is a **form schema definition system** that works across your entire stack:
 
-- 🎯 **Workflow Engines** - Define node parameters with validation
-- 🎨 **Visual Programming Tools** - Type-safe parameter schemas
-- 🔧 **No-Code Platforms** - Dynamic form generation
-- 🎮 **Game Engines** - Component properties and settings
-- ⚙️ **CLI Tools** - Configuration with validation
+- 🔧 **Backend**: Define schemas in Rust, validate API requests, generate OpenAPI specs
+- 🎨 **Frontend**: Same schemas render forms in WASM (Leptos, Yew, Dioxus)
+- ⚙️ **CLI**: Interactive prompts and configuration wizards
+- 🎮 **Tools**: Property editors, node-based workflows, no-code builders
+
+**Not just validation** — Rich metadata, layout hints, and semantic types built-in.
 
 ## Quick Start
 
@@ -47,6 +51,63 @@ ctx.set("username", Value::text("alice"));
 ctx.set("age", Value::Float(25.0));
 
 assert_eq!(ctx.get("username").and_then(|v| v.as_text()), Some("alice"));
+```
+
+## Why paramdef?
+
+### 🆚 vs JSON Schema + React JSON Schema Form
+
+- ✅ **Type-safe**: Compile-time validation, not just runtime
+- ✅ **Universal**: Backend, frontend (WASM), CLI — not just React
+- ✅ **Rich types**: 14 semantic types (Mode, Vector, etc.) vs 7 JSON primitives
+- ✅ **Layout system**: Built-in Panel/Group organization
+
+### 🆚 vs Zod + React Hook Form
+
+- ✅ **Backend-first**: Perfect for Rust servers generating forms
+- ✅ **Zero overhead**: Many checks at compile-time, not runtime
+- ✅ **Units system**: Physical units (Meters, Celsius, Pixels) built-in
+- ✅ **Discriminated unions**: Native Mode containers, not workarounds
+
+### 🆚 vs Bevy Reflection
+
+- ✅ **Not tied to ECS**: Use in any project, not just game engines
+- ✅ **Form-oriented**: Labels, descriptions, groups out of the box
+- ✅ **Schema/Runtime split**: Immutable definitions, mutable state
+
+### 🆚 vs validator/garde
+
+- ✅ **Not just validation**: Full schema definition with UI metadata
+- ✅ **Form generation**: Render forms automatically from schemas
+- ✅ **Layout hints**: Panel, Group, Decoration types for UI structure
+
+### ⚡ One Schema, Everywhere
+
+```rust
+// Define once
+let user_form = Object::builder("user")
+    .field("email", Text::email("email").required())
+    .field("age", Number::integer("age"))
+    .build();
+
+// Use in Axum backend
+async fn create_user(Json(data): Json<Value>) -> Result<(), Error> {
+    user_form.validate(&data)?;  // ← Backend validation
+    // ...
+}
+
+// Render in Leptos frontend
+#[component]
+fn UserForm() -> impl IntoView {
+    let form = user_form.clone();  // ← Same schema!
+    view! { <DynamicForm schema={form} /> }
+}
+
+// Interactive CLI prompt
+fn main() {
+    let values = user_form.prompt()?;  // ← CLI wizard
+    // ...
+}
 ```
 
 ## Key Features
@@ -210,6 +271,110 @@ assert!(password.flags().contains(Flags::REQUIRED));
 assert!(password.flags().contains(Flags::SENSITIVE));
 ```
 
+### Real-World: Workflow Engine Node
+
+```rust
+use paramdef::types::container::Object;
+use paramdef::types::leaf::{Number, Select};
+use paramdef::subtype::NumberUnit;
+
+// Image resize node with rich metadata
+let resize_node = Object::builder("resize")
+    .field("width",
+        Number::integer("width")
+            .label("Width")
+            .description("Output image width")
+            .unit(NumberUnit::Pixels)
+            .default(1920.0)
+            .required()
+            .build())
+    .field("height",
+        Number::integer("height")
+            .label("Height")
+            .unit(NumberUnit::Pixels)
+            .default(1080.0)
+            .build())
+    .field("method",
+        Select::single("method")
+            .label("Resize Method")
+            .options(vec![
+                SelectOption::simple("nearest"),
+                SelectOption::simple("bilinear"),
+                SelectOption::simple("bicubic"),
+            ])
+            .default_single("bilinear")
+            .build())
+    .build()
+    .unwrap();
+
+// ✅ Backend validates incoming JSON
+// ✅ Frontend renders form with labels, units, tooltips
+// ✅ CLI creates interactive wizard
+```
+
+### Real-World: Scientific Tool with Units
+
+```rust
+use paramdef::subtype::NumberUnit;
+
+// Physics simulation parameters
+let simulation = Object::builder("simulation")
+    .field("duration",
+        Number::builder("duration")
+            .label("Simulation Duration")
+            .unit(NumberUnit::Seconds)
+            .default(60.0)
+            .build())
+    .field("temperature",
+        Number::builder("temp")
+            .label("Initial Temperature")
+            .unit(NumberUnit::Celsius)
+            .default(20.0)
+            .build())
+    .field("mass",
+        Number::builder("mass")
+            .label("Object Mass")
+            .unit(NumberUnit::Kilograms)
+            .default(1.0)
+            .build())
+    .build()
+    .unwrap();
+
+// Units displayed in UI: "60 s", "20 °C", "1 kg"
+```
+
+### Real-World: Admin Panel CRUD Form
+
+```rust
+// Single schema definition works everywhere!
+let product_form = Object::builder("product")
+    .field("name", Text::builder("name")
+        .label("Product Name")
+        .required()
+        .build())
+    .field("sku", Text::builder("sku")
+        .label("SKU")
+        .description("Stock Keeping Unit")
+        .required()
+        .build())
+    .field("price", Number::builder("price")
+        .label("Price")
+        .unit(NumberUnit::Currency)
+        .default(0.0)
+        .build())
+    .field("active", Boolean::builder("active")
+        .label("Active")
+        .description("Is product visible in store?")
+        .default(true)
+        .build())
+    .build()
+    .unwrap();
+
+// ✅ Axum/Actix: Validate POST /api/products
+// ✅ Leptos/Yew: Render create/edit forms
+// ✅ OpenAPI: Generate spec automatically
+```
+
 ## Architecture
 
 ### Node Categories
@@ -239,25 +404,33 @@ assert!(password.flags().contains(Flags::SENSITIVE));
 
 ## Current Status
 
-**Version 0.2.0** - Active Development
+**Version 0.2.0** - Production-Ready Core
 
 ✅ **Complete:**
-- Core type system (14 types)
-- Three-layer architecture
-- Subtype system with compile-time constraints
-- Comprehensive benchmarks
-- Zero-warning build
+- **Core schema system** - 14 semantic types (Group, Layout, Container, Leaf, Decoration)
+- **Type safety** - Compile-time constraints via subtypes (Port, Email, Percentage, etc.)
+- **Blender-style units** - 60 subtypes × 17 unit categories
+- **Three-layer architecture** - Schema (immutable) / Runtime (mutable) / Value
+- **Rich metadata** - Labels, descriptions, groups, icons, tooltips
+- **Zero-warning build** - Production-ready code quality
 
-🚧 **In Progress:**
-- Validation system
-- Event system (undo/redo)
-- Visibility/conditional logic
-- i18n integration
+🚧 **Coming Soon (v0.3):**
+- **Form renderers** - Leptos, Yew, Dioxus bindings
+- **OpenAPI generation** - Auto-generate specs from schemas
+- **CLI prompts** - Interactive wizards via `dialoguer` integration
+- **Validation** - Custom validators, async validation
+- **Serialization** - Full serde support with JSON Schema export
+
+🔮 **Roadmap (v0.4+):**
+- **Event system** - Undo/redo, change tracking
+- **Visibility expressions** - Conditional fields (show/hide based on values)
+- **i18n** - Fluent integration for multilingual forms
+- **UI theming** - CSS-in-Rust styling hints
 
 📚 **Documentation:**
 - 18 comprehensive design documents in `docs/`
-- Full API documentation
-- Architecture guide
+- Full API documentation on docs.rs
+- Real-world examples and cookbook
 
 ## Installation
 
