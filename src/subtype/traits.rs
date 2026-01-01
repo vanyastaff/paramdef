@@ -338,6 +338,50 @@ pub trait TextSubtype: Debug + Clone + Copy + Default + Send + Sync + 'static {
     }
 }
 
+/// Trait for file subtypes with MIME type constraints.
+///
+/// File subtypes provide:
+/// - Accepted MIME types
+/// - Maximum file size hints
+/// - Semantic meaning for file handling
+///
+/// # Example
+///
+/// ```ignore
+/// use paramdef::subtype::{FileSubtype, Image, Pdf};
+///
+/// // Image accepts image/* MIME types
+/// let accept = Image::accept();
+///
+/// // Pdf accepts only application/pdf
+/// let accept = Pdf::accept();
+/// ```
+pub trait FileSubtype: Debug + Clone + Copy + Default + Send + Sync + 'static {
+    /// Returns the name of this subtype.
+    fn name() -> &'static str;
+
+    /// Returns the accepted MIME types for this subtype.
+    ///
+    /// Empty slice means any file type is accepted.
+    /// Wildcards like `image/*` are supported.
+    #[must_use]
+    fn accept() -> &'static [&'static str] {
+        &[]
+    }
+
+    /// Returns the maximum file size in bytes, if any.
+    #[must_use]
+    fn max_size() -> Option<u64> {
+        None
+    }
+
+    /// Returns whether multiple files are allowed by default.
+    #[must_use]
+    fn is_multiple() -> bool {
+        false
+    }
+}
+
 /// Trait for converting a subtype into a parameter builder.
 ///
 /// This enables the ergonomic subtype-first API pattern:

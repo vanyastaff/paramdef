@@ -3,6 +3,27 @@
 //! List represents a dynamic collection of items based on a template,
 //! similar to a JSON array. All items share the same structure defined
 //! by the item template.
+//!
+//! # Ranking Lists
+//!
+//! Lists can be marked as rankable when item order represents priority:
+//!
+//! ```ignore
+//! // Simple ranking - order = priority
+//! let priorities = List::builder("task_priorities")
+//!     .item_template(Text::builder("task").build())
+//!     .rankable()
+//!     .build()?;
+//!
+//! // Ranking with configuration
+//! let features = List::builder("feature_ranking")
+//!     .item_template(Text::builder("feature").build())
+//!     .ranking_config(RankingConfig::default()
+//!         .show_numbers(true)
+//!         .direction(RankDirection::HighestFirst))
+//!     .unique(true)
+//!     .build()?;
+//! ```
 
 use std::any::Any;
 use std::fmt;
@@ -11,6 +32,95 @@ use std::sync::Arc;
 use crate::core::{Flags, Key, Metadata, SmartStr};
 use crate::types::kind::NodeKind;
 use crate::types::traits::{Container, Node};
+
+// =============================================================================
+// RankingConfig
+// =============================================================================
+
+/// Direction of ranking (which end is highest priority).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum RankDirection {
+    /// First item = highest priority (rank 1).
+    #[default]
+    HighestFirst,
+    /// First item = lowest priority.
+    LowestFirst,
+}
+
+impl RankDirection {
+    /// Returns the name of this direction.
+    #[must_use]
+    pub const fn name(&self) -> &'static str {
+        match self {
+            Self::HighestFirst => "highest_first",
+            Self::LowestFirst => "lowest_first",
+        }
+    }
+}
+
+/// Configuration for rankable lists.
+///
+/// When a list is rankable, the order of items represents their priority
+/// or ranking. This is useful for:
+/// - Priority ordering
+/// - Preference rankings
+/// - Feature prioritization
+/// - Candidate ranking
+///
+/// # Example
+///
+/// ```ignore
+/// use paramdef::types::container::{List, RankingConfig, RankDirection};
+/// use paramdef::types::leaf::Text;
+///
+/// let ranking = List::builder("priorities")
+///     .item_template(Text::builder("item").build())
+///     .ranking_config(RankingConfig::default()
+///         .show_numbers(true)
+///         .direction(RankDirection::HighestFirst))
+///     .build()?;
+/// ```
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct RankingConfig {
+    /// Whether to display rank numbers in UI (1, 2, 3...).
+    show_numbers: bool,
+    /// Direction of ranking.
+    direction: RankDirection,
+}
+
+impl RankingConfig {
+    /// Creates a new ranking configuration with defaults.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Sets whether to show rank numbers in UI.
+    #[must_use]
+    pub fn show_numbers(mut self, show: bool) -> Self {
+        self.show_numbers = show;
+        self
+    }
+
+    /// Sets the ranking direction.
+    #[must_use]
+    pub fn direction(mut self, direction: RankDirection) -> Self {
+        self.direction = direction;
+        self
+    }
+
+    /// Returns whether rank numbers should be shown.
+    #[must_use]
+    pub fn shows_numbers(&self) -> bool {
+        self.show_numbers
+    }
+
+    /// Returns the ranking direction.
+    #[must_use]
+    pub fn get_direction(&self) -> RankDirection {
+        self.direction
+    }
+}
 
 /// A container for dynamic arrays of items.
 ///
@@ -43,6 +153,8 @@ pub struct List {
     max_items: Option<usize>,
     unique: bool,
     sortable: bool,
+    /// Ranking configuration (if item order represents priority).
+    ranking: Option<RankingConfig>,
     /// Cached children for Container trait
     children_cache: Arc<[Arc<dyn Node>]>,
 }
@@ -56,6 +168,7 @@ impl fmt::Debug for List {
             .field("max_items", &self.max_items)
             .field("unique", &self.unique)
             .field("sortable", &self.sortable)
+            .field("ranking", &self.ranking)
             .finish_non_exhaustive()
     }
 }
@@ -108,6 +221,19 @@ impl List {
     pub fn is_sortable(&self) -> bool {
         self.sortable
     }
+
+    /// Returns whether the list is rankable (order represents priority).
+    #[inline]
+    #[must_use]
+    pub fn is_rankable(&self) -> bool {
+        self.ranking.is_some()
+    }
+
+    /// Returns the ranking configuration, if set.
+    #[must_use]
+    pub fn ranking_config(&self) -> Option<&RankingConfig> {
+        self.ranking.as_ref()
+    }
 }
 
 impl Node for List {
@@ -153,6 +279,7 @@ pub struct ListBuilder {
     max_items: Option<usize>,
     unique: bool,
     sortable: bool,
+    ranking: Option<RankingConfig>,
 }
 
 impl fmt::Debug for ListBuilder {
@@ -167,6 +294,7 @@ impl fmt::Debug for ListBuilder {
             .field("max_items", &self.max_items)
             .field("unique", &self.unique)
             .field("sortable", &self.sortable)
+            .field("ranking", &self.ranking)
             .finish()
     }
 }
@@ -185,6 +313,7 @@ impl ListBuilder {
             max_items: None,
             unique: false,
             sortable: false,
+            ranking: None,
         }
     }
 
@@ -258,6 +387,47 @@ impl ListBuilder {
         self
     }
 
+    /// Makes this list rankable with default configuration.
+    ///
+    /// When a list is rankable, the order of items represents their priority.
+    /// First item = highest priority by default.
+    ///
+    /// This also enables sortable automatically.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// let priorities = List::builder("priorities")
+    ///     .item_template(Text::builder("task").build())
+    ///     .rankable()
+    ///     .build()?;
+    /// ```
+    #[must_use]
+    pub fn rankable(mut self) -> Self {
+        self.ranking = Some(RankingConfig::default());
+        self.sortable = true; // Ranking implies sortable
+        self
+    }
+
+    /// Makes this list rankable with custom configuration.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// let ranking = List::builder("candidates")
+    ///     .item_template(Text::builder("name").build())
+    ///     .ranking_config(RankingConfig::new()
+    ///         .show_numbers(true)
+    ///         .direction(RankDirection::HighestFirst))
+    ///     .build()?;
+    /// ```
+    #[must_use]
+    pub fn ranking_config(mut self, config: RankingConfig) -> Self {
+        self.ranking = Some(config);
+        self.sortable = true; // Ranking implies sortable
+        self
+    }
+
     /// Builds the List.
     ///
     /// # Errors
@@ -299,6 +469,7 @@ impl ListBuilder {
             max_items: self.max_items,
             unique: self.unique,
             sortable: self.sortable,
+            ranking: self.ranking,
             children_cache,
         })
     }
@@ -409,5 +580,81 @@ mod tests {
             .max_items(5)
             .build();
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_list_rankable_simple() {
+        let list = List::builder("priorities")
+            .item_template(Text::builder("task").build())
+            .rankable()
+            .build()
+            .unwrap();
+
+        assert!(list.is_rankable());
+        assert!(list.is_sortable()); // Ranking implies sortable
+        let config = list.ranking_config().unwrap();
+        assert!(!config.shows_numbers());
+        assert_eq!(config.get_direction(), RankDirection::HighestFirst);
+    }
+
+    #[test]
+    fn test_list_rankable_with_config() {
+        let list = List::builder("candidates")
+            .item_template(Text::builder("name").build())
+            .ranking_config(
+                RankingConfig::new()
+                    .show_numbers(true)
+                    .direction(RankDirection::LowestFirst),
+            )
+            .build()
+            .unwrap();
+
+        assert!(list.is_rankable());
+        assert!(list.is_sortable());
+        let config = list.ranking_config().unwrap();
+        assert!(config.shows_numbers());
+        assert_eq!(config.get_direction(), RankDirection::LowestFirst);
+    }
+
+    #[test]
+    fn test_list_not_rankable_by_default() {
+        let list = List::builder("items")
+            .item_template(Text::builder("item").build())
+            .build()
+            .unwrap();
+
+        assert!(!list.is_rankable());
+        assert!(list.ranking_config().is_none());
+    }
+
+    #[test]
+    fn test_list_rankable_with_unique() {
+        let list = List::builder("feature_ranking")
+            .item_template(Text::builder("feature").build())
+            .rankable()
+            .unique(true)
+            .min_items(3)
+            .build()
+            .unwrap();
+
+        assert!(list.is_rankable());
+        assert!(list.is_unique());
+        assert_eq!(list.min_items(), Some(3));
+    }
+
+    #[test]
+    fn test_ranking_config_builder() {
+        let config = RankingConfig::new()
+            .show_numbers(true)
+            .direction(RankDirection::LowestFirst);
+
+        assert!(config.shows_numbers());
+        assert_eq!(config.get_direction(), RankDirection::LowestFirst);
+    }
+
+    #[test]
+    fn test_rank_direction_name() {
+        assert_eq!(RankDirection::HighestFirst.name(), "highest_first");
+        assert_eq!(RankDirection::LowestFirst.name(), "lowest_first");
     }
 }

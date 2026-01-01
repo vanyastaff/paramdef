@@ -30,7 +30,8 @@
       "Bash(cargo clippy:*)",
       "Bash(cargo build:*)",
       "Bash(cargo bench:*)",
-      "Bash(cargo doc:*)"
+      "Bash(cargo doc:*)",
+      "WebSearch"
     ]
   }
 }

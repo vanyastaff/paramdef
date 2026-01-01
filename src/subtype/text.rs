@@ -13,6 +13,7 @@
 //! - [`IpAddressV4`] - IPv4 address
 //! - [`IpAddressV6`] - IPv6 address
 //! - [`Hostname`] - Hostname
+//! - [`MacAddress`] - MAC address
 //!
 //! ## Paths
 //! - [`FilePath`] - File path
@@ -33,12 +34,17 @@
 //! - [`DateTime`] - ISO 8601 datetime
 //! - [`Date`] - ISO 8601 date
 //! - [`Time`] - ISO 8601 time
+//! - [`Iso8601Duration`] - ISO 8601 duration (PT1H30M)
+//! - [`Cron`] - Cron expression
+//! - [`Timezone`] - Timezone identifier
 //!
 //! ## Structured Data
 //! - [`Json`] - JSON
 //! - [`Yaml`] - YAML
 //! - [`Toml`] - TOML
 //! - [`Xml`] - XML
+//! - [`Markdown`] - Markdown text
+//! - [`Html`] - HTML markup
 //!
 //! ## Code
 //! - [`Sql`] - SQL query
@@ -47,6 +53,20 @@
 //! - [`JavaScript`] - JavaScript code
 //! - [`Python`] - Python code
 //! - [`Rust`] - Rust code
+//!
+//! ## Contact
+//! - [`PhoneNumber`] - Phone number (E.164)
+//!
+//! ## Color
+//! - [`HexColor`] - Hex color (#RRGGBB)
+//!
+//! ## Localization
+//! - [`Country`] - ISO 3166 country code
+//! - [`Language`] - ISO 639 language code
+//! - [`Currency`] - ISO 4217 currency code
+//!
+//! ## Versioning
+//! - [`Semver`] - Semantic version
 
 use crate::define_text_subtype;
 
@@ -63,6 +83,7 @@ define_text_subtype!(Domain, "domain", placeholder: "example.com");
 define_text_subtype!(IpAddressV4, "ip_v4", pattern: r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", placeholder: "192.168.1.1");
 define_text_subtype!(IpAddressV6, "ip_v6", placeholder: "::1");
 define_text_subtype!(Hostname, "hostname", placeholder: "localhost");
+define_text_subtype!(MacAddress, "mac_address", pattern: r"^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$", placeholder: "00:1A:2B:3C:4D:5E");
 
 // === Paths ===
 
@@ -87,6 +108,9 @@ define_text_subtype!(Slug, "slug", pattern: r"^[a-z0-9]+(?:-[a-z0-9]+)*$", place
 define_text_subtype!(DateTime, "datetime", placeholder: "2024-01-01T00:00:00Z");
 define_text_subtype!(Date, "date", pattern: r"^\d{4}-\d{2}-\d{2}$", placeholder: "2024-01-01");
 define_text_subtype!(Time, "time", pattern: r"^\d{2}:\d{2}(:\d{2})?$", placeholder: "12:00:00");
+define_text_subtype!(Iso8601Duration, "iso8601_duration", pattern: r"^P", placeholder: "PT1H30M");
+define_text_subtype!(Cron, "cron", placeholder: "*/5 * * * *");
+define_text_subtype!(Timezone, "timezone", placeholder: "America/New_York");
 
 // === Structured Data ===
 
@@ -94,6 +118,8 @@ define_text_subtype!(Json, "json", multiline: true);
 define_text_subtype!(Yaml, "yaml", multiline: true);
 define_text_subtype!(Toml, "toml", multiline: true);
 define_text_subtype!(Xml, "xml", multiline: true);
+define_text_subtype!(Markdown, "markdown", multiline: true);
+define_text_subtype!(Html, "html", multiline: true);
 
 // === Code ===
 
@@ -103,6 +129,24 @@ define_text_subtype!(Expression, "expression", placeholder: "{{ value }}");
 define_text_subtype!(JavaScript, "javascript", code: "javascript");
 define_text_subtype!(Python, "python", code: "python");
 define_text_subtype!(Rust, "rust", code: "rust");
+
+// === Contact ===
+
+define_text_subtype!(PhoneNumber, "phone_number", placeholder: "+1 555 123 4567");
+
+// === Color ===
+
+define_text_subtype!(HexColor, "hex_color", pattern: r"^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$", placeholder: "#FF5733");
+
+// === Localization ===
+
+define_text_subtype!(Country, "country", pattern: r"^[A-Z]{2}$", placeholder: "US");
+define_text_subtype!(Language, "language", pattern: r"^[a-z]{2}(-[A-Z]{2})?$", placeholder: "en");
+define_text_subtype!(CurrencyCode, "currency_code", pattern: r"^[A-Z]{3}$", placeholder: "USD");
+
+// === Versioning ===
+
+define_text_subtype!(Semver, "semver", pattern: r"^\d+\.\d+\.\d+", placeholder: "1.0.0");
 
 #[cfg(test)]
 mod tests {
@@ -301,5 +345,98 @@ mod tests {
     fn test_rust() {
         assert_eq!(Rust::name(), "rust");
         assert_eq!(Rust::code_language(), Some("rust"));
+    }
+
+    // === Network (new) Tests ===
+
+    #[test]
+    fn test_mac_address() {
+        assert_eq!(MacAddress::name(), "mac_address");
+        assert!(MacAddress::pattern().is_some());
+        assert_eq!(MacAddress::placeholder(), Some("00:1A:2B:3C:4D:5E"));
+    }
+
+    // === Date/Time (new) Tests ===
+
+    #[test]
+    fn test_iso8601_duration() {
+        assert_eq!(Iso8601Duration::name(), "iso8601_duration");
+        assert!(Iso8601Duration::pattern().is_some());
+        assert_eq!(Iso8601Duration::placeholder(), Some("PT1H30M"));
+    }
+
+    #[test]
+    fn test_cron() {
+        assert_eq!(Cron::name(), "cron");
+        assert_eq!(Cron::placeholder(), Some("*/5 * * * *"));
+    }
+
+    #[test]
+    fn test_timezone() {
+        assert_eq!(Timezone::name(), "timezone");
+        assert_eq!(Timezone::placeholder(), Some("America/New_York"));
+    }
+
+    // === Structured Data (new) Tests ===
+
+    #[test]
+    fn test_markdown() {
+        assert_eq!(Markdown::name(), "markdown");
+        assert!(Markdown::is_multiline());
+    }
+
+    #[test]
+    fn test_html() {
+        assert_eq!(Html::name(), "html");
+        assert!(Html::is_multiline());
+    }
+
+    // === Contact Tests ===
+
+    #[test]
+    fn test_phone_number() {
+        assert_eq!(PhoneNumber::name(), "phone_number");
+        assert_eq!(PhoneNumber::placeholder(), Some("+1 555 123 4567"));
+    }
+
+    // === Color Tests ===
+
+    #[test]
+    fn test_hex_color() {
+        assert_eq!(HexColor::name(), "hex_color");
+        assert!(HexColor::pattern().is_some());
+        assert_eq!(HexColor::placeholder(), Some("#FF5733"));
+    }
+
+    // === Localization Tests ===
+
+    #[test]
+    fn test_country() {
+        assert_eq!(Country::name(), "country");
+        assert!(Country::pattern().is_some());
+        assert_eq!(Country::placeholder(), Some("US"));
+    }
+
+    #[test]
+    fn test_language() {
+        assert_eq!(Language::name(), "language");
+        assert!(Language::pattern().is_some());
+        assert_eq!(Language::placeholder(), Some("en"));
+    }
+
+    #[test]
+    fn test_currency_code() {
+        assert_eq!(CurrencyCode::name(), "currency_code");
+        assert!(CurrencyCode::pattern().is_some());
+        assert_eq!(CurrencyCode::placeholder(), Some("USD"));
+    }
+
+    // === Versioning Tests ===
+
+    #[test]
+    fn test_semver() {
+        assert_eq!(Semver::name(), "semver");
+        assert!(Semver::pattern().is_some());
+        assert_eq!(Semver::placeholder(), Some("1.0.0"));
     }
 }

@@ -3,6 +3,26 @@
 //! Object represents a structured collection of named child parameters,
 //! similar to a JSON object or a struct. Each field has a unique key
 //! and can be any Container or Leaf node type.
+//!
+//! # Extensible Objects
+//!
+//! Objects can be made extensible to allow additional key-value pairs
+//! beyond the fixed fields defined at schema time. This is similar to
+//! `additionalProperties` in JSON Schema.
+//!
+//! ```ignore
+//! // HTTP headers - any string keys with string values
+//! let headers = Object::builder("headers")
+//!     .extensible(Text::builder("value").build())
+//!     .build()?;
+//!
+//! // Environment variables with key pattern
+//! let env = Object::builder("environment")
+//!     .extensible_config(ExtensibleConfig::new(Text::builder("value").build())
+//!         .key_pattern(r"^[A-Z][A-Z0-9_]*$")
+//!         .max_properties(50))
+//!     .build()?;
+//! ```
 
 use std::any::Any;
 use std::fmt;
@@ -11,6 +31,133 @@ use std::sync::Arc;
 use crate::core::{Flags, FxHashSet, Key, Metadata, SmartStr};
 use crate::types::kind::NodeKind;
 use crate::types::traits::{Container, Node};
+
+// =============================================================================
+// ExtensibleConfig
+// =============================================================================
+
+/// Configuration for extensible objects that allow additional properties.
+///
+/// When an object is extensible, it can accept key-value pairs beyond
+/// the fixed fields defined in the schema. This is useful for:
+/// - HTTP headers
+/// - Environment variables
+/// - Custom metadata
+/// - User-defined properties
+///
+/// # Example
+///
+/// ```ignore
+/// use paramdef::types::container::{Object, ExtensibleConfig};
+/// use paramdef::types::leaf::Text;
+///
+/// let headers = Object::builder("headers")
+///     .extensible_config(ExtensibleConfig::new(Text::builder("value").build())
+///         .max_properties(100))
+///     .build()?;
+/// ```
+#[derive(Clone)]
+pub struct ExtensibleConfig {
+    /// Template node defining the type of additional values.
+    value_template: Arc<dyn Node>,
+    /// Optional regex pattern for validating keys.
+    key_pattern: Option<SmartStr>,
+    /// Minimum number of additional properties.
+    min_properties: Option<usize>,
+    /// Maximum number of additional properties.
+    max_properties: Option<usize>,
+}
+
+impl fmt::Debug for ExtensibleConfig {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ExtensibleConfig")
+            .field("value_template", &self.value_template.key())
+            .field("key_pattern", &self.key_pattern)
+            .field("min_properties", &self.min_properties)
+            .field("max_properties", &self.max_properties)
+            .finish()
+    }
+}
+
+impl ExtensibleConfig {
+    /// Creates a new extensible configuration with the given value template.
+    ///
+    /// The value template defines what type of values can be added
+    /// as additional properties.
+    #[must_use]
+    pub fn new(value_template: impl Node + 'static) -> Self {
+        Self {
+            value_template: Arc::new(value_template),
+            key_pattern: None,
+            min_properties: None,
+            max_properties: None,
+        }
+    }
+
+    /// Creates a new extensible configuration with an Arc-wrapped template.
+    #[must_use]
+    pub fn with_arc(value_template: Arc<dyn Node>) -> Self {
+        Self {
+            value_template,
+            key_pattern: None,
+            min_properties: None,
+            max_properties: None,
+        }
+    }
+
+    /// Sets a regex pattern for validating additional property keys.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// // Only allow SCREAMING_SNAKE_CASE keys
+    /// ExtensibleConfig::new(Text::builder("value").build())
+    ///     .key_pattern(r"^[A-Z][A-Z0-9_]*$")
+    /// ```
+    #[must_use]
+    pub fn key_pattern(mut self, pattern: impl Into<SmartStr>) -> Self {
+        self.key_pattern = Some(pattern.into());
+        self
+    }
+
+    /// Sets the minimum number of additional properties required.
+    #[must_use]
+    pub fn min_properties(mut self, min: usize) -> Self {
+        self.min_properties = Some(min);
+        self
+    }
+
+    /// Sets the maximum number of additional properties allowed.
+    #[must_use]
+    pub fn max_properties(mut self, max: usize) -> Self {
+        self.max_properties = Some(max);
+        self
+    }
+
+    /// Returns the value template node.
+    #[must_use]
+    pub fn value_template(&self) -> &Arc<dyn Node> {
+        &self.value_template
+    }
+
+    /// Returns the key pattern, if set.
+    #[must_use]
+    pub fn get_key_pattern(&self) -> Option<&str> {
+        self.key_pattern.as_deref()
+    }
+
+    /// Returns the minimum properties constraint.
+    #[must_use]
+    pub fn get_min_properties(&self) -> Option<usize> {
+        self.min_properties
+    }
+
+    /// Returns the maximum properties constraint.
+    #[must_use]
+    pub fn get_max_properties(&self) -> Option<usize> {
+        self.max_properties
+    }
+}
 
 /// A container with named fields.
 ///
@@ -35,6 +182,8 @@ pub struct Object {
     metadata: Metadata,
     flags: Flags,
     fields: Vec<(Key, Arc<dyn Node>)>,
+    /// Configuration for additional properties beyond fixed fields.
+    extensible: Option<ExtensibleConfig>,
     /// Cached children for Container trait
     children_cache: Arc<[Arc<dyn Node>]>,
 }
@@ -63,6 +212,7 @@ impl Object {
             metadata: Metadata::new(key),
             flags: Flags::empty(),
             fields: Vec::new(),
+            extensible: None,
             children_cache: Arc::from([]),
         }
     }
@@ -103,6 +253,19 @@ impl Object {
     /// Returns an iterator over field keys.
     pub fn field_keys(&self) -> impl Iterator<Item = &Key> {
         self.fields.iter().map(|(k, _)| k)
+    }
+
+    /// Returns whether this object is extensible (allows additional properties).
+    #[inline]
+    #[must_use]
+    pub fn is_extensible(&self) -> bool {
+        self.extensible.is_some()
+    }
+
+    /// Returns the extensible configuration, if set.
+    #[must_use]
+    pub fn extensible_config(&self) -> Option<&ExtensibleConfig> {
+        self.extensible.as_ref()
     }
 }
 
@@ -146,6 +309,7 @@ pub struct ObjectBuilder {
     description: Option<SmartStr>,
     flags: Flags,
     fields: Vec<(Key, Arc<dyn Node>)>,
+    extensible: Option<ExtensibleConfig>,
 }
 
 impl fmt::Debug for ObjectBuilder {
@@ -156,6 +320,7 @@ impl fmt::Debug for ObjectBuilder {
             .field("description", &self.description)
             .field("flags", &self.flags)
             .field("field_count", &self.fields.len())
+            .field("extensible", &self.extensible.is_some())
             .finish()
     }
 }
@@ -170,6 +335,7 @@ impl ObjectBuilder {
             description: None,
             flags: Flags::empty(),
             fields: Vec::new(),
+            extensible: None,
         }
     }
 
@@ -219,6 +385,43 @@ impl ObjectBuilder {
         self
     }
 
+    /// Makes this object extensible, allowing additional properties.
+    ///
+    /// The value template defines what type of values can be added
+    /// as additional properties beyond the fixed fields.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// // HTTP headers - string keys with string values
+    /// let headers = Object::builder("headers")
+    ///     .extensible(Text::builder("value").build())
+    ///     .build()?;
+    /// ```
+    #[must_use]
+    pub fn extensible(mut self, value_template: impl Node + 'static) -> Self {
+        self.extensible = Some(ExtensibleConfig::new(value_template));
+        self
+    }
+
+    /// Makes this object extensible with full configuration.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// // Environment variables with constraints
+    /// let env = Object::builder("environment")
+    ///     .extensible_config(ExtensibleConfig::new(Text::builder("value").build())
+    ///         .key_pattern(r"^[A-Z][A-Z0-9_]*$")
+    ///         .max_properties(50))
+    ///     .build()?;
+    /// ```
+    #[must_use]
+    pub fn extensible_config(mut self, config: ExtensibleConfig) -> Self {
+        self.extensible = Some(config);
+        self
+    }
+
     /// Builds the Object.
     ///
     /// # Errors
@@ -255,6 +458,7 @@ impl ObjectBuilder {
             metadata,
             flags: self.flags,
             fields: self.fields,
+            extensible: self.extensible,
             children_cache,
         })
     }
@@ -379,5 +583,70 @@ mod tests {
             .build();
 
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_object_extensible_simple() {
+        let obj = Object::builder("headers")
+            .extensible(Text::builder("value").build())
+            .build()
+            .unwrap();
+
+        assert!(obj.is_extensible());
+        let config = obj.extensible_config().unwrap();
+        assert!(config.get_key_pattern().is_none());
+        assert!(config.get_min_properties().is_none());
+        assert!(config.get_max_properties().is_none());
+    }
+
+    #[test]
+    fn test_object_extensible_with_config() {
+        let obj = Object::builder("environment")
+            .extensible_config(
+                ExtensibleConfig::new(Text::builder("value").build())
+                    .key_pattern(r"^[A-Z][A-Z0-9_]*$")
+                    .min_properties(1)
+                    .max_properties(50),
+            )
+            .build()
+            .unwrap();
+
+        assert!(obj.is_extensible());
+        let config = obj.extensible_config().unwrap();
+        assert_eq!(config.get_key_pattern(), Some(r"^[A-Z][A-Z0-9_]*$"));
+        assert_eq!(config.get_min_properties(), Some(1));
+        assert_eq!(config.get_max_properties(), Some(50));
+    }
+
+    #[test]
+    fn test_object_mixed_fixed_and_extensible() {
+        let obj = Object::builder("config")
+            .field("name", Text::builder("name").required().build())
+            .field("version", Text::builder("version").build())
+            .extensible(Text::builder("value").build())
+            .build()
+            .unwrap();
+
+        assert_eq!(obj.field_count(), 2);
+        assert!(obj.has_field("name"));
+        assert!(obj.has_field("version"));
+        assert!(obj.is_extensible());
+    }
+
+    #[test]
+    fn test_object_not_extensible_by_default() {
+        let obj = Object::builder("simple")
+            .field("key", Text::builder("key").build())
+            .build()
+            .unwrap();
+
+        assert!(!obj.is_extensible());
+        assert!(obj.extensible_config().is_none());
+    }
+
+    #[test]
+    fn test_extensible_config_value_template() {
+        let config = ExtensibleConfig::new(Text::builder("value").build());
+        assert_eq!(config.value_template().key().as_str(), "value");
     }
 }

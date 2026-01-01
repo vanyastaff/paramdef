@@ -8,12 +8,22 @@
 //! - [`Rating`] - Rating value (1-5)
 //! - [`ByteCount`] - Byte count (file sizes)
 //! - [`Index`] - Zero-based index
+//! - [`Year`] - Calendar year
+//! - [`Month`] - Month (1-12)
+//! - [`Day`] - Day of month (1-31)
+//! - [`Hour`] - Hour (0-23)
+//! - [`Minute`] - Minute (0-59)
+//! - [`Second`] - Second (0-59)
+//! - [`Priority`] - Priority level (1-10)
+//! - [`Pixels`] - Pixel count
 //!
 //! ## Float-Only Subtypes
 //! - [`Factor`] - Multiplicative factor (0-1)
 //! - [`Percentage`] - Percentage (0-100)
 //! - [`Angle`] - Angle in degrees (0-360)
 //! - [`AngleRadians`] - Angle in radians (0-2π)
+//! - [`Latitude`] - Geographic latitude (-90 to 90)
+//! - [`Longitude`] - Geographic longitude (-180 to 180)
 //!
 //! ## Universal Subtypes
 //! - [`Distance`] - Distance measurement
@@ -33,12 +43,22 @@ define_number_subtype!(Count, int_only, u64, "count");
 define_number_subtype!(Rating, int_only, u8, "rating", range: (1, 5));
 define_number_subtype!(ByteCount, int_only, u64, "byte_count");
 define_number_subtype!(Index, int_only, usize, "index");
+define_number_subtype!(Year, int_only, i32, "year");
+define_number_subtype!(Month, int_only, u8, "month", range: (1, 12));
+define_number_subtype!(Day, int_only, u8, "day", range: (1, 31));
+define_number_subtype!(Hour, int_only, u8, "hour", range: (0, 23));
+define_number_subtype!(Minute, int_only, u8, "minute", range: (0, 59));
+define_number_subtype!(Second, int_only, u8, "second", range: (0, 59));
+define_number_subtype!(Priority, int_only, u8, "priority", range: (1, 10));
+define_number_subtype!(Pixels, int_only, u32, "pixels");
 
 // === Float-Only Subtypes ===
 
 define_number_subtype!(Factor, float_only, f64, "factor", range: (0.0, 1.0));
 define_number_subtype!(Percentage, float_only, f64, "percentage", range: (0.0, 100.0));
 define_number_subtype!(Angle, float_only, f64, "angle", range: (0.0, 360.0));
+define_number_subtype!(Latitude, float_only, f64, "latitude", range: (-90.0, 90.0));
+define_number_subtype!(Longitude, float_only, f64, "longitude", range: (-180.0, 180.0));
 
 /// Angle in radians.
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
@@ -165,5 +185,69 @@ mod tests {
     #[test]
     fn test_generic_number_subtype() {
         assert_eq!(GenericNumber::name(), "generic");
+    }
+
+    // === New Integer-Only Tests ===
+
+    #[test]
+    fn test_year_subtype() {
+        assert_eq!(Year::name(), "year");
+        assert_eq!(Year::default_range(), None);
+    }
+
+    #[test]
+    fn test_month_subtype() {
+        assert_eq!(Month::name(), "month");
+        assert_eq!(Month::default_range(), Some((1, 12)));
+    }
+
+    #[test]
+    fn test_day_subtype() {
+        assert_eq!(Day::name(), "day");
+        assert_eq!(Day::default_range(), Some((1, 31)));
+    }
+
+    #[test]
+    fn test_hour_subtype() {
+        assert_eq!(Hour::name(), "hour");
+        assert_eq!(Hour::default_range(), Some((0, 23)));
+    }
+
+    #[test]
+    fn test_minute_subtype() {
+        assert_eq!(Minute::name(), "minute");
+        assert_eq!(Minute::default_range(), Some((0, 59)));
+    }
+
+    #[test]
+    fn test_second_subtype() {
+        assert_eq!(Second::name(), "second");
+        assert_eq!(Second::default_range(), Some((0, 59)));
+    }
+
+    #[test]
+    fn test_priority_subtype() {
+        assert_eq!(Priority::name(), "priority");
+        assert_eq!(Priority::default_range(), Some((1, 10)));
+    }
+
+    #[test]
+    fn test_pixels_subtype() {
+        assert_eq!(Pixels::name(), "pixels");
+        assert_eq!(Pixels::default_range(), None);
+    }
+
+    // === New Float-Only Tests ===
+
+    #[test]
+    fn test_latitude_subtype() {
+        assert_eq!(Latitude::name(), "latitude");
+        assert_eq!(Latitude::default_range(), Some((-90.0, 90.0)));
+    }
+
+    #[test]
+    fn test_longitude_subtype() {
+        assert_eq!(Longitude::name(), "longitude");
+        assert_eq!(Longitude::default_range(), Some((-180.0, 180.0)));
     }
 }

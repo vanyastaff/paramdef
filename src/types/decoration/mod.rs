@@ -10,6 +10,9 @@
 //! - [`Link`] - Clickable references to docs/external resources
 //! - [`Code`] - Syntax-highlighted code snippets
 //! - [`Image`] - Static image display
+//! - [`Html`] - Rich HTML content with sanitization options
+//! - [`Video`] - Embedded video content (YouTube/Vimeo/direct URL)
+//! - [`Progress`] - Progress bars, spinners, and step indicators
 //!
 //! # Example
 //!
@@ -28,13 +31,19 @@
 //! ```
 
 mod code;
+mod html;
 mod image;
 mod link;
 mod notice;
+mod progress;
 mod separator;
+mod video;
 
 pub use code::{Code, CodeBuilder};
+pub use html::{Html, HtmlBuilder, SanitizeLevel};
 pub use image::{Image, ImageAlignment, ImageBuilder, ImageSource};
 pub use link::{Link, LinkBuilder};
 pub use notice::{Notice, NoticeBuilder};
+pub use progress::{Progress, ProgressBuilder, ProgressOptions, ProgressSource, ProgressStyle};
 pub use separator::{Separator, SeparatorBuilder};
+pub use video::{Video, VideoBuilder, VideoOptions, VideoSize, VideoSource};

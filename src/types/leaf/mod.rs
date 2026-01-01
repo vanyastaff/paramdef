@@ -10,11 +10,12 @@
 //! - [`Boolean`] - Simple true/false toggles
 //! - [`Vector`] - Fixed-size numeric arrays (Position, Color, etc.)
 //! - [`Select`] - Single or multiple selection from options
+//! - [`File`] - File uploads and references with MIME constraints
 //!
 //! # Example
 //!
 //! ```ignore
-//! use paramdef::types::leaf::{Text, Number, Boolean};
+//! use paramdef::types::leaf::{Text, Number, Boolean, File};
 //! use paramdef::core::Flags;
 //!
 //! // Text with validation
@@ -36,6 +37,11 @@
 //!     .label("Enabled")
 //!     .default(true)
 //!     .build();
+//!
+//! // File upload
+//! let avatar = File::image("avatar")
+//!     .max_size_mb(5)
+//!     .build();
 //! ```
 //!
 //! # Subtypes
@@ -50,12 +56,14 @@
 //! ```
 
 mod boolean;
+mod file;
 mod number;
 mod select;
 mod text;
 mod vector;
 
 pub use boolean::{Boolean, BooleanBuilder};
+pub use file::{File, FileBuilder};
 pub use number::{Number, NumberBuilder};
 pub use select::{OptionSource, Select, SelectBuilder, SelectOption, SelectionMode};
 pub use text::{Text, TextBuilder};

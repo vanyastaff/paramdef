@@ -8,6 +8,7 @@
 //! - [`Object`] - Named field collection (like structs)
 //! - [`List`] - Dynamic array with item template
 //! - [`Mode`] - Discriminated union (sum type / tagged union)
+//! - [`Matrix`] - Table-based data entry (rows × columns)
 //! - [`Routing`] - Connection/reference wrapper
 //! - [`Expirable`] - TTL-based wrapper for temporary data
 //! - [`Reference`] - Template reference for reusable definitions
@@ -28,14 +29,16 @@
 
 mod expirable;
 mod list;
+mod matrix;
 mod mode;
 mod object;
 mod reference;
 mod routing;
 
 pub use expirable::{Expirable, ExpirableBuilder, ExpirableOptions};
-pub use list::{List, ListBuilder};
+pub use list::{List, ListBuilder, RankDirection, RankingConfig};
+pub use matrix::{Matrix, MatrixBuilder, MatrixCellType, MatrixColumn, MatrixRow};
 pub use mode::{Mode, ModeBuilder, ModeVariant};
-pub use object::{Object, ObjectBuilder};
+pub use object::{ExtensibleConfig, Object, ObjectBuilder};
 pub use reference::{Reference, ReferenceBuilder};
 pub use routing::{Routing, RoutingBuilder, RoutingOptions};

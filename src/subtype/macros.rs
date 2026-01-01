@@ -336,7 +336,90 @@ macro_rules! define_text_subtype {
     };
 }
 
+/// Defines a file subtype with MIME type constraints.
+///
+/// # Example
+///
+/// ```ignore
+/// use paramdef::define_file_subtype;
+///
+/// define_file_subtype!(GenericFile, "file");
+/// define_file_subtype!(Image, "image", accept: ["image/*"]);
+/// define_file_subtype!(Avatar, "avatar", accept: ["image/jpeg", "image/png"], max_size: 5242880);
+/// ```
+#[macro_export]
+macro_rules! define_file_subtype {
+    // Basic (no constraints)
+    ($name:ident, $str_name:literal) => {
+        /// File subtype.
+        #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
+        pub struct $name;
+
+        impl $crate::subtype::FileSubtype for $name {
+            fn name() -> &'static str {
+                $str_name
+            }
+        }
+    };
+
+    // With accept MIME types
+    ($name:ident, $str_name:literal, accept: [$($mime:literal),+ $(,)?]) => {
+        /// File subtype with MIME constraints.
+        #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
+        pub struct $name;
+
+        impl $crate::subtype::FileSubtype for $name {
+            fn name() -> &'static str {
+                $str_name
+            }
+
+            fn accept() -> &'static [&'static str] {
+                &[$($mime),+]
+            }
+        }
+    };
+
+    // With accept and max_size
+    ($name:ident, $str_name:literal, accept: [$($mime:literal),+ $(,)?], max_size: $max_size:expr) => {
+        /// File subtype with MIME and size constraints.
+        #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
+        pub struct $name;
+
+        impl $crate::subtype::FileSubtype for $name {
+            fn name() -> &'static str {
+                $str_name
+            }
+
+            fn accept() -> &'static [&'static str] {
+                &[$($mime),+]
+            }
+
+            fn max_size() -> Option<u64> {
+                Some($max_size)
+            }
+        }
+    };
+
+    // With max_size only
+    ($name:ident, $str_name:literal, max_size: $max_size:expr) => {
+        /// File subtype with size constraint.
+        #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
+        pub struct $name;
+
+        impl $crate::subtype::FileSubtype for $name {
+            fn name() -> &'static str {
+                $str_name
+            }
+
+            fn max_size() -> Option<u64> {
+                Some($max_size)
+            }
+        }
+    };
+}
+
 // Re-export macros at crate level
+pub use define_file_subtype;
 pub use define_number_subtype;
 pub use define_text_subtype;
 pub use define_vector_subtype;
