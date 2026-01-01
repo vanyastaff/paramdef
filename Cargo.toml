@@ -22,7 +22,7 @@ unexpected_cfgs = { level = "warn", check-cfg = ['cfg(codspeed)'] }
 default = []
 visibility = []
 validation = []
-serde = ["dep:serde", "dep:serde_json", "dep:base64", "smartstring/serde"]
+serde = ["dep:serde", "dep:serde_json", "dep:base64", "smartstring/serde", "indexmap/serde"]
 events = ["dep:tokio"]
 i18n = ["dep:fluent"]
 chrono = ["dep:chrono"]

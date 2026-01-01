@@ -16,10 +16,9 @@ mod ops;
 #[cfg(feature = "serde")]
 mod serde_support;
 
-use std::collections::HashMap;
 use std::sync::Arc;
 
-use super::{Key, SmartStr};
+use super::{IndexMap, Key, SmartStr};
 
 // Re-export conversion traits (used by inherent methods and external users)
 #[allow(unused_imports)]
@@ -70,8 +69,11 @@ pub enum Value {
     /// Ordered array of values.
     Array(Arc<[Value]>),
 
-    /// Key-value object.
-    Object(Arc<HashMap<Key, Value>>),
+    /// Key-value object with insertion-order preservation.
+    ///
+    /// Uses [`IndexMap`] to maintain the order in which fields were inserted,
+    /// providing consistent serialization and iteration order.
+    Object(Arc<IndexMap<Key, Value>>),
 
     /// Binary data.
     Binary(Arc<[u8]>),
@@ -142,8 +144,8 @@ impl Value {
 
     /// Creates an object value from key-value pairs.
     ///
-    /// Uses the iterator's `size_hint()` to pre-allocate the `HashMap`,
-    /// avoiding rehashing during construction.
+    /// Uses the iterator's `size_hint()` to pre-allocate the `IndexMap`,
+    /// avoiding rehashing during construction. Field order is preserved.
     ///
     /// # Examples
     ///
@@ -159,7 +161,7 @@ impl Value {
         let iter = pairs.into_iter();
         let (lower_bound, _) = iter.size_hint();
 
-        let mut map = HashMap::with_capacity(lower_bound);
+        let mut map = IndexMap::with_capacity(lower_bound);
         map.extend(iter.map(|(k, v)| (k.into(), v)));
 
         Self::Object(Arc::new(map))
@@ -169,7 +171,7 @@ impl Value {
     ///
     /// Use this when you know the number of key-value pairs in advance
     /// to avoid rehashing. For dynamic sizes, use [`Value::object`] which
-    /// uses the iterator's `size_hint()`.
+    /// uses the iterator's `size_hint()`. Field order is preserved.
     ///
     /// # Examples
     ///
@@ -187,7 +189,7 @@ impl Value {
         capacity: usize,
         pairs: impl IntoIterator<Item = (impl Into<Key>, Value)>,
     ) -> Self {
-        let mut map = HashMap::with_capacity(capacity);
+        let mut map = IndexMap::with_capacity(capacity);
         map.extend(pairs.into_iter().map(|(k, v)| (k.into(), v)));
 
         Self::Object(Arc::new(map))

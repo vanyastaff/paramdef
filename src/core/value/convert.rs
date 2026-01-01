@@ -1,8 +1,6 @@
 //! Type conversion and accessor methods for Value.
 
-use std::collections::HashMap;
-
-use super::{Key, Value};
+use super::{IndexMap, Key, Value};
 
 impl Value {
     // === Type checking methods ===
@@ -125,7 +123,7 @@ impl Value {
     /// Returns the object if this is an `Object`.
     #[inline]
     #[must_use]
-    pub fn as_object(&self) -> Option<&HashMap<Key, Value>> {
+    pub fn as_object(&self) -> Option<&IndexMap<Key, Value>> {
         match self {
             Self::Object(obj) => Some(obj),
             _ => None,

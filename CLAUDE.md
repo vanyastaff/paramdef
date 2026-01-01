@@ -88,15 +88,14 @@ cargo deny check licenses
    - Unified `Value` enum for all parameter types
    - Serialization target
 
-### Node Hierarchy (14 Core Types)
+### Node Hierarchy (23 Types)
 
-The system defines exactly 14 node types across five categories:
+The system defines 23 node types across five categories:
 
-- **Group (1)**: Root aggregator, no own value, has ValueAccess
-- **Layout (1)**: UI organization (Panel), no own value, has ValueAccess
-- **Decoration (1)**: Display-only (Notice), no value, no children
-- **Container (6)**: Object, List, Mode, Routing, Expirable, Ref - have own value + children
-- **Leaf (5)**: Text, Number, Boolean, Vector, Select - have own value, no children
+- **Group (2)**: Group, Panel - root aggregators, no own value, have ValueAccess
+- **Decoration (8)**: Notice, Separator, Link, Code, Image, Html, Video, Progress - display-only, no value, no children
+- **Container (7)**: Object, List, Mode, Matrix, Routing, Expirable, Reference - have own value + children
+- **Leaf (6)**: Text, Number, Boolean, Vector, Select, File - have own value, no children
 
 **Key Invariants:**
 - Schema is ALWAYS immutable - runtime state lives in Context
@@ -172,7 +171,7 @@ pub struct NumberParameter { ... }
 ### Design Patterns
 
 **Composition over proliferation:**
-- 14 base types + subtypes + flags = thousands of combinations
+- 23 base types + subtypes + flags = thousands of combinations
 - No specialized types like `Password` - use `Text` + `subtype: Secret` + `flags: SENSITIVE`
 
 **Type-safe API without const generics:**
@@ -240,7 +239,7 @@ Essential reading in `docs/`:
 2. Implement the `Node` trait + category-specific trait
 3. If has own Value: implement `Validatable` trait (if validation feature enabled)
 4. If can contain children: implement `ValueAccess` trait
-5. All 14 types implement `Visibility` trait (if visibility feature enabled)
+5. All types implement `Visibility` trait (if visibility feature enabled)
 6. Add builder pattern with `::builder()` constructor
 
 ### Adding a New Subtype

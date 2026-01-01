@@ -47,9 +47,10 @@ impl Context {
     /// Creates a new context from a schema.
     ///
     /// Instantiates a runtime node for each parameter in the schema.
+    /// Pre-allocates the hash map with the exact capacity to avoid rehashing.
     #[must_use]
     pub fn new(schema: Arc<Schema>) -> Self {
-        let mut nodes = FxHashMap::default();
+        let mut nodes = FxHashMap::with_capacity_and_hasher(schema.len(), Default::default());
 
         for node in schema.iter() {
             let key = node.key().clone();
@@ -136,6 +137,40 @@ impl Context {
             .filter(|(_, n)| n.state().is_dirty())
             .filter_map(|(k, n)| n.value().map(|v| (k.clone(), v.clone())))
             .collect()
+    }
+
+    /// Returns an iterator over dirty values without cloning.
+    ///
+    /// This is a zero-allocation alternative to [`collect_dirty_values()`](Self::collect_dirty_values)
+    /// that returns references instead of owned values. Use this when you need to inspect
+    /// dirty values without collecting them into a new map.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use paramdef::context::Context;
+    /// use paramdef::schema::Schema;
+    /// use paramdef::types::leaf::Text;
+    /// use paramdef::core::Value;
+    /// use std::sync::Arc;
+    ///
+    /// let schema = Arc::new(Schema::builder()
+    ///     .parameter(Text::builder("name").build())
+    ///     .parameter(Text::builder("email").build())
+    ///     .build());
+    ///
+    /// let mut ctx = Context::new(schema);
+    /// ctx.set("name", Value::text("Alice"));
+    ///
+    /// for (key, value) in ctx.dirty_values() {
+    ///     println!("{}: {:?}", key, value);
+    /// }
+    /// ```
+    pub fn dirty_values(&self) -> impl Iterator<Item = (&Key, &Value)> + '_ {
+        self.nodes
+            .iter()
+            .filter(|(_, n)| n.state().is_dirty())
+            .filter_map(|(k, n)| n.value().map(|v| (k, v)))
     }
 
     /// Returns `true` if any parameter is dirty.

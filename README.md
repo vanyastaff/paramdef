@@ -59,7 +59,7 @@ assert_eq!(ctx.get("username").and_then(|v| v.as_text()), Some("alice"));
 
 - ✅ **Type-safe**: Compile-time validation, not just runtime
 - ✅ **Universal**: Backend, frontend (WASM), CLI — not just React
-- ✅ **Rich types**: 14 semantic types (Mode, Vector, etc.) vs 7 JSON primitives
+- ✅ **Rich types**: 23 semantic types (Mode, Vector, Matrix, etc.) vs 7 JSON primitives
 - ✅ **Layout system**: Built-in Panel/Group organization
 
 ### 🆚 vs Zod + React Hook Form
@@ -127,19 +127,19 @@ fn main() {
 └─────────────────────────────────────┘
 ```
 
-### 📊 14 Core Types
+### 📊 23 Node Types
 
 | Category   | Own Value | Children | Types |
 |------------|-----------|----------|-------|
-| **Group**      | ❌ | ✅ | 1 - Root aggregator |
-| **Layout**     | ❌ | ✅ | 1 - UI organization |
-| **Decoration** | ❌ | ❌ | 5 - Display elements |
-| **Container**  | ✅ | ✅ | 6 - Structured data |
-| **Leaf**       | ✅ | ❌ | 5 - Terminal values |
+| **Group**      | ❌ | ✅ | 2 - Root aggregators |
+| **Decoration** | ❌ | ❌ | 8 - Display elements |
+| **Container**  | ✅ | ✅ | 7 - Structured data |
+| **Leaf**       | ✅ | ❌ | 6 - Terminal values |
 
-**Leaf Types:** Text, Number, Boolean, Vector, Select
-**Containers:** Object, List, Mode, Routing, Expirable, Reference
-**Decorations:** Notice, Separator, Link, Code, Image
+**Leaf Types:** Text, Number, Boolean, Vector, Select, File
+**Containers:** Object, List, Mode, Matrix, Routing, Expirable, Reference
+**Decorations:** Notice, Separator, Link, Code, Image, Html, Video, Progress
+**Group:** Group, Panel
 
 ### 🎯 Type-Safe Subtypes
 
@@ -379,35 +379,31 @@ let product_form = Object::builder("product")
 
 ### Node Categories
 
-**Group** (1 type)
-- Root aggregator with NO own value
+**Group** (2 types)
+- Root aggregators with NO own value
 - Provides `ValueAccess` at runtime
-- Can contain: Layout, Decoration, Container, Leaf
-
-**Layout** (1 type)
-- UI organization (Panel)
-- NO own value, has `ValueAccess`
+- Types: Group, Panel
 - Can contain: Decoration, Container, Leaf
 
-**Decoration** (5 types)
+**Decoration** (8 types)
 - Display-only, NO value, NO children
-- Types: Notice, Separator, Link, Code, Image
+- Types: Notice, Separator, Link, Code, Image, Html, Video, Progress
 
-**Container** (6 types)
+**Container** (7 types)
 - HAS own value + children
 - Provides `ValueAccess` at runtime
-- Types: Object, List, Mode, Routing, Expirable, Reference
+- Types: Object, List, Mode, Matrix, Routing, Expirable, Reference
 
-**Leaf** (5 types)
+**Leaf** (6 types)
 - Terminal values, NO children
-- Types: Text, Number, Boolean, Vector, Select
+- Types: Text, Number, Boolean, Vector, Select, File
 
 ## Current Status
 
 **Version 0.2.0** - Production-Ready Core
 
 ✅ **Complete:**
-- **Core schema system** - 14 semantic types (Group, Layout, Container, Leaf, Decoration)
+- **Core schema system** - 23 semantic types (Group, Container, Leaf, Decoration)
 - **Type safety** - Compile-time constraints via subtypes (Port, Email, Percentage, etc.)
 - **Blender-style units** - 60 subtypes × 17 unit categories
 - **Three-layer architecture** - Schema (immutable) / Runtime (mutable) / Value
@@ -634,7 +630,7 @@ Uses Rust 2024 Edition.
 
 ## Contributing
 
-Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+Contributions are welcome! Please open an issue or pull request on GitHub.
 
 ## License
 
