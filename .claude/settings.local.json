@@ -19,7 +19,17 @@
       "Skill(rust-error-handling)",
       "Skill(rust-safety)",
       "Skill(rust-security)",
-      "Skill(rust-refactor)"
+      "Skill(rust-refactor)",
+      "mcp__deepwiki__ask_question",
+      "Bash(find:*)",
+      "Bash(xargs sed -i '2i use crate::types::kind::LinkType;')",
+      "Bash(xargs sed:*)",
+      "Bash(1)",
+      "Bash(grep:*)",
+      "Bash(cargo test:*)",
+      "Bash(cargo clippy:*)",
+      "Bash(cargo build:*)",
+      "Bash(cargo bench:*)"
     ]
   }
 }

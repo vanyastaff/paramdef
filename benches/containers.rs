@@ -5,9 +5,9 @@ use codspeed_criterion_compat::{Criterion, criterion_group, criterion_main};
 #[cfg(not(codspeed))]
 use criterion::{Criterion, criterion_group, criterion_main};
 
-use paramdef::container::{List, Mode, Object};
-use paramdef::node::Container;
-use paramdef::parameter::Text;
+use paramdef::types::container::{List, Mode, Object};
+use paramdef::types::traits::Container;
+use paramdef::types::leaf::Text;
 use std::hint::black_box;
 
 // =============================================================================

@@ -20,7 +20,7 @@ use crate::schema::Schema;
 /// ```
 /// use paramdef::context::Context;
 /// use paramdef::schema::Schema;
-/// use paramdef::parameter::Text;
+/// use paramdef::types::leaf::Text;
 /// use paramdef::core::Value;
 /// use std::sync::Arc;
 ///
@@ -178,7 +178,7 @@ impl Context {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::parameter::{Number, Text};
+    use crate::types::leaf::{Number, Text};
 
     fn create_test_schema() -> Arc<Schema> {
         Arc::new(

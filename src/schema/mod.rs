@@ -6,7 +6,7 @@
 use std::sync::Arc;
 
 use crate::core::{IndexMap, Key};
-use crate::node::Node;
+use crate::types::traits::Node;
 
 /// Immutable parameter definitions shared across contexts.
 ///
@@ -17,7 +17,7 @@ use crate::node::Node;
 ///
 /// ```
 /// use paramdef::schema::Schema;
-/// use paramdef::parameter::Text;
+/// use paramdef::types::leaf::Text;
 ///
 /// let schema = Schema::builder()
 ///     .parameter(Text::builder("username").required().build())
@@ -113,7 +113,7 @@ impl SchemaBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::parameter::{Boolean, Number, Text};
+    use crate::types::leaf::{Boolean, Number, Text};
 
     #[test]
     fn test_schema_builder() {

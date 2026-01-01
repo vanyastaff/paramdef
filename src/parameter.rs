@@ -18,7 +18,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use paramdef::parameter::{Text, Number, Boolean};
+//! use paramdef::types::leaf::{Text, Number, Boolean};
 //!
 //! // Create a text parameter with constraints
 //! let username = Text::builder("username")

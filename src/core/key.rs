@@ -272,9 +272,9 @@ mod tests {
 
     #[test]
     fn test_key_hash() {
-        use std::collections::HashSet;
+        use crate::core::FxHashSet;
 
-        let mut set = HashSet::new();
+        let mut set = FxHashSet::default();
         set.insert(Key::new("key1"));
         set.insert(Key::new("key2"));
         set.insert(Key::new("key1")); // duplicate

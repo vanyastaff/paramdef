@@ -3,7 +3,7 @@
 use std::sync::Arc;
 
 use crate::core::Value;
-use crate::node::Node;
+use crate::types::traits::Node;
 
 use super::State;
 
@@ -21,7 +21,7 @@ use super::State;
 ///
 /// ```
 /// use paramdef::runtime::RuntimeNode;
-/// use paramdef::parameter::Text;
+/// use paramdef::types::leaf::Text;
 /// use paramdef::core::Value;
 /// use std::sync::Arc;
 ///
@@ -195,7 +195,7 @@ impl ErasedRuntimeNode {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::parameter::Text;
+    use crate::types::leaf::Text;
 
     #[test]
     fn test_runtime_node_create() {

@@ -21,7 +21,7 @@
 //! use paramdef::group::{Group, Panel};
 //! use paramdef::decoration::Notice;
 //! use paramdef::container::Object;
-//! use paramdef::parameter::Text;
+//! use paramdef::types::leaf::Text;
 //!
 //! let config = Group::builder("settings")
 //!     .child(Panel::builder("general")

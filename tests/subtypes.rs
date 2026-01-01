@@ -1,6 +1,6 @@
 //! Integration tests for the subtype system.
 
-use paramdef::subtypes::{
+use paramdef::subtype::{
     // Number subtypes
     Angle,
     // Vector subtypes

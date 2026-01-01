@@ -6,8 +6,8 @@ use codspeed_criterion_compat::{Criterion, criterion_group, criterion_main};
 use criterion::{Criterion, criterion_group, criterion_main};
 
 use paramdef::core::Value;
-use paramdef::node::Node;
-use paramdef::parameter::{Number, Text};
+use paramdef::types::traits::Node;
+use paramdef::types::leaf::{Number, Text};
 use paramdef::runtime::{ErasedRuntimeNode, RuntimeNode};
 use std::hint::black_box;
 use std::sync::Arc;

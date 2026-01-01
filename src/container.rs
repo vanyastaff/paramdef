@@ -20,7 +20,7 @@
 //!
 //! ```ignore
 //! use paramdef::container::{Object, List, Mode};
-//! use paramdef::parameter::{Text, Number};
+//! use paramdef::types::leaf::{Text, Number};
 //!
 //! // Create an object with named fields
 //! let address = Object::builder("address")
