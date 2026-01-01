@@ -63,6 +63,10 @@ pub struct MatrixColumn {
     pub label: SmartStr,
     /// Optional weight or score for this column (useful for scoring).
     pub weight: Option<i32>,
+    /// If true, selecting this column excludes all other columns in the row.
+    ///
+    /// Useful for "Not Applicable", "N/A", or "Don't Know" options.
+    pub exclusive: bool,
 }
 
 impl MatrixColumn {
@@ -73,6 +77,7 @@ impl MatrixColumn {
             value: value.into(),
             label: label.into(),
             weight: None,
+            exclusive: false,
         }
     }
 
@@ -87,7 +92,42 @@ impl MatrixColumn {
             value: value.into(),
             label: label.into(),
             weight: Some(weight),
+            exclusive: false,
         }
+    }
+
+    /// Creates an exclusive column that deselects other columns when selected.
+    ///
+    /// Useful for "Not Applicable", "N/A", or "Don't Know" options.
+    #[must_use]
+    pub fn exclusive(value: impl Into<SmartStr>, label: impl Into<SmartStr>) -> Self {
+        Self {
+            value: value.into(),
+            label: label.into(),
+            weight: None,
+            exclusive: true,
+        }
+    }
+
+    /// Creates an exclusive column with a weight.
+    #[must_use]
+    pub fn exclusive_with_weight(
+        value: impl Into<SmartStr>,
+        label: impl Into<SmartStr>,
+        weight: i32,
+    ) -> Self {
+        Self {
+            value: value.into(),
+            label: label.into(),
+            weight: Some(weight),
+            exclusive: true,
+        }
+    }
+
+    /// Returns true if this column is exclusive.
+    #[must_use]
+    pub fn is_exclusive(&self) -> bool {
+        self.exclusive
     }
 
     /// Creates columns from simple string labels.
@@ -104,6 +144,7 @@ impl MatrixColumn {
                     value: s.clone(),
                     label: s,
                     weight: None,
+                    exclusive: false,
                 }
             })
             .collect()
@@ -295,6 +336,18 @@ impl Matrix {
         self.columns.iter().find(|c| c.value == value)
     }
 
+    /// Returns exclusive columns (columns that deselect others when selected).
+    #[must_use]
+    pub fn exclusive_columns(&self) -> impl Iterator<Item = &MatrixColumn> {
+        self.columns.iter().filter(|c| c.exclusive)
+    }
+
+    /// Returns true if this matrix has any exclusive columns.
+    #[must_use]
+    pub fn has_exclusive_columns(&self) -> bool {
+        self.columns.iter().any(|c| c.exclusive)
+    }
+
     /// Returns an iterator over row keys.
     pub fn row_keys(&self) -> impl Iterator<Item = &Key> {
         self.rows.iter().map(|r| &r.key)
@@ -473,6 +526,15 @@ impl MatrixBuilder {
         self
     }
 
+    /// Adds an exclusive column that deselects others when selected.
+    ///
+    /// Useful for "Not Applicable", "N/A", or "Don't Know" options.
+    #[must_use]
+    pub fn exclusive_column(mut self, value: impl Into<SmartStr>, label: impl Into<SmartStr>) -> Self {
+        self.columns.push(MatrixColumn::exclusive(value, label));
+        self
+    }
+
     /// Adds multiple columns from (value, label) tuples.
     #[must_use]
     pub fn columns<V, L, I>(mut self, columns: I) -> Self
@@ -500,6 +562,7 @@ impl MatrixBuilder {
                 value: s.clone(),
                 label: s,
                 weight: None,
+                exclusive: false,
             });
         }
         self
@@ -821,5 +884,38 @@ mod tests {
         assert_eq!(MatrixCellType::Dropdown.name(), "dropdown");
         assert_eq!(MatrixCellType::Text.name(), "text");
         assert_eq!(MatrixCellType::Rating.name(), "rating");
+    }
+
+    #[test]
+    fn test_matrix_exclusive_columns() {
+        let matrix = Matrix::builder("satisfaction")
+            .row("price", "Price")
+            .row("quality", "Quality")
+            .column("1", "Poor")
+            .column("2", "Fair")
+            .column("3", "Good")
+            .exclusive_column("na", "Not Applicable")
+            .build()
+            .unwrap();
+
+        assert!(matrix.has_exclusive_columns());
+        assert_eq!(matrix.exclusive_columns().count(), 1);
+
+        let na_col = matrix.get_column("na").unwrap();
+        assert!(na_col.is_exclusive());
+
+        let good_col = matrix.get_column("3").unwrap();
+        assert!(!good_col.is_exclusive());
+    }
+
+    #[test]
+    fn test_matrix_column_exclusive_constructors() {
+        let col = MatrixColumn::exclusive("na", "N/A");
+        assert!(col.is_exclusive());
+        assert!(col.weight.is_none());
+
+        let col_weighted = MatrixColumn::exclusive_with_weight("na", "N/A", 0);
+        assert!(col_weighted.is_exclusive());
+        assert_eq!(col_weighted.weight, Some(0));
     }
 }
