@@ -19,39 +19,39 @@
 //! Root aggregator that can contain Layout, Decoration, Container, and Leaf nodes.
 //! Has NO own value, only delegates to children via `ValueAccess`.
 //!
-//! - [`Group`](group::Group) - Root parameter group with layout
-//! - [`Panel`](group::Panel) - UI organization panel (technically Layout, grouped here)
+//! - [`group::Group`] - Root parameter group with layout
+//! - [`group::Panel`] - UI organization panel (technically Layout, grouped here)
 //!
 //! ## Leaf (5 types)
 //!
 //! Terminal values with NO children. These are the actual data-bearing parameters.
 //!
-//! - [`Text`](leaf::Text) - String values with validation
-//! - [`Number`](leaf::Number) - Numeric values (int/float) with units
-//! - [`Boolean`](leaf::Boolean) - True/false toggles
-//! - [`Vector`](leaf::Vector) - Fixed-size numeric arrays
-//! - [`Select`](leaf::Select) - Single or multiple selection
+//! - [`leaf::Text`] - String values with validation
+//! - [`leaf::Number`] - Numeric values (int/float) with units
+//! - [`leaf::Boolean`] - True/false toggles
+//! - [`leaf::Vector`] - Fixed-size numeric arrays
+//! - [`leaf::Select`] - Single or multiple selection
 //!
 //! ## Container (6 types)
 //!
 //! Structured types that have BOTH own value AND children.
 //!
-//! - [`Object`](container::Object) - Named field collection
-//! - [`List`](container::List) - Dynamic array with item template
-//! - [`Mode`](container::Mode) - Discriminated union (sum type)
-//! - [`Routing`](container::Routing) - Connection/reference wrapper
-//! - [`Expirable`](container::Expirable) - TTL-based wrapper
-//! - [`Reference`](container::Reference) - Template reference
+//! - [`container::Object`] - Named field collection
+//! - [`container::List`] - Dynamic array with item template
+//! - [`container::Mode`] - Discriminated union (sum type)
+//! - [`container::Routing`] - Connection/reference wrapper
+//! - [`container::Expirable`] - TTL-based wrapper
+//! - [`container::Reference`] - Template reference
 //!
 //! ## Decoration (5 types)
 //!
 //! Display-only elements with NO value and NO children.
 //!
-//! - [`Notice`](decoration::Notice) - Info/warning/error messages
-//! - [`Separator`](decoration::Separator) - Visual dividers
-//! - [`Link`](decoration::Link) - Clickable references
-//! - [`Code`](decoration::Code) - Syntax-highlighted code
-//! - [`Image`](decoration::Image) - Static images
+//! - [`decoration::Notice`] - Info/warning/error messages
+//! - [`decoration::Separator`] - Visual dividers
+//! - [`decoration::Link`] - Clickable references
+//! - [`decoration::Code`] - Syntax-highlighted code
+//! - [`decoration::Image`] - Static images
 //!
 //! # Example
 //!

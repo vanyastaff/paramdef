@@ -11,7 +11,7 @@
 //! - [`number`] - Number subtypes and traits
 //! - [`vector`] - Vector subtypes
 //! - [`text`] - Text subtypes
-//! - [`unit`] - Measurement units (Length, Mass, Time, etc.)
+//! - [`mod@unit`] - Measurement units (Length, Mass, Time, etc.)
 //! - [`macros`] - Macros for defining custom subtypes
 //!
 //! # Example

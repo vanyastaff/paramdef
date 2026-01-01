@@ -210,7 +210,7 @@ impl Value {
 
 #[cfg(test)]
 mod tests {
-    use super::{Key, Value};
+    use super::Value;
 
     // Value creation tests
     #[test]

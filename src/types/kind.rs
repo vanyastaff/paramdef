@@ -171,7 +171,7 @@ impl fmt::Display for SeparatorStyle {
 /// (e.g., showing appropriate icons). The `External` variant is a catch-all
 /// for links that don't fit other semantic categories.
 ///
-/// Note: Use the `open_in_new_tab` field on [`Link`](crate::decoration::Link)
+/// Note: Use the `open_in_new_tab` field on [`Link`](crate::types::decoration::Link)
 /// to control whether links open in a new tab, regardless of their type.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 #[non_exhaustive]
