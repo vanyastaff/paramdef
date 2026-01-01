@@ -454,14 +454,14 @@ mod tests {
 
     #[test]
     fn test_progress_bar() {
-        let progress = Progress::bar("loading", 0.75)
-            .label("Loading...")
-            .build();
+        let progress = Progress::bar("loading", 0.75).label("Loading...").build();
 
         assert_eq!(progress.key().as_str(), "loading");
         assert_eq!(progress.metadata().label(), Some("Loading..."));
         assert_eq!(progress.style(), ProgressStyle::Bar);
-        assert!(matches!(progress.source(), ProgressSource::Static(v) if (*v - 0.75).abs() < f64::EPSILON));
+        assert!(
+            matches!(progress.source(), ProgressSource::Static(v) if (*v - 0.75).abs() < f64::EPSILON)
+        );
     }
 
     #[test]
@@ -473,14 +473,14 @@ mod tests {
 
     #[test]
     fn test_progress_steps() {
-        let progress = Progress::steps("wizard", 3, 5)
-            .label("Step 3 of 5")
-            .build();
+        let progress = Progress::steps("wizard", 3, 5).label("Step 3 of 5").build();
 
         assert_eq!(progress.style(), ProgressStyle::Steps);
         assert_eq!(progress.total_steps(), Some(5));
         // 3/5 = 0.6
-        assert!(matches!(progress.source(), ProgressSource::Static(v) if (*v - 0.6).abs() < f64::EPSILON));
+        assert!(
+            matches!(progress.source(), ProgressSource::Static(v) if (*v - 0.6).abs() < f64::EPSILON)
+        );
     }
 
     #[test]
@@ -494,9 +494,7 @@ mod tests {
 
     #[test]
     fn test_progress_bind_to_parameter() {
-        let progress = Progress::builder("bound")
-            .bind_to("progress_value")
-            .build();
+        let progress = Progress::builder("bound").bind_to("progress_value").build();
 
         assert!(matches!(
             progress.source(),

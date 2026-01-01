@@ -63,7 +63,7 @@
 //! ## Localization
 //! - [`Country`] - ISO 3166 country code
 //! - [`Language`] - ISO 639 language code
-//! - [`Currency`] - ISO 4217 currency code
+//! - [`CurrencyCode`] - ISO 4217 currency code
 //!
 //! ## Versioning
 //! - [`Semver`] - Semantic version

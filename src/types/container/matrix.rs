@@ -337,7 +337,6 @@ impl Matrix {
     }
 
     /// Returns exclusive columns (columns that deselect others when selected).
-    #[must_use]
     pub fn exclusive_columns(&self) -> impl Iterator<Item = &MatrixColumn> {
         self.columns.iter().filter(|c| c.exclusive)
     }
@@ -530,7 +529,11 @@ impl MatrixBuilder {
     ///
     /// Useful for "Not Applicable", "N/A", or "Don't Know" options.
     #[must_use]
-    pub fn exclusive_column(mut self, value: impl Into<SmartStr>, label: impl Into<SmartStr>) -> Self {
+    pub fn exclusive_column(
+        mut self,
+        value: impl Into<SmartStr>,
+        label: impl Into<SmartStr>,
+    ) -> Self {
         self.columns.push(MatrixColumn::exclusive(value, label));
         self
     }
@@ -709,7 +712,11 @@ mod tests {
     #[test]
     fn test_matrix_with_tuples() {
         let matrix = Matrix::builder("survey")
-            .rows([("price", "Price"), ("quality", "Quality"), ("speed", "Speed")])
+            .rows([
+                ("price", "Price"),
+                ("quality", "Quality"),
+                ("speed", "Speed"),
+            ])
             .columns([
                 ("1", "Very Poor"),
                 ("2", "Poor"),

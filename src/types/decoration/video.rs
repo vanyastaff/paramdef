@@ -488,9 +488,7 @@ mod tests {
 
     #[test]
     fn test_video_widescreen() {
-        let video = Video::youtube("vid", "abc")
-            .widescreen(1280)
-            .build();
+        let video = Video::youtube("vid", "abc").widescreen(1280).build();
 
         let size = video.size().unwrap();
         assert_eq!(size.width, 1280);
