@@ -9,6 +9,7 @@ use std::sync::Arc;
 use crate::core::{FxHashMap, Key, Value};
 use crate::runtime::ErasedRuntimeNode;
 use crate::schema::Schema;
+use rustc_hash::FxBuildHasher;
 
 /// Runtime manager for a parameter tree.
 ///
@@ -50,7 +51,7 @@ impl Context {
     /// Pre-allocates the hash map with the exact capacity to avoid rehashing.
     #[must_use]
     pub fn new(schema: Arc<Schema>) -> Self {
-        let mut nodes = FxHashMap::with_capacity_and_hasher(schema.len(), Default::default());
+        let mut nodes = FxHashMap::with_capacity_and_hasher(schema.len(), FxBuildHasher);
 
         for node in schema.iter() {
             let key = node.key().clone();
