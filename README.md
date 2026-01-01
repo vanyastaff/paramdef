@@ -441,6 +441,184 @@ Add to your `Cargo.toml`:
 paramdef = "0.2"
 ```
 
+## Ecosystem Integrations
+
+`paramdef` is designed to be a **universal foundation** for parameter systems across different ecosystems:
+
+### 🌊 Workflow Engines (like n8n, Temporal)
+
+```rust
+// Each node in your workflow has a paramdef schema
+struct ResizeImageNode {
+    schema: Arc<Object>,  // paramdef schema
+}
+
+impl WorkflowNode for ResizeImageNode {
+    fn schema(&self) -> &Object {
+        &self.schema  // ← Rich metadata for UI
+    }
+
+    fn execute(&self, inputs: Value) -> Result<Value> {
+        self.schema.validate(&inputs)?;  // ← Backend validation
+        // ... execute node logic
+    }
+}
+
+// ✅ Visual editor renders form from schema
+// ✅ Runtime validates with same schema
+// ✅ Export to JSON for sharing
+```
+
+### 🎮 Game Engines (Bevy, Macroquad)
+
+```rust
+use bevy::prelude::*;
+use paramdef::prelude::*;
+
+// Alternative to Bevy's Reflect for properties
+#[derive(Component)]
+struct Transform {
+    schema: Arc<Object>,  // paramdef schema
+    values: Context,      // runtime values
+}
+
+impl Transform {
+    fn new() -> Self {
+        let schema = Object::builder("transform")
+            .field("position", Vector::builder::<f32, 3>("pos")
+                .label("Position")
+                .default([0.0, 0.0, 0.0])
+                .build())
+            .field("rotation", Vector::builder::<f32, 3>("rot")
+                .label("Rotation")
+                .build())
+            .build()
+            .unwrap();
+
+        Self {
+            schema: Arc::new(schema),
+            values: Context::new(Arc::clone(&schema)),
+        }
+    }
+}
+
+// ✅ Inspector UI auto-generated from schema
+// ✅ Serialization built-in
+// ✅ Undo/redo support (coming in v0.4)
+```
+
+### 🖼️ GUI Frameworks (egui, iced, Dioxus)
+
+```rust
+use egui::{Ui, Widget};
+
+// Auto-generate egui widgets from paramdef schemas
+struct ParamDefWidget<'a> {
+    schema: &'a Object,
+    context: &'a mut Context,
+}
+
+impl<'a> Widget for ParamDefWidget<'a> {
+    fn ui(self, ui: &mut Ui) -> Response {
+        // Iterate schema fields, render appropriate widgets
+        for field in self.schema.fields() {
+            match field.kind() {
+                NodeKind::Leaf => {
+                    // Text input, number slider, checkbox, etc.
+                }
+                NodeKind::Container => {
+                    // Nested group with collapsible
+                }
+                // ...
+            }
+        }
+    }
+}
+
+// ✅ No manual UI code - schema drives everything
+// ✅ Consistent forms across your app
+```
+
+### 🌐 Full-Stack Rust (Axum + Leptos/Dioxus)
+
+```rust
+// Shared types crate
+mod shared {
+    pub fn user_schema() -> Object {
+        Object::builder("user")
+            .field("email", Text::email("email").required())
+            .field("age", Number::integer("age"))
+            .build()
+            .unwrap()
+    }
+}
+
+// Backend (Axum)
+async fn create_user(Json(data): Json<Value>) -> Result<Json<User>> {
+    let schema = shared::user_schema();
+    schema.validate(&data)?;  // ← Same schema!
+    // ...
+}
+
+// Frontend (Leptos)
+#[component]
+fn UserForm() -> impl IntoView {
+    let schema = shared::user_schema();  // ← Same schema!
+    view! { <DynamicForm schema={schema} /> }
+}
+
+// ✅ Single source of truth
+// ✅ Type-safe across the stack
+// ✅ No JSON Schema duplication
+```
+
+### 🛠️ Desktop Apps (Tauri, Slint)
+
+```rust
+// Settings panel auto-generated from schema
+let app_settings = Object::builder("settings")
+    .field("theme", Select::single("theme")
+        .options(vec![
+            SelectOption::simple("light"),
+            SelectOption::simple("dark"),
+            SelectOption::simple("auto"),
+        ]))
+    .field("language", Select::single("lang")
+        .options(vec![
+            SelectOption::new("en", "English"),
+            SelectOption::new("ru", "Русский"),
+        ]))
+    .build()
+    .unwrap();
+
+// ✅ Settings UI rendered from schema
+// ✅ Persistence via serde
+// ✅ Validation built-in
+```
+
+### 🔌 Plugin Systems
+
+```rust
+// Plugins register their parameters via paramdef
+trait Plugin {
+    fn name(&self) -> &str;
+    fn schema(&self) -> Arc<Object>;  // ← paramdef schema
+    fn execute(&self, params: &Context) -> Result<()>;
+}
+
+// Host app can:
+// ✅ Discover plugin parameters automatically
+// ✅ Generate UI for any plugin
+// ✅ Validate plugin configs
+// ✅ Serialize plugin state
+```
+
+---
+
+**Community Integrations Welcome!**
+
+Building a paramdef integration for your framework? Let us know - we'd love to feature it here!
+
 ## Documentation
 
 - [API Documentation](https://docs.rs/paramdef)
