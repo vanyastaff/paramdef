@@ -36,55 +36,40 @@
 
 use crate::define_number_subtype;
 
-// === Integer-Only Subtypes ===
+// === Integer Subtypes ===
 
-define_number_subtype!(Port, int_only, u16, "port", range: (1, 65535));
-define_number_subtype!(Count, int_only, u64, "count");
-define_number_subtype!(Rating, int_only, u8, "rating", range: (1, 5));
-define_number_subtype!(ByteCount, int_only, u64, "byte_count");
-define_number_subtype!(Index, int_only, usize, "index");
-define_number_subtype!(Year, int_only, i32, "year");
-define_number_subtype!(Month, int_only, u8, "month", range: (1, 12));
-define_number_subtype!(Day, int_only, u8, "day", range: (1, 31));
-define_number_subtype!(Hour, int_only, u8, "hour", range: (0, 23));
-define_number_subtype!(Minute, int_only, u8, "minute", range: (0, 59));
-define_number_subtype!(Second, int_only, u8, "second", range: (0, 59));
-define_number_subtype!(Priority, int_only, u8, "priority", range: (1, 10));
-define_number_subtype!(Pixels, int_only, u32, "pixels");
+define_number_subtype!(Port, u16, "port", range: (1, 65535));
+define_number_subtype!(Count, u64, "count");
+define_number_subtype!(Rating, u8, "rating", range: (1, 5));
+define_number_subtype!(ByteCount, u64, "byte_count");
+define_number_subtype!(Index, usize, "index");
+define_number_subtype!(Year, i32, "year");
+define_number_subtype!(Month, u8, "month", range: (1, 12));
+define_number_subtype!(Day, u8, "day", range: (1, 31));
+define_number_subtype!(Hour, u8, "hour", range: (0, 23));
+define_number_subtype!(Minute, u8, "minute", range: (0, 59));
+define_number_subtype!(Second, u8, "second", range: (0, 59));
+define_number_subtype!(Priority, u8, "priority", range: (1, 10));
+define_number_subtype!(Pixels, u32, "pixels");
 
-// === Float-Only Subtypes ===
+// === Float Subtypes ===
 
-define_number_subtype!(Factor, float_only, f64, "factor", range: (0.0, 1.0));
-define_number_subtype!(Percentage, float_only, f64, "percentage", range: (0.0, 100.0));
-define_number_subtype!(Angle, float_only, f64, "angle", range: (0.0, 360.0));
-define_number_subtype!(Latitude, float_only, f64, "latitude", range: (-90.0, 90.0));
-define_number_subtype!(Longitude, float_only, f64, "longitude", range: (-180.0, 180.0));
-
-/// Angle in radians.
-#[derive(Debug, Clone, Copy, Default, PartialEq)]
-pub struct AngleRadians;
-
-impl super::NumberSubtype for AngleRadians {
-    type Value = f64;
-
-    fn name() -> &'static str {
-        "angle_radians"
-    }
-
-    fn default_range() -> Option<(Self::Value, Self::Value)> {
-        Some((0.0, std::f64::consts::TAU))
-    }
-}
+define_number_subtype!(Factor, f64, "factor", range: (0.0, 1.0));
+define_number_subtype!(Percentage, f64, "percentage", range: (0.0, 100.0));
+define_number_subtype!(Angle, f64, "angle", range: (0.0, 360.0));
+define_number_subtype!(Latitude, f64, "latitude", range: (-90.0, 90.0));
+define_number_subtype!(Longitude, f64, "longitude", range: (-180.0, 180.0));
+define_number_subtype!(AngleRadians, f64, "angle_radians", range: (0.0, std::f64::consts::TAU));
 
 // === Universal Subtypes ===
 
-define_number_subtype!(Distance, any, f64, "distance");
-define_number_subtype!(Duration, any, f64, "duration");
-define_number_subtype!(Temperature, any, f64, "temperature");
-define_number_subtype!(Currency, any, f64, "currency");
-define_number_subtype!(Speed, any, f64, "speed");
-define_number_subtype!(Mass, any, f64, "mass");
-define_number_subtype!(GenericNumber, any, f64, "generic");
+define_number_subtype!(Distance, f64, "distance");
+define_number_subtype!(Duration, f64, "duration");
+define_number_subtype!(Temperature, f64, "temperature");
+define_number_subtype!(Currency, f64, "currency");
+define_number_subtype!(Speed, f64, "speed");
+define_number_subtype!(Mass, f64, "mass");
+define_number_subtype!(GenericNumber, f64, "generic");
 
 #[cfg(test)]
 mod tests {

@@ -1,78 +1,29 @@
 //! Macros for defining subtypes.
 
-/// Defines a number subtype with type constraints.
+/// Defines a number subtype with automatic type constraint detection.
 ///
-/// # Variants
-///
-/// - `int_only`: Only works with integer types
-/// - `float_only`: Only works with floating-point types
-/// - `any`: Works with any numeric type
+/// The macro automatically detects whether the value type is an integer or float
+/// and applies the appropriate compile-time constraints.
 ///
 /// # Example
 ///
 /// ```ignore
 /// use paramdef::define_number_subtype;
 ///
-/// // Integer-only subtype
-/// define_number_subtype!(Port, int_only, i32, "port", range: (1, 65535));
+/// // Integer subtype (u16 implements Integer)
+/// define_number_subtype!(Port, u16, "port", range: (1, 65535));
 ///
-/// // Float-only subtype
-/// define_number_subtype!(Percentage, float_only, f64, "percentage", range: (0.0, 100.0));
+/// // Float subtype (f64 implements Float)
+/// define_number_subtype!(Percentage, f64, "percentage", range: (0.0, 100.0));
 ///
-/// // Universal subtype
-/// define_number_subtype!(Distance, any, f64, "distance");
+/// // Without range
+/// define_number_subtype!(Distance, f64, "distance");
 /// ```
 #[macro_export]
 macro_rules! define_number_subtype {
-    // Integer-only with range
-    ($name:ident, int_only, $value:ty, $str_name:literal, range: ($min:expr, $max:expr)) => {
-        /// Number subtype (integer-only).
-        #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
-        pub struct $name;
-
-        impl $crate::subtype::NumberSubtype for $name {
-            type Value = $value;
-
-            fn name() -> &'static str {
-                $str_name
-            }
-
-            fn default_range() -> Option<(Self::Value, Self::Value)> {
-                Some(($min, $max))
-            }
-        }
-
-        // Compile-time check: Value must implement Integer
-        const _: () = {
-            fn _assert_integer<T: $crate::subtype::traits::Integer>() {}
-            fn _check() { _assert_integer::<$value>(); }
-        };
-    };
-
-    // Integer-only without range
-    ($name:ident, int_only, $value:ty, $str_name:literal) => {
-        /// Number subtype (integer-only).
-        #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
-        pub struct $name;
-
-        impl $crate::subtype::NumberSubtype for $name {
-            type Value = $value;
-
-            fn name() -> &'static str {
-                $str_name
-            }
-        }
-
-        // Compile-time check: Value must implement Integer
-        const _: () = {
-            fn _assert_integer<T: $crate::subtype::traits::Integer>() {}
-            fn _check() { _assert_integer::<$value>(); }
-        };
-    };
-
-    // Float-only with range
-    ($name:ident, float_only, $value:ty, $str_name:literal, range: ($min:expr, $max:expr)) => {
-        /// Number subtype (float-only).
+    // With range
+    ($name:ident, $value:ty, $str_name:literal, range: ($min:expr, $max:expr)) => {
+        /// Number subtype.
         #[derive(Debug, Clone, Copy, Default, PartialEq)]
         pub struct $name;
 
@@ -88,16 +39,16 @@ macro_rules! define_number_subtype {
             }
         }
 
-        // Compile-time check: Value must implement Float
+        // Compile-time check: Value must implement Numeric
         const _: () = {
-            fn _assert_float<T: $crate::subtype::traits::Float>() {}
-            fn _check() { _assert_float::<$value>(); }
+            fn _assert_numeric<T: $crate::subtype::traits::Numeric>() {}
+            fn _check() { _assert_numeric::<$value>(); }
         };
     };
 
-    // Float-only without range
-    ($name:ident, float_only, $value:ty, $str_name:literal) => {
-        /// Number subtype (float-only).
+    // Without range
+    ($name:ident, $value:ty, $str_name:literal) => {
+        /// Number subtype.
         #[derive(Debug, Clone, Copy, Default, PartialEq)]
         pub struct $name;
 
@@ -109,45 +60,11 @@ macro_rules! define_number_subtype {
             }
         }
 
-        // Compile-time check: Value must implement Float
+        // Compile-time check: Value must implement Numeric
         const _: () = {
-            fn _assert_float<T: $crate::subtype::traits::Float>() {}
-            fn _check() { _assert_float::<$value>(); }
+            fn _assert_numeric<T: $crate::subtype::traits::Numeric>() {}
+            fn _check() { _assert_numeric::<$value>(); }
         };
-    };
-
-    // Universal with range
-    ($name:ident, any, $value:ty, $str_name:literal, range: ($min:expr, $max:expr)) => {
-        /// Number subtype (universal).
-        #[derive(Debug, Clone, Copy, Default, PartialEq)]
-        pub struct $name;
-
-        impl $crate::subtype::NumberSubtype for $name {
-            type Value = $value;
-
-            fn name() -> &'static str {
-                $str_name
-            }
-
-            fn default_range() -> Option<(Self::Value, Self::Value)> {
-                Some(($min, $max))
-            }
-        }
-    };
-
-    // Universal without range
-    ($name:ident, any, $value:ty, $str_name:literal) => {
-        /// Number subtype (universal).
-        #[derive(Debug, Clone, Copy, Default, PartialEq)]
-        pub struct $name;
-
-        impl $crate::subtype::NumberSubtype for $name {
-            type Value = $value;
-
-            fn name() -> &'static str {
-                $str_name
-            }
-        }
     };
 }
 
@@ -452,24 +369,24 @@ pub use define_vector_subtype;
 mod tests {
     use crate::subtype::{NumberSubtype, TextSubtype, VectorSubtype};
 
-    define_number_subtype!(TestPort, int_only, i32, "test_port", range: (1, 65535));
-    define_number_subtype!(TestFactor, float_only, f64, "test_factor", range: (0.0, 1.0));
-    define_number_subtype!(TestGeneric, any, f64, "test_generic");
+    define_number_subtype!(TestPort, i32, "test_port", range: (1, 65535));
+    define_number_subtype!(TestFactor, f64, "test_factor", range: (0.0, 1.0));
+    define_number_subtype!(TestGeneric, f64, "test_generic");
 
     #[test]
-    fn test_define_number_subtype_int_only() {
+    fn test_define_number_subtype_int() {
         assert_eq!(TestPort::name(), "test_port");
         assert_eq!(TestPort::default_range(), Some((1, 65535)));
     }
 
     #[test]
-    fn test_define_number_subtype_float_only() {
+    fn test_define_number_subtype_float() {
         assert_eq!(TestFactor::name(), "test_factor");
         assert_eq!(TestFactor::default_range(), Some((0.0, 1.0)));
     }
 
     #[test]
-    fn test_define_number_subtype_any() {
+    fn test_define_number_subtype_no_range() {
         assert_eq!(TestGeneric::name(), "test_generic");
         assert_eq!(TestGeneric::default_range(), None);
     }
