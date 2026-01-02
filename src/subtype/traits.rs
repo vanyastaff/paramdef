@@ -181,7 +181,8 @@ impl_numeric_float!(
 /// Marker trait for integer types.
 ///
 /// Used to constrain integer-only subtypes like `Port` or `Count`.
-#[allow(dead_code)]
+/// The `define_number_subtype!` macro uses this trait to enforce
+/// compile-time type safety for `int_only` subtypes.
 pub trait Integer: Numeric {}
 
 impl Integer for i8 {}
@@ -200,7 +201,8 @@ impl Integer for usize {}
 /// Marker trait for floating-point types.
 ///
 /// Used to constrain float-only subtypes like `Factor` or `Percentage`.
-#[allow(dead_code)]
+/// The `define_number_subtype!` macro uses this trait to enforce
+/// compile-time type safety for `float_only` subtypes.
 pub trait Float: Numeric {}
 
 impl Float for f32 {}

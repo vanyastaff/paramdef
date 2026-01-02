@@ -41,6 +41,12 @@ macro_rules! define_number_subtype {
                 Some(($min, $max))
             }
         }
+
+        // Compile-time check: Value must implement Integer
+        const _: () = {
+            fn _assert_integer<T: $crate::subtype::traits::Integer>() {}
+            fn _check() { _assert_integer::<$value>(); }
+        };
     };
 
     // Integer-only without range
@@ -56,6 +62,12 @@ macro_rules! define_number_subtype {
                 $str_name
             }
         }
+
+        // Compile-time check: Value must implement Integer
+        const _: () = {
+            fn _assert_integer<T: $crate::subtype::traits::Integer>() {}
+            fn _check() { _assert_integer::<$value>(); }
+        };
     };
 
     // Float-only with range
@@ -75,6 +87,12 @@ macro_rules! define_number_subtype {
                 Some(($min, $max))
             }
         }
+
+        // Compile-time check: Value must implement Float
+        const _: () = {
+            fn _assert_float<T: $crate::subtype::traits::Float>() {}
+            fn _check() { _assert_float::<$value>(); }
+        };
     };
 
     // Float-only without range
@@ -90,6 +108,12 @@ macro_rules! define_number_subtype {
                 $str_name
             }
         }
+
+        // Compile-time check: Value must implement Float
+        const _: () = {
+            fn _assert_float<T: $crate::subtype::traits::Float>() {}
+            fn _check() { _assert_float::<$value>(); }
+        };
     };
 
     // Universal with range

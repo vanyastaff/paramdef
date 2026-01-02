@@ -43,7 +43,8 @@ pub use macros::{
     define_file_subtype, define_number_subtype, define_text_subtype, define_vector_subtype,
 };
 pub use traits::{
-    FileSubtype, IntoBuilder, NumberSubtype, Numeric, NumericKind, TextSubtype, VectorSubtype,
+    FileSubtype, Float, IntoBuilder, Integer, NumberSubtype, Numeric, NumericKind, TextSubtype,
+    VectorSubtype,
 };
 pub use unit::NumberUnit;
 
