@@ -25,7 +25,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `paramdef` is a type-safe parameter definition system for Rust, inspired by Blender RNA, Unreal Engine UPROPERTY, and Qt Property System. The goal is to create the "serde of parameter schemas" - a production-ready library for workflow engines, visual programming tools, no-code platforms, and game engines.
 
-**Current Status:** Early development - core structure and documentation complete, implementation in progress.
+**Current Status:** Active development - Phase 1-4.2 complete (Event System, Validation), Phase 4.3+ in progress.
 
 ## Build and Test Commands
 
@@ -192,26 +192,86 @@ pub struct RuntimeParameter<T: Node> {
 }
 ```
 
-### Validation Integration
+### Validation System (Implemented)
 
-The library provides the `Validator` trait but NO built-in validation library dependencies:
+Hybrid validation combining declarative expressions with programmatic validators (see `docs/20-VALIDATION-SYSTEM.md`):
+
 ```rust
-pub trait Validator: Send + Sync {
-    fn validate(&self, value: &Value) -> Result<(), ValidationError>;
+// Declarative validation (~80% of cases)
+let rules = Rules::from_rules([
+    Rule::required(),
+    Rule::min_length(3),
+    Rule::max_length(50),
+    Rule::email(),
+]);
+
+// Programmatic validation (complex cases)
+let custom = Rule::custom("password_match", |value, ctx| {
+    let confirm = ctx.get("confirm_password");
+    if value != confirm {
+        return Err(Error::custom("mismatch", "Passwords must match").into());
+    }
+    Ok(())
+});
+
+// Cross-field validation via ValidationContext
+pub trait Validator: Send + Sync + Debug {
+    fn validate(&self, value: &Value, ctx: &ValidationContext<'_>) -> ValidationResult;
 }
 ```
 
-**Rationale:** No version conflicts, user controls dependencies, works with any library (garde, validator, custom).
+**Built-in validators:** `Required`, `Length`, `Range`, `Match`, `PasswordStrength`, `When` (conditional).
 
-### Event System
+**Industry patterns:**
+- Declarative expressions (JSON Schema, Zod)
+- Cross-field validation (Yup `.when()`)
+- Resolver pattern (React Hook Form)
+- Thread-local regex cache (performance)
 
-Uses `tokio::broadcast` for EventBus:
-- Async + sync support
-- Multiple subscribers built-in
-- Battle-tested by Tokio team
-- Already in dependencies (events feature)
+### Event System (Implemented)
 
-**Command Pattern for Undo/Redo:**
+Uses `tokio::broadcast` for EventBus (see `docs/19-EVENT-SYSTEM.md`):
+
+```rust
+// Event types
+pub enum Event {
+    ValueChanging { key, old_value, new_value },
+    ValueChanged { key, old_value, new_value },
+    ValueCleared { key, old_value },
+    Validated { key, is_valid, errors },
+    Touched { key },
+    Dirtied { key },
+    Cleaned { key },
+    Reset { key },
+    BatchBegin { id, description },
+    BatchEnd { id },
+    ContextReset,
+    AllCleaned,
+}
+
+// Usage
+let bus = EventBus::new(64);
+let mut sub = bus.subscribe();
+let ctx = Context::with_event_bus(schema, bus);
+
+ctx.set("name", Value::text("Alice")); // Emits events
+
+// Async receive
+while let Ok(event) = sub.recv().await {
+    match event {
+        Event::ValueChanged { key, .. } => println!("{} changed", key),
+        _ => {}
+    }
+}
+```
+
+**Industry patterns implemented:**
+- `ValueChanging`/`ValueChanged` pair (SurveyJS)
+- Batching with `BatchBegin`/`BatchEnd` (MobX transactions)
+- `Touched` state (Formik)
+- RAII Subscription cleanup (MobX disposer)
+
+**Command Pattern for Undo/Redo (planned):**
 - ~100 bytes per command vs ~10KB per snapshot
 - Supports command merging (optimization)
 - Extensible (custom commands)
@@ -224,12 +284,15 @@ Essential reading in `docs/`:
 - `02-TYPE-SYSTEM.md` - Complete reference for all node types
 - `17-DESIGN-DECISIONS.md` - Rationale for major architectural choices
 - `18-ROADMAP.md` - Implementation plan and milestones
+- `19-EVENT-SYSTEM.md` - Event system documentation
+- `20-VALIDATION-SYSTEM.md` - Hybrid validation system documentation
 
 **Reading Guide for Full Understanding:**
 1. README.md (this overview)
 2. docs/01-ARCHITECTURE.md (30 min)
 3. docs/02-TYPE-SYSTEM.md (30 min)
 4. docs/17-DESIGN-DECISIONS.md (20 min)
+5. docs/19-EVENT-SYSTEM.md (15 min) - for reactive features
 
 ## Common Patterns
 
@@ -295,8 +358,17 @@ GitHub Actions runs on push/PR:
 ```
 paramdef/
 ├── src/
-│   └── lib.rs          # Main library entry (currently stub)
-├── docs/               # 18 comprehensive design documents
+│   ├── lib.rs          # Main library entry
+│   ├── core/           # Key, Value, Metadata, Flags, Error
+│   ├── types/          # 23 node types (leaf, container, group, decoration)
+│   ├── subtype/        # TextSubtype, NumberSubtype, VectorSubtype, Unit
+│   ├── schema/         # Schema builder and storage
+│   ├── context/        # Runtime context with event integration
+│   ├── runtime/        # RuntimeNode, State
+│   ├── event/          # Event, EventBus, Subscription (events feature)
+│   ├── validation/     # Expr, Rule, Validator, validators (validation feature)
+│   └── prelude.rs      # Common imports
+├── docs/               # 20 comprehensive design documents
 ├── .cargo/
 │   ├── config.toml     # LLD linker configuration
 │   └── audit.toml      # Security audit config
@@ -321,6 +393,7 @@ paramdef/
 **Optional:**
 - `serde` + `serde_json` - Serialization (serde feature)
 - `tokio` - Event system with broadcast channels (events feature)
+- `regex` - Pattern validation (validation feature)
 - `fluent` - Mozilla Fluent localization (i18n feature)
 - `chrono` - Date/time conversions (chrono feature)
 

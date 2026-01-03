@@ -2,8 +2,8 @@
 
 **Step-by-step guide to implementation**
 
-Version: 1.0  
-Status: Ready for Implementation ✅
+Version: 1.1  
+Status: Phase 4.2 Complete ✅
 
 ---
 
@@ -13,21 +13,39 @@ This roadmap provides a structured approach to implementing paramdef, organized 
 
 **Total Estimated Effort:** 8-12 weeks  
 **Team Size:** 1-2 developers  
-**Prerequisites:** Rust 1.75+, familiarity with Arc, trait objects
+**Prerequisites:** Rust 1.85+, familiarity with Arc, trait objects
 
 ---
 
-## Phase 1: Foundation (Week 1-2)
+## Current Progress
+
+| Phase | Status | Description |
+|-------|--------|-------------|
+| Phase 1: Foundation | ✅ Complete | Core types, Key, Metadata, Flags, Value |
+| Phase 2: Parameter Types | ✅ Complete | All 23 node types (Leaf, Container, Group, Decoration) |
+| Phase 3: Schema & Runtime | ✅ Complete | Schema, Context, RuntimeNode, ErasedRuntimeNode |
+| Phase 4.1: Event System | ✅ Complete | Event, EventBus, Subscription, Context integration |
+| Phase 4.2: Validation | ✅ Complete | Hybrid Expr + Validator trait, built-in validators |
+| Phase 4.3: Transformers | 🔲 Pending | Transformer trait, built-in transformers |
+| Phase 4.4: History | 🔲 Pending | Command pattern, undo/redo |
+| Phase 5: Display | 🔲 Pending | Visibility expressions (Expr) |
+| Phase 6: Polish | 🔲 Pending | Performance, docs, examples |
+| Phase 7: UI Integration | 🔲 Optional | egui example |
+
+---
+
+## Phase 1: Foundation ✅
 
 ### Goal: Core infrastructure and basic types
 
-### 1.1 Project Setup
+**Status: COMPLETE**
 
-**Tasks:**
-- [ ] Create project structure (`paramdef` with optional `paramdef-validator`)
-- [ ] Set up Cargo.toml with dependencies
-- [ ] Configure CI/CD (GitHub Actions)
-- [ ] Set up documentation structure
+### 1.1 Project Setup ✅
+
+- [x] Create project structure
+- [x] Set up Cargo.toml with dependencies
+- [x] Configure CI/CD (GitHub Actions)
+- [x] Set up documentation structure
 
 **Files:**
 ```
@@ -35,545 +53,317 @@ paramdef/
 ├── Cargo.toml
 ├── src/
 │   ├── lib.rs
-│   ├── key.rs
+│   ├── core/
+│   │   ├── mod.rs
+│   │   ├── key.rs
+│   │   ├── metadata.rs
+│   │   ├── flags.rs
+│   │   ├── value/
+│   │   └── error.rs
 │   └── ...
 ```
 
-**Dependencies:**
-```toml
-tokio = { version = "1", features = ["sync", "rt-multi-thread"] }
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-smartstring = "1"
-regex = "1"
-thiserror = "1"
-crossbeam = "0.8"
-```
+### 1.2 Core Types ✅
 
-**Deliverable:** Working workspace that compiles
+- [x] Key - Parameter identifier with SmartString
+- [x] Metadata - Label, description, group, tags
+- [x] Flags - Schema-level bitflags (REQUIRED, READONLY, etc.)
+- [x] StateFlags - Runtime state (DIRTY, TOUCHED, VALID)
+- [x] Value - Unified runtime representation
+- [x] Error - thiserror-based error types
 
----
+### 1.3 Subtypes ✅
 
-### 1.2 Core Types
-
-**Priority: CRITICAL**
-
-**Implementation Order:**
-
-#### Step 1: Key
-```rust
-// src/key.rs
-pub struct Key { ... }
-```
-
-#### Step 2: Metadata
-```rust
-// src/core/metadata.rs
-pub struct Metadata {
-    key: Key,
-    label: Option<String>,
-    description: Option<String>,
-    group: Option<String>,
-    tags: Vec<String>,
-}
-```
-
-**Test Coverage:** 90%+
-
-#### Step 3: Flags
-```rust
-// src/core/flags.rs
-bitflags! {
-    pub struct Flags: u64 {
-        const REQUIRED = 1 << 0;
-        const READONLY = 1 << 1;
-        const HIDDEN = 1 << 2;
-        const ADVANCED = 1 << 3;
-        const ANIMATABLE = 1 << 4;
-        // ... (total: 20 flags)
-    }
-}
-
-bitflags! {
-    pub struct StateFlags: u32 {
-        const DIRTY = 1 << 0;
-        const TOUCHED = 1 << 1;
-        const VALID = 1 << 2;
-        const VISIBLE = 1 << 3;
-        const ENABLED = 1 << 4;
-        const READONLY = 1 << 5;
-    }
-}
-```
-
-**Test Coverage:** 95%+
-
-#### Step 4: Value Enum
-```rust
-// src/core/value.rs
-pub enum Value {
-    None,
-    Text(String),
-    Integer(i64),
-    Float(f64),
-    Boolean(bool),
-    Array(Vec<Value>),
-    Object(HashMap<String, Value>),
-    Vector(Vec<f64>),
-}
-```
-
-**Test Coverage:** 90%+
-
-**Deliverable:** Core types module compiles with tests
+- [x] TextSubtype - 56 variants with helper methods
+- [x] NumberSubtype - Type-safe with Integer/Float constraints via macro
+- [x] VectorSubtype - Size-aware with component names
+- [x] FileSubtype - File type categories
+- [x] NumberUnit - 17 unit categories with conversion
 
 ---
 
-### 1.3 Subtypes
+## Phase 2: Parameter Types ✅
 
-**Priority: HIGH**
+### Goal: Implement all 23 node types
 
-**Implementation Order:**
+**Status: COMPLETE**
 
-#### Week 1: TextSubtype
-```rust
-// src/core/subtype/text.rs
-pub enum TextSubtype {
-    Generic, SingleLine, MultiLine, RichText,
-    Code, Json, Xml, Yaml, Toml,
-    Email, Url, FilePath,
-    Uuid, Slug, Username, Secret,
-    // ... (56 total)
-    Custom(String),
-}
+### Node Hierarchy
 
-impl TextSubtype {
-    pub fn is_code(&self) -> bool;
-    pub fn is_sensitive(&self) -> bool;
-    pub fn is_structured(&self) -> bool;
-    pub fn mime_type_hint(&self) -> Option<&'static str>;
-}
-```
+| Category | Count | Types |
+|----------|-------|-------|
+| Group | 2 | Group, Panel |
+| Decoration | 8 | Notice, Separator, Link, Code, Image, Html, Video, Progress |
+| Container | 7 | Object, List, Mode, Matrix, Routing, Expirable, Reference |
+| Leaf | 6 | Text, Number, Boolean, Vector, Select, File |
 
-**Files:** Use provided `text.rs` ✅
-
-#### Week 2: NumberSubtype + Unit
-```rust
-// src/core/subtype/number.rs
-pub enum NumberSubtype {
-    Integer, Float, Decimal, Percentage,
-    Currency, Price, Temperature, Distance,
-    // ... (60 total)
-    Custom(String),
-}
-
-// src/core/unit.rs
-pub enum Unit {
-    None,
-    Temperature(TemperatureUnit),
-    Distance(DistanceUnit),
-    // ... (17 categories)
-}
-```
-
-**Files:** Use provided `number.rs` and `unit.rs` ✅
-
-#### Week 2: VectorSubtype
-```rust
-// src/core/subtype/vector.rs
-pub enum VectorSubtype {
-    Vector2, Vector3, Vector4,
-    ColorRgb, ColorRgba,
-    Quaternion, Matrix4x4,
-    // ... (35 total)
-    Custom(String),
-}
-
-impl VectorSubtype {
-    pub fn component_count(&self) -> Option<usize>;
-    pub fn component_names(&self) -> Option<&[&'static str]>;
-}
-```
-
-**Files:** Use provided `vector.rs` ✅
-
-**Deliverable:** All subtypes implemented with helper methods and tests
-
----
-
-## Phase 2: Parameter Types (Week 3-4)
-
-### Goal: Implement all parameter types
-
-### 2.1 Parameter Trait
+### 2.1 Node Trait ✅
 
 ```rust
-// src/parameter/base.rs
-pub trait Parameter: Send + Sync {
+pub trait Node: Send + Sync + Debug {
+    fn key(&self) -> &Key;
     fn metadata(&self) -> &Metadata;
-    fn param_type(&self) -> ParameterType;
-    fn validate(&self, value: &Value) -> ValidationResult<()>;
-    fn transform(&self, value: Value) -> Value;
-    fn default_value(&self) -> Value;
+    fn flags(&self) -> Flags;
+    fn node_kind(&self) -> NodeKind;
 }
 ```
 
-**Deliverable:** Parameter trait with documentation
+### 2.2 Leaf Types ✅
+
+- [x] Text - String values with TextSubtype
+- [x] Number - Numeric values with NumberSubtype + Unit
+- [x] Boolean - True/false toggles
+- [x] Vector - Fixed-size numeric arrays with VectorSubtype
+- [x] Select - Single/multi selection with options
+- [x] File - File uploads with FileSubtype
+
+### 2.3 Container Types ✅
+
+- [x] Object - Named field collection
+- [x] List - Dynamic array with item template
+- [x] Mode - Discriminated union (sum type)
+- [x] Matrix - Table-based data entry
+- [x] Routing - Connection/reference wrapper
+- [x] Expirable - TTL-based wrapper
+- [x] Reference - Template reference
+
+### 2.4 Group Types ✅
+
+- [x] Group - Root parameter group
+- [x] Panel - UI organization panel
+
+### 2.5 Decoration Types ✅
+
+- [x] Notice - Info/warning/error messages
+- [x] Separator - Visual dividers
+- [x] Link - Clickable references
+- [x] Code - Syntax-highlighted code
+- [x] Image - Static images
+- [x] Html - Rich HTML content
+- [x] Video - Embedded video
+- [x] Progress - Progress indicators
 
 ---
 
-### 2.2 Text
-
-**Priority: CRITICAL (most common type)**
-
-```rust
-// src/parameter/text.rs
-pub struct Text {
-    metadata: Metadata,
-    flags: Flags,
-    subtype: TextSubtype,
-    min_length: Option<usize>,
-    max_length: Option<usize>,
-    pattern: Option<Regex>,
-    allowed_values: Option<Vec<String>>,
-    validators: Vec<Arc<dyn Validator>>,
-    transformers: Vec<Arc<dyn Transformer>>,
-    visibility: Option<Expr>,
-}
-
-// Builder
-pub struct TextBuilder { ... }
-
-impl Text {
-    pub fn builder(key: impl Into<Key>) -> TextBuilder;
-    pub fn email(key: impl Into<Key>) -> TextBuilder;
-    pub fn url(key: impl Into<Key>) -> TextBuilder;
-    pub fn password(key: impl Into<Key>) -> TextBuilder;
-}
-```
-
-**Test Coverage:** 90%+
-
-**Deliverable:** Text with builder and tests
-
----
-
-### 2.3 Number
-
-```rust
-// src/parameter/number.rs
-pub struct Number {
-    metadata: Metadata,
-    flags: Flags,
-    subtype: NumberSubtype,
-    unit: Option<Unit>,
-    min: Option<f64>,
-    max: Option<f64>,
-    step: Option<f64>,
-    validators: Vec<Arc<dyn Validator>>,
-}
-
-// Builder
-impl Number {
-    pub fn integer(key: impl Into<Key>) -> NumberBuilder;
-    pub fn float(key: impl Into<Key>) -> NumberBuilder;
-    pub fn percentage(key: impl Into<Key>) -> NumberBuilder;
-}
-```
-
-**Test Coverage:** 90%+
-
----
-
-### 2.4 Boolean
-
-```rust
-// src/parameter/boolean.rs
-pub struct Boolean {
-    metadata: Metadata,
-    flags: Flags,
-    default: bool,
-    visibility: Option<Expr>,
-}
-
-// Simple - no subtype!
-```
-
-**Test Coverage:** 95%+
-
----
-
-### 2.5 Select
-
-```rust
-// src/parameter/select.rs
-pub struct Select {
-    metadata: Metadata,
-    flags: Flags,
-    mode: SelectionMode,
-    options: Vec<SelectOption>,
-}
-
-pub enum SelectionMode {
-    Single,
-    Multi,
-}
-
-pub struct SelectOption {
-    value: String,
-    label: Option<String>,
-    icon: Option<String>,
-    enabled: bool,
-}
-```
-
-**Test Coverage:** 90%+
-
----
-
-### 2.6 Vector
-
-```rust
-// src/parameter/vector.rs
-pub struct Vector {
-    metadata: Metadata,
-    flags: Flags,
-    subtype: VectorSubtype,
-    validators: Vec<Arc<dyn Validator>>,
-}
-
-impl Vector {
-    pub fn vector3(key: impl Into<Key>) -> VectorBuilder;
-    pub fn color_rgba(key: impl Into<Key>) -> VectorBuilder;
-    pub fn matrix4x4(key: impl Into<Key>) -> VectorBuilder;
-}
-```
-
-**Test Coverage:** 90%+
-
----
-
-### 2.7 List, Object
-
-**Priority: MEDIUM (can be Phase 3)**
-
-```rust
-// src/parameter/list.rs
-pub struct List {
-    metadata: Metadata,
-    flags: Flags,
-    element_type: Box<dyn Parameter>,
-    min_items: Option<usize>,
-    max_items: Option<usize>,
-}
-
-// src/parameter/object.rs
-pub struct Object {
-    metadata: Metadata,
-    flags: Flags,
-    properties: Vec<Arc<dyn Parameter>>,
-}
-```
-
-**Test Coverage:** 85%+
-
-**Deliverable:** All parameter types implemented
-
----
-
-## Phase 3: Schema and Runtime (Week 4-5)
+## Phase 3: Schema and Runtime ✅
 
 ### Goal: Schema definition and runtime state
 
-### 3.1 Schema
+**Status: COMPLETE**
+
+### 3.1 Schema ✅
 
 ```rust
-// src/schema/schema.rs
 pub struct Schema {
-    parameters: Vec<Arc<dyn Parameter>>,
-    groups: Vec<ParameterGroup>,
-}
-
-pub struct SchemaBuilder {
-    parameters: Vec<Arc<dyn Parameter>>,
+    parameters: IndexMap<Key, Arc<dyn Node>>,
 }
 
 impl Schema {
-    pub fn new() -> SchemaBuilder;
-    pub fn parameters(&self) -> &[Arc<dyn Parameter>];
-    pub fn get_parameter(&self, key: &str) -> Option<&Arc<dyn Parameter>>;
+    pub fn builder() -> SchemaBuilder;
+    pub fn get(&self, key: &str) -> Option<&Arc<dyn Node>>;
+    pub fn iter(&self) -> impl Iterator<Item = &Arc<dyn Node>>;
 }
 ```
 
-**Test Coverage:** 90%+
-
----
-
-### 3.2 RuntimeParameter
+### 3.2 RuntimeNode ✅
 
 ```rust
-// src/runtime/parameter.rs
-pub struct RuntimeParameter<T: Parameter> {
-    schema: Arc<T>,
-    state: ParameterState,
-    value: Value,
-    event_bus: EventBus,
+pub struct RuntimeNode<T: Node> {
+    node: Arc<T>,
+    state: State,
 }
 
-pub struct ParameterState {
+pub struct State {
+    value: Option<Value>,
     flags: StateFlags,
-    errors: Vec<ValidationError>,
-    modified_at: Option<Instant>,
-}
-
-impl<T: Parameter> RuntimeParameter<T> {
-    pub fn new(schema: Arc<T>, event_bus: EventBus) -> Self;
-    pub fn set_value(&mut self, value: Value) -> ValidationResult<()>;
-    pub fn get_value(&self) -> &Value;
-    pub fn validate(&mut self) -> bool;
-    pub fn is_dirty(&self) -> bool;
-    pub fn is_touched(&self) -> bool;
 }
 ```
 
-**Test Coverage:** 95%+
+### 3.3 ErasedRuntimeNode ✅
 
----
+Type-erased runtime node for heterogeneous collections.
 
-### 3.3 Context
+### 3.4 Context ✅
 
 ```rust
-// src/context/context.rs
 pub struct Context {
     schema: Arc<Schema>,
-    parameters: HashMap<Key, RuntimeParameter<dyn Parameter>>,
-    event_bus: EventBus,
-    // history and display_observer added in Phase 4
+    nodes: FxHashMap<Key, ErasedRuntimeNode>,
+    #[cfg(feature = "events")]
+    event_bus: Option<EventBus>,
 }
 
 impl Context {
-    pub fn new(schema: Schema) -> Self;
-    pub fn get_value(&self, key: &str) -> Option<&Value>;
-    pub fn set_value(&mut self, key: &str, value: Value) -> Result<()>;
-    pub fn validate(&mut self, key: &str) -> bool;
-    pub fn validate_all(&mut self) -> bool;
+    pub fn new(schema: Arc<Schema>) -> Self;
+    pub fn with_event_bus(schema: Arc<Schema>, bus: EventBus) -> Self;
+    pub fn get(&self, key: &str) -> Option<&Value>;
+    pub fn set(&mut self, key: &str, value: Value) -> bool;
+    pub fn touch(&mut self, key: &str) -> bool;
+    pub fn batch<F, R>(&mut self, description: Option<impl Into<SmartStr>>, f: F) -> R;
 }
 ```
 
-**Test Coverage:** 90%+
-
-**Deliverable:** Schema, Runtime, Context working together
-
 ---
 
-## Phase 4: Reactive Systems (Week 5-7)
+## Phase 4: Reactive Systems (In Progress)
 
-### Goal: Events, observers, undo/redo
+### Goal: Events, observers, validation, undo/redo
 
-### 4.1 Event System
+### 4.1 Event System ✅
 
-**Week 5**
+**Status: COMPLETE**
 
+**Files:**
+```
+src/event/
+├── mod.rs      # Module exports and documentation
+├── types.rs    # Event enum, ValidationError
+└── bus.rs      # EventBus, Subscription, RecvError
+```
+
+**Event Types:**
 ```rust
-// src/event/event.rs
-pub enum ParameterEvent {
-    ValueChanging { key: Key, old_value: Value, new_value: Value },
-    ValueChanged { key: Key, old_value: Value, new_value: Value },
-    Validated { key: Key, is_valid: bool, errors: Vec<ValidationError> },
-    Dirtied { key: Key },
-    Touched { key: Key },
-    VisibilityChanged { key: Key, visible: bool },
-    BatchBegin { description: String },
-    BatchEnd { description: String },
+pub enum Event {
+    // Value events
+    ValueChanging { key, old_value, new_value },
+    ValueChanged { key, old_value, new_value },
+    ValueCleared { key, old_value },
+    
+    // Validation events
+    Validated { key, is_valid, errors },
+    
+    // State events
+    Touched { key },
+    Dirtied { key },
+    Cleaned { key },
+    Reset { key },
+    
+    // Batch events
+    BatchBegin { id, description },
+    BatchEnd { id },
+    
+    // Context events
+    ContextReset,
+    AllCleaned,
 }
+```
 
-// src/event/bus.rs
+**EventBus:**
+```rust
 pub struct EventBus {
-    tx: broadcast::Sender<ParameterEvent>,
-    observers: Mutex<HashMap<SubscriptionId, Box<dyn Observer>>>,
-    batch_state: Mutex<BatchState>,
+    tx: broadcast::Sender<Event>,
+    batch_counter: AtomicU64,
+}
+
+impl EventBus {
+    pub fn new(capacity: usize) -> Self;
+    pub fn subscribe(&self) -> Subscription;
+    pub fn emit(&self, event: Event) -> usize;
+    pub fn batch<F, R>(&self, description: Option<impl Into<SmartStr>>, f: F) -> R;
 }
 ```
 
-**Deliverable:** Event system with tokio::broadcast
+**Industry Patterns Implemented:**
+| Pattern | Source |
+|---------|--------|
+| `ValueChanging`/`ValueChanged` pair | SurveyJS |
+| Batching with `BatchBegin`/`BatchEnd` | MobX transactions |
+| `Touched` state tracking | Formik |
+| RAII Subscription cleanup | MobX disposer |
+| `tokio::broadcast` channel | Vue async queue |
 
 ---
 
-### 4.2 Built-in Observers
+### 4.2 Validation System ✅
 
-**Week 5-6**
+**Status: COMPLETE**
 
+**Files:**
+```
+src/validation/
+├── mod.rs       # Module exports and documentation
+├── context.rs   # ValidationContext, ValueAccess, NoValues
+├── expr.rs      # Declarative Expr enum (~30 variants)
+├── result.rs    # ValidationResult, ValidationOutcome, Error
+├── rule.rs      # Rule enum (Expr + Fn), Rules collection
+├── traits.rs    # Validator trait, FnValidator
+└── validators.rs # Built-in validators
+```
+
+**Hybrid Design (Expr + Validator):**
 ```rust
-// src/observer/logger.rs
-pub struct LoggerObserver { ... }
+/// Declarative validation (80% of cases)
+pub enum Expr {
+    Required,
+    MinLength(usize), MaxLength(usize), Length(usize),
+    Pattern(SmartStr), Email, Url, Uuid,
+    Min(f64), Max(f64), ExclusiveMin(f64), ExclusiveMax(f64),
+    Positive, Negative, NonNegative, Integer, MultipleOf(f64),
+    MinItems(usize), MaxItems(usize), UniqueItems,
+    OneOf(Vec<Value>), Const(Value),
+    And(Vec<Expr>), Or(Vec<Expr>), Not(Box<Expr>),
+    If { condition, then, otherwise },
+    EqualTo(SmartStr), NotEqualTo(SmartStr),
+    LessThan(SmartStr), GreaterThan(SmartStr),
+    // ...
+}
 
-// src/observer/validation.rs
-pub struct ValidationObserver { ... }
+/// Programmatic validation (20% complex cases)
+pub trait Validator: Send + Sync + Debug {
+    fn validate(&self, value: &Value, ctx: &ValidationContext<'_>) -> ValidationResult;
+}
 
-// src/observer/dependency.rs
-pub struct DependencyObserver { ... }
-
-// src/observer/ui.rs
-pub struct UiObserver {
-    sender: mpsc::Sender<UiUpdate>,
+/// Hybrid rule combining both approaches
+pub enum Rule {
+    Expr(Expr),           // Declarative, serializable
+    Fn(Arc<dyn Validator>) // Flexible, Rust-native
 }
 ```
 
-**Test Coverage:** 85%+
-
----
-
-### 4.3 Validation System
-
-**Week 6**
-
+**Built-in Validators:**
 ```rust
-// src/validation/validator.rs
-pub trait Validator: Send + Sync {
-    fn validate(&self, value: &Value) -> ValidationResult<()>;
-}
-
-// src/validation/builtin.rs
-pub struct RequiredValidator;
-pub struct MinLengthValidator(usize);
-pub struct MaxLengthValidator(usize);
-pub struct RegexValidator(Regex);
-pub struct EmailValidator;
-pub struct UrlValidator;
-pub struct RangeValidator { min: f64, max: f64 }
+pub struct Required;
+pub struct Length { min: Option<usize>, max: Option<usize> }
+pub struct Range { min: Option<f64>, max: Option<f64>, exclusive_min: bool, exclusive_max: bool }
+pub struct Match { other_key: SmartStr }
+pub struct PasswordStrength { min_length, require_uppercase, require_lowercase, require_digit, require_special }
+pub struct When<V: Validator> { condition_key, expected_value, then_validator }
 ```
 
-**Deliverable:** Validation system with 10+ built-in validators
+**Industry Patterns Implemented:**
+| Pattern | Source |
+|---------|--------|
+| Declarative expressions | JSON Schema, Zod |
+| Cross-field validation | Yup `.when()` |
+| Resolver pattern | React Hook Form |
+| Expression language | CEL (Kubernetes) |
+| Thread-local regex cache | Performance optimization |
 
 ---
 
-### 4.4 Transformer System
+### 4.3 Transformer System 🔲
 
-**Week 6**
+**Status: PENDING**
 
 ```rust
-// src/transformer/transformer.rs
 pub trait Transformer: Send + Sync {
     fn transform(&self, value: Value) -> Value;
 }
 
-// src/transformer/builtin.rs
-pub struct TrimTransformer;
-pub struct LowercaseTransformer;
-pub struct UppercaseTransformer;
-pub struct StripWhitespaceTransformer;
+// Built-in transformers
+pub struct Trim;
+pub struct Lowercase;
+pub struct Uppercase;
+pub struct StripWhitespace;
 ```
-
-**Deliverable:** Transformer system with 5+ built-in transformers
 
 ---
 
-### 4.5 History System (Undo/Redo)
+### 4.4 History System (Undo/Redo) 🔲
 
-**Week 7**
+**Status: PENDING**
 
 ```rust
-// src/history/command.rs
 pub trait Command: Send + Sync {
     fn execute(&mut self, ctx: &mut Context) -> Result<()>;
     fn undo(&mut self, ctx: &mut Context) -> Result<()>;
@@ -581,69 +371,37 @@ pub trait Command: Send + Sync {
     fn merge(&mut self, other: &dyn Command) -> bool;
 }
 
-pub struct SetValueCommand {
-    key: Key,
-    old_value: Value,
-    new_value: Value,
-}
-
-// src/history/macro_command.rs
-pub struct MacroCommand {
-    commands: Vec<Box<dyn Command>>,
-    description: String,
-}
-
-// src/history/manager.rs
 pub struct HistoryManager {
     undo_stack: VecDeque<Box<dyn Command>>,
     redo_stack: VecDeque<Box<dyn Command>>,
     max_history: usize,
-    current_transaction: Option<MacroCommand>,
 }
 ```
 
-**Test Coverage:** 90%+
-
-**Deliverable:** Full undo/redo with transactions
-
 ---
 
-## Phase 5: Display System (Week 7-8)
+## Phase 5: Display System 🔲
 
 ### Goal: Conditional visibility
+
+**Status: PENDING**
 
 ### 5.1 Visibility Expression
 
 ```rust
-// src/visibility/expr.rs
 pub enum Expr {
-    // Comparisons
-    Eq(Key, Value),           // key == value
-    Ne(Key, Value),           // key != value
-    
-    // Existence
-    IsSet(Key),               // key is not null
-    IsEmpty(Key),             // "", [], {}
-    
-    // Boolean
-    IsTrue(Key),              // key == true
-    
-    // Numeric
-    Lt(Key, f64),             // key < value
-    Le(Key, f64),             // key <= value
-    Gt(Key, f64),             // key > value
-    Ge(Key, f64),             // key >= value
-    
-    // Set membership
-    OneOf(Key, Arc<[Value]>), // key in [...]
-    
-    // Validation state
-    IsValid(Key),             // key passed validation
-    
-    // Combinators
-    And(Arc<[Expr]>),         // all must be true
-    Or(Arc<[Expr]>),          // any must be true
-    Not(Box<Expr>),           // invert
+    Eq(Key, Value),
+    Ne(Key, Value),
+    IsSet(Key),
+    IsEmpty(Key),
+    IsTrue(Key),
+    Lt(Key, f64),
+    Gt(Key, f64),
+    OneOf(Key, Arc<[Value]>),
+    IsValid(Key),
+    And(Arc<[Expr]>),
+    Or(Arc<[Expr]>),
+    Not(Box<Expr>),
 }
 
 impl Expr {
@@ -652,298 +410,65 @@ impl Expr {
 }
 ```
 
-**Deliverable:** Visibility expression system
-
 ---
 
-### 5.2 VisibilityObserver
-
-```rust
-// src/observer/visibility.rs
-pub struct VisibilityObserver {
-    context: Arc<RwLock<Context>>,
-    expressions: HashMap<Key, Expr>,
-}
-
-impl VisibilityObserver {
-    pub fn register(&mut self, key: Key, expr: Expr);
-    pub async fn start(&self);  // Listen and react to changes
-}
-```
-
-**Test Coverage:** 90%+
-
-**Deliverable:** Reactive visibility system integrated with events
-
----
-
-## Phase 6: Polish and Optimization (Week 9-10)
+## Phase 6: Polish and Optimization 🔲
 
 ### Goal: Performance, docs, examples
 
-### 6.1 Performance Optimization
+**Status: PENDING**
 
-**Tasks:**
 - [ ] Benchmark critical paths
-- [ ] Optimize hot loops
-- [ ] Profile memory usage
-- [ ] Reduce allocations
-
-**Targets:**
-- Event dispatch: <200ns
-- Validation: <1µs per validator
-- Command execution: <500ns
-
----
-
-### 6.2 Documentation
-
-**Tasks:**
 - [ ] Complete API documentation (100% coverage)
-- [ ] Write user guide
-- [ ] Write architecture guide
-- [ ] Create examples (10+)
-
-**Examples:**
-- Basic usage
-- Form validation
-- Workflow automation
-- Undo/redo
-- Reactive UI
-- 3D transform editor
-- Game settings
-- CLI tool
-- Custom validators
-- Custom transformers
+- [ ] Create 10+ examples
+- [ ] Property-based tests (proptest)
 
 ---
 
-### 6.3 Testing
+## Phase 7: UI Integration 🔲
 
-**Target Coverage:**
-- Core types: 95%+
-- Parameter types: 90%+
-- Runtime: 90%+
-- Event system: 85%+
-- History: 90%+
-- Display: 90%+
-- **Overall: 90%+**
+### Goal: egui integration example
 
-**Test Types:**
-- Unit tests
-- Integration tests
-- Property-based tests (proptest)
-- Benchmarks (Criterion)
+**Status: OPTIONAL**
 
 ---
 
-## Phase 7: UI Integration (Week 11-12)
+## Feature Flags
 
-### Goal: egui integration (example)
-
-**Priority: OPTIONAL (proof of concept)**
-
-### 7.1 UI Metadata
-
-```rust
-// src/ui/hints.rs (feature-gated)
-pub struct UIHints {
-    widget_type: WidgetType,
-    placeholder: Option<String>,
-    icon: Option<String>,
-    tooltip: Option<String>,
-}
-
-pub enum WidgetType {
-    TextInput,
-    TextArea,
-    NumberInput,
-    Slider,
-    Checkbox,
-    Toggle,
-    Dropdown,
-    ColorPicker,
-    // ...
-}
-```
+| Feature | Status | Description |
+|---------|--------|-------------|
+| `default` | ✅ | Core types only |
+| `serde` | ✅ | Serialization + JSON |
+| `events` | ✅ | Event system with tokio |
+| `visibility` | 🔲 | Visibility expressions |
+| `validation` | ✅ | Validation system with Expr + Validator |
+| `i18n` | 🔲 | Fluent localization |
+| `chrono` | ✅ | Chrono type conversions |
+| `full` | 🔲 | All features |
 
 ---
 
-### 7.2 egui Integration Example
+## Code Statistics
 
-```rust
-// examples/egui_form.rs
-fn render_parameter(ui: &mut egui::Ui, param: &RuntimeParameter) {
-    match param.schema.param_type() {
-        ParameterType::Text => {
-            ui.text_edit_singleline(param.value.as_str_mut());
-        }
-        ParameterType::Number => {
-            ui.add(egui::Slider::new(param.value.as_f64_mut(), 0.0..=100.0));
-        }
-        // ...
-    }
-}
-```
-
-**Deliverable:** Working egui example
+| Metric | Value |
+|--------|-------|
+| Lines of Code | ~16,700 |
+| Node Types | 23 |
+| Test Coverage | 90%+ |
+| Clippy Warnings | 0 |
 
 ---
 
-## Implementation Guidelines
+## Next Steps
 
-### Code Quality Standards
+1. **Phase 4.3: Transformer System**
+   - Implement `Transformer` trait
+   - Add built-in transformers (Trim, Lowercase, etc.)
 
-**Required:**
-- [ ] Clippy clean (no warnings)
-- [ ] Rustfmt formatted
-- [ ] Documentation for all public APIs
-- [ ] Tests for all features
-- [ ] No `unsafe` without justification
-- [ ] Error handling with `thiserror`
-- [ ] Serialization with `serde`
+2. **Phase 4.4: History System**
+   - Implement Command pattern
+   - Add HistoryManager with undo/redo
 
-### Git Workflow
-
-**Branches:**
-- `main` - stable releases
-- `develop` - integration branch
-- `feature/*` - feature branches
-- `fix/*` - bug fix branches
-
-**Commit Messages:**
-```
-type(scope): subject
-
-- feat: new feature
-- fix: bug fix
-- docs: documentation
-- test: tests
-- refactor: code refactoring
-- perf: performance improvement
-```
-
-### Code Review
-
-**Required Reviewers:** 1+  
-**Merge Requirements:**
-- [ ] All tests pass
-- [ ] Code coverage maintained
-- [ ] Documentation updated
-- [ ] Changelog updated
-
----
-
-## Milestones
-
-### Milestone 1: Foundation Complete (Week 2)
-- Core types
-- Subtypes
-- ✅ **Deliverable:** Core module compiles
-
-### Milestone 2: Parameters Complete (Week 4)
-- All parameter types
-- Builders
-- ✅ **Deliverable:** Can define schemas
-
-### Milestone 3: Runtime Complete (Week 5)
-- Schema
-- RuntimeParameter
-- Context
-- ✅ **Deliverable:** Can create and use parameters
-
-### Milestone 4: Reactive Complete (Week 7)
-- Events
-- Observers
-- History
-- ✅ **Deliverable:** Full reactive system
-
-### Milestone 5: Display Complete (Week 8)
-- Display conditions
-- DisplayObserver
-- ✅ **Deliverable:** Conditional visibility
-
-### Milestone 6: Production Ready (Week 10)
-- Performance optimized
-- Fully documented
-- Comprehensive tests
-- ✅ **Deliverable:** v1.0 release
-
-### Milestone 7: UI Example (Week 12)
-- egui integration
-- Example application
-- ✅ **Deliverable:** Working demo
-
----
-
-## Risk Management
-
-### Technical Risks
-
-**Risk 1: Performance Issues**
-- **Mitigation:** Benchmark early, optimize hot paths
-- **Fallback:** Profile-guided optimization
-
-**Risk 2: Type Erasure Complexity**
-- **Mitigation:** Use proven patterns (Arc<dyn Trait>)
-- **Fallback:** Simplify if needed
-
-**Risk 3: Event System Overhead**
-- **Mitigation:** Use efficient channel (tokio::broadcast)
-- **Fallback:** Optional events (feature-gated)
-
-### Schedule Risks
-
-**Risk 1: Scope Creep**
-- **Mitigation:** Strict phase boundaries, defer non-critical features
-- **Fallback:** Move Phase 7 to v2.0
-
-**Risk 2: Testing Takes Longer**
-- **Mitigation:** Write tests alongside code
-- **Fallback:** Extend Week 9-10
-
----
-
-## Success Criteria
-
-### Must Have (v1.0)
-- ✅ All parameter types working
-- ✅ Schema and runtime functional
-- ✅ Event system operational
-- ✅ Undo/redo working
-- ✅ Display conditions working
-- ✅ 90%+ test coverage
-- ✅ Complete documentation
-
-### Nice to Have (v1.1)
-- ⭐ egui integration
-- ⭐ Additional examples
-- ⭐ Performance benchmarks published
-
-### Future (v2.0)
-- 🚀 iced integration
-- 🚀 Web assembly support
-- 🚀 Async validation
-- 🚀 Plugin system
-
----
-
-## Getting Started
-
-### Day 1 Tasks
-
-1. Clone repo structure
-2. Set up Cargo workspace
-3. Add dependencies
-4. Implement Key (already done)
-5. Implement Metadata
-6. Write first tests
-
-### Week 1 Goals
-
-- Core types module complete
-- TextSubtype complete
-- Tests passing
-- Documentation started
-
-**LET'S BUILD IT!** 🚀
+3. **Phase 5: Display System**
+   - Implement visibility Expr
+   - Add reactive visibility observer

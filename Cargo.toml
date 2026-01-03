@@ -21,7 +21,7 @@ unexpected_cfgs = { level = "warn", check-cfg = ['cfg(codspeed)'] }
 [features]
 default = []
 visibility = []
-validation = []
+validation = ["dep:regex"]
 serde = ["dep:serde", "dep:serde_json", "dep:base64", "smartstring/serde", "indexmap/serde"]
 events = ["dep:tokio"]
 i18n = ["dep:fluent"]
@@ -42,6 +42,7 @@ base64 = { version = "0.22", optional = true }
 tokio = { version = "1.43", optional = true, features = ["sync"] }
 fluent = { version = "0.17", optional = true }
 chrono = { version = "0.4", optional = true, default-features = false, features = ["std"] }
+regex = { version = "1.11", optional = true }
 
 [dev-dependencies]
 tokio = { version = "1.43", features = ["rt-multi-thread", "macros"] }
