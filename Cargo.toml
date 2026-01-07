@@ -46,7 +46,7 @@ chrono = { version = "0.4", optional = true, default-features = false, features 
 [dev-dependencies]
 tokio = { version = "1.43", features = ["rt-multi-thread", "macros"] }
 criterion = { version = "0.7", features = ["html_reports"] }
-codspeed-criterion-compat = "2.8"
+codspeed-criterion-compat = "4.2"
 
 [[bench]]
 name = "parameters"
