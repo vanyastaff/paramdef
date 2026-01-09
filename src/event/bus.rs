@@ -113,6 +113,7 @@ impl EventBus {
     ///
     /// This method never blocks - if the channel is full, the oldest
     /// event is dropped for lagging subscribers.
+    #[allow(clippy::manual_unwrap_or_default, clippy::manual_unwrap_or)]
     pub fn emit(&self, event: Event) -> usize {
         match self.tx.send(event) {
             Ok(count) => count,
