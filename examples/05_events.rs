@@ -10,7 +10,7 @@ use paramdef::context::Context;
 #[cfg(feature = "events")]
 use paramdef::core::Value;
 #[cfg(feature = "events")]
-use paramdef::event::{Event, EventBus};
+use paramdef::event::{Event, EventBus, RecvError};
 #[cfg(feature = "events")]
 use paramdef::schema::Schema;
 #[cfg(feature = "events")]
@@ -40,24 +40,36 @@ async fn main() {
     // Spawn a task to listen for events
     let listener = tokio::spawn(async move {
         let mut count = 0;
-        while let Ok(event) = sub.recv().await {
-            count += 1;
-            match event {
-                Event::ValueChanged { key, new_value, .. } => {
-                    println!("  [Event] Value changed: {} = {:?}", key, new_value);
+        loop {
+            match sub.recv().await {
+                Ok(event) => {
+                    count += 1;
+                    match event {
+                        Event::ValueChanged { key, new_value, .. } => {
+                            println!("  [Event] Value changed: {} = {:?}", key, new_value);
+                        }
+                        Event::Touched { key } => {
+                            println!("  [Event] Field touched: {}", key);
+                        }
+                        Event::Dirtied { key } => {
+                            println!("  [Event] Field dirtied: {}", key);
+                        }
+                        _ => {
+                            println!("  [Event] {:?}", event);
+                        }
+                    }
+                    if count >= 6 {
+                        break;
+                    }
                 }
-                Event::Touched { key } => {
-                    println!("  [Event] Field touched: {}", key);
+                Err(RecvError::Lagged(n)) => {
+                    println!("  [Warning] Receiver lagged, missed {} events", n);
+                    // Continue receiving subsequent events
                 }
-                Event::Dirtied { key } => {
-                    println!("  [Event] Field dirtied: {}", key);
+                Err(RecvError::Closed) => {
+                    println!("  [Info] Event bus closed");
+                    break;
                 }
-                _ => {
-                    println!("  [Event] {:?}", event);
-                }
-            }
-            if count >= 6 {
-                break;
             }
         }
     });
@@ -77,7 +89,9 @@ async fn main() {
     ctx.clear("email");
 
     // Wait for listener to finish
-    listener.await.unwrap();
+    if let Err(e) = listener.await {
+        eprintln!("Listener task panicked: {:?}", e);
+    }
 
     println!("\nEvent processing complete!");
 }

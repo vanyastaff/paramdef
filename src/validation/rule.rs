@@ -85,22 +85,30 @@ impl Rule {
     /// Validates a value without context.
     ///
     /// This is a simplified validation method for cases where cross-field
-    /// validation is not needed. Function-based validators (`Rule::Fn`) are
-    /// skipped and return `Ok(())` since they require context.
+    /// validation is not needed. Only expression-based rules (`Rule::Expr`)
+    /// can be checked without context.
     ///
     /// Use [`validate`](Self::validate) with a `ValidationContext` for complete
     /// validation including function-based rules.
     ///
     /// # Errors
     ///
-    /// Returns `Err(ValidationOutcome)` if the value fails validation.
+    /// Returns `Err(ValidationOutcome)` if:
+    /// - The value fails validation
+    /// - The rule is function-based and requires context
     pub fn check(&self, value: &Value) -> ValidationResult {
         match self {
             Self::Expr(expr) => expr.validate(value),
-            Self::Fn(_) => {
-                // Cannot validate Fn rules without context
-                // Return Ok to allow standalone validation of Expr rules
-                Ok(())
+            Self::Fn(validator) => {
+                // Function validators require context - cannot validate in standalone mode
+                Err(super::result::Error::custom(
+                    "context_required",
+                    format!(
+                        "Validator '{}' requires ValidationContext. Use validate() instead of check()",
+                        validator.name()
+                    ),
+                )
+                .into())
             }
         }
     }
@@ -404,19 +412,24 @@ impl Rules {
     /// Validates a value and collects all errors.
     ///
     /// Unlike [`validate`](Self::validate), this doesn't short-circuit on first error.
-    #[must_use]
-    pub fn validate_all(
-        &self,
-        value: &Value,
-        ctx: &ValidationContext<'_>,
-    ) -> Vec<super::result::Error> {
+    /// All rules are evaluated and all errors are collected.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err(ValidationOutcome)` containing all validation errors if any rule fails.
+    pub fn validate_all(&self, value: &Value, ctx: &ValidationContext<'_>) -> ValidationResult {
         let mut errors = Vec::new();
         for rule in &self.rules {
             if let Err(outcome) = rule.validate(value, ctx) {
                 errors.extend(outcome.errors().iter().cloned());
             }
         }
-        errors
+
+        if errors.is_empty() {
+            Ok(())
+        } else {
+            Err(super::result::ValidationOutcome::multiple(errors))
+        }
     }
 
     /// Returns an iterator over the rules.
@@ -621,15 +634,23 @@ mod tests {
 
         let rules = Rules::from_rules([Rule::min_length(10), Rule::max_length(5)]);
 
-        // Both rules will fail for "abc"
-        let errors = rules.validate_all(&Value::text("abc"), &ctx);
-        // min_length fails, max_length passes for "abc"
-        assert_eq!(errors.len(), 1);
+        // Both rules will fail for "abc" - min_length fails, max_length passes
+        let result = rules.validate_all(&Value::text("abc"), &ctx);
+        assert!(result.is_err());
+        let outcome = result.unwrap_err();
+        assert_eq!(outcome.errors().len(), 1);
 
-        // Empty string fails both required (if we add it) and min_length
+        // Empty string fails both required and min_length
         let rules = Rules::from_rules([Rule::required(), Rule::min_length(5)]);
-        let errors = rules.validate_all(&Value::text(""), &ctx);
-        assert_eq!(errors.len(), 2);
+        let result = rules.validate_all(&Value::text(""), &ctx);
+        assert!(result.is_err());
+        let outcome = result.unwrap_err();
+        assert_eq!(outcome.errors().len(), 2);
+
+        // Valid value should pass
+        let rules = Rules::from_rules([Rule::required(), Rule::min_length(3)]);
+        let result = rules.validate_all(&Value::text("hello"), &ctx);
+        assert!(result.is_ok());
     }
 
     #[test]

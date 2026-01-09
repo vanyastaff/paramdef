@@ -114,8 +114,14 @@ impl EventBus {
     /// This method never blocks - if the channel is full, the oldest
     /// event is dropped for lagging subscribers.
     pub fn emit(&self, event: Event) -> usize {
-        // Returns number of subscribers that received the event, or 0 if none active
-        self.tx.send(event).unwrap_or(0)
+        match self.tx.send(event) {
+            Ok(count) => count,
+            Err(_) => {
+                // No active subscribers - event is intentionally dropped
+                // This is expected behavior, not an error condition
+                0
+            }
+        }
     }
 
     /// Emits multiple events in sequence.
