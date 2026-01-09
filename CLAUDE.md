@@ -25,7 +25,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `paramdef` is a type-safe parameter definition system for Rust, inspired by Blender RNA, Unreal Engine UPROPERTY, and Qt Property System. The goal is to create the "serde of parameter schemas" - a production-ready library for workflow engines, visual programming tools, no-code platforms, and game engines.
 
-**Current Status:** Active development - Phase 1-4.2 complete (Event System, Validation), Phase 4.3+ in progress.
+**Current Status:** Active development - Phase 1-4.3 complete (Event System, Validation, Transformers), Phase 4.4+ in progress.
 
 ## Build and Test Commands
 
@@ -191,6 +191,34 @@ pub struct RuntimeParameter<T: Node> {
     errors: Vec<ValidationError>,
 }
 ```
+
+### Transform System (Implemented)
+
+Hybrid transformation combining declarative expressions with programmatic transformers (see `docs/21-TRANSFORM-SYSTEM.md`):
+
+```rust
+// Declarative transforms (~80% of cases)
+let transforms = Transforms::new()
+    .trim()
+    .lowercase()
+    .capitalize();
+
+// Programmatic transformation (complex cases)
+let pipeline = Transforms::new()
+    .push(Transform::Trim)
+    .custom(PhoneFormatter)
+    .func("custom", |v| v.clone());
+
+// Apply transformations
+let result = transforms.apply(&value);
+```
+
+**Built-in:** `Trim`, `Lowercase`, `Uppercase`, `Capitalize`, `Clamp`, `Round`, `Truncate`, `Replace`, `Default`.
+
+**Industry patterns:**
+- `parse`/`format` pipeline (React Final Form)
+- Method chaining (Express Validator)
+- Normalize before validate (OWASP)
 
 ### Validation System (Implemented)
 

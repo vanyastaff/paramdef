@@ -199,6 +199,9 @@ pub mod schema;
 #[cfg(feature = "validation")]
 pub mod validation;
 
+#[cfg(feature = "validation")]
+pub mod transform;
+
 // #[cfg(feature = "visibility")]
 // pub mod visibility;
 

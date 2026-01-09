@@ -165,6 +165,7 @@ impl Context {
     ///
     /// When `events` feature is enabled, emits `ValueChanging` before
     /// and `ValueChanged` after the update.
+    #[allow(clippy::needless_pass_by_value)]
     pub fn set(&mut self, key: &str, value: Value) -> bool {
         if let Some(node) = self.nodes.get_mut(key) {
             #[cfg(feature = "events")]
