@@ -208,6 +208,8 @@ pub mod transform;
 #[cfg(feature = "events")]
 pub mod event;
 
+pub mod history;
+
 // #[cfg(feature = "i18n")]
 // pub mod i18n;
 

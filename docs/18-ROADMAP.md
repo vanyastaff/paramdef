@@ -27,7 +27,7 @@ This roadmap provides a structured approach to implementing paramdef, organized 
 | Phase 4.1: Event System | ✅ Complete | Event, EventBus, Subscription, Context integration |
 | Phase 4.2: Validation | ✅ Complete | Hybrid Expr + Validator trait, built-in validators |
 | Phase 4.3: Transformers | ✅ Complete | Hybrid Transform + Transformer trait, built-in transformers |
-| Phase 4.4: History | 🔲 Pending | Command pattern, undo/redo |
+| Phase 4.4: History | ✅ Complete | Command pattern, undo/redo, command merging |
 | Phase 5: Display | 🔲 Pending | Visibility expressions (Expr) |
 | Phase 6: Polish | 🔲 Pending | Performance, docs, examples |
 | Phase 7: UI Integration | 🔲 Optional | egui example |
@@ -408,24 +408,66 @@ pub struct Default { value: Value }
 
 ---
 
-### 4.4 History System (Undo/Redo) 🔲
+### 4.4 History System (Undo/Redo) ✅
 
-**Status: PENDING**
+**Status: COMPLETE**
 
+**Files:**
+```
+src/history/
+├── mod.rs       # Module exports and documentation
+├── command.rs   # Command trait, CommandResult
+├── manager.rs   # HistoryManager with undo/redo stacks
+└── commands.rs  # Built-in commands (SetValue, Clear, Touch, Macro)
+```
+
+**Command Trait:**
 ```rust
-pub trait Command: Send + Sync {
-    fn execute(&mut self, ctx: &mut Context) -> Result<()>;
-    fn undo(&mut self, ctx: &mut Context) -> Result<()>;
-    fn redo(&mut self, ctx: &mut Context) -> Result<()>;
+pub trait Command: Send + Sync + Debug {
+    fn as_any(&self) -> &dyn Any;
+    fn execute(&mut self, ctx: &mut Context) -> CommandResult;
+    fn undo(&mut self, ctx: &mut Context) -> CommandResult;
+    fn redo(&mut self, ctx: &mut Context) -> CommandResult;
     fn merge(&mut self, other: &dyn Command) -> bool;
+    fn can_merge_with(&self, other: &dyn Command) -> bool;
+    fn description(&self) -> &str;
 }
+```
 
+**HistoryManager:**
+```rust
 pub struct HistoryManager {
     undo_stack: VecDeque<Box<dyn Command>>,
     redo_stack: VecDeque<Box<dyn Command>>,
     max_history: usize,
+    enable_merging: bool,
+}
+
+impl HistoryManager {
+    pub fn new() -> Self;
+    pub fn execute<C: Command + 'static>(&mut self, cmd: C, ctx: &mut Context) -> CommandResult;
+    pub fn undo(&mut self, ctx: &mut Context) -> CommandResult;
+    pub fn redo(&mut self, ctx: &mut Context) -> CommandResult;
+    pub fn can_undo(&self) -> bool;
+    pub fn can_redo(&self) -> bool;
 }
 ```
+
+**Built-in Commands:**
+```rust
+pub struct SetValueCommand { key, old_value, new_value }  // Supports merging
+pub struct ClearValueCommand { key, old_value }
+pub struct TouchCommand { key, was_touched }
+pub struct MacroCommand { commands: Vec<Box<dyn Command>>, description }
+```
+
+**Industry Patterns Implemented:**
+| Pattern | Source |
+|---------|--------|
+| Command pattern | Qt Undo Framework |
+| Command merging | Photoshop |
+| Transaction grouping | Text Editors |
+| Memory-efficient deltas | Game Engines (100 bytes vs 10KB snapshots) |
 
 ---
 

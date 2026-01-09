@@ -25,7 +25,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `paramdef` is a type-safe parameter definition system for Rust, inspired by Blender RNA, Unreal Engine UPROPERTY, and Qt Property System. The goal is to create the "serde of parameter schemas" - a production-ready library for workflow engines, visual programming tools, no-code platforms, and game engines.
 
-**Current Status:** Active development - Phase 1-4.3 complete (Event System, Validation, Transformers), Phase 4.4+ in progress.
+**Current Status:** Active development - Phase 1-4.4 complete (Event System, Validation, Transformers, History), Phase 5+ in progress.
 
 ## Build and Test Commands
 
@@ -299,11 +299,33 @@ while let Ok(event) = sub.recv().await {
 - `Touched` state (Formik)
 - RAII Subscription cleanup (MobX disposer)
 
-**Command Pattern for Undo/Redo (planned):**
-- ~100 bytes per command vs ~10KB per snapshot
-- Supports command merging (optimization)
-- Extensible (custom commands)
-- Enables transactions (MacroCommand)
+### History System (Implemented)
+
+Command pattern for undo/redo (see `docs/22-HISTORY-SYSTEM.md`):
+
+```rust
+use paramdef::history::{HistoryManager, SetValueCommand};
+
+let mut history = HistoryManager::new();
+
+// Execute a command (stores in undo stack)
+let cmd = SetValueCommand::new("name", None, Value::text("Alice"));
+history.execute(cmd, &mut ctx).unwrap();
+
+// Undo the change
+history.undo(&mut ctx).unwrap();
+
+// Redo the change
+history.redo(&mut ctx).unwrap();
+```
+
+**Built-in commands:** `SetValueCommand`, `ClearValueCommand`, `TouchCommand`, `MacroCommand` (transactions).
+
+**Industry patterns implemented:**
+- Command pattern (Qt Undo Framework)
+- Command merging (Photoshop) - ~100 bytes per command vs ~10KB per snapshot
+- Transaction grouping (Text Editors)
+- Memory-efficient delta storage (Game Engines)
 
 ## Key Documentation Files
 
@@ -314,6 +336,8 @@ Essential reading in `docs/`:
 - `18-ROADMAP.md` - Implementation plan and milestones
 - `19-EVENT-SYSTEM.md` - Event system documentation
 - `20-VALIDATION-SYSTEM.md` - Hybrid validation system documentation
+- `21-TRANSFORM-SYSTEM.md` - Transformation system documentation
+- `22-HISTORY-SYSTEM.md` - Undo/redo system documentation
 
 **Reading Guide for Full Understanding:**
 1. README.md (this overview)
