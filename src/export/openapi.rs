@@ -199,8 +199,12 @@ impl OpenApiGenerator {
         let json_schema = json_exporter.export(schema)?;
 
         // Convert to JSON Value for OpenAPI components
-        let schema_json = serde_json::to_value(&json_schema)
-            .map_err(|e| super::json_schema::ExportError::Serialization(e.to_string()))?;
+        let schema_json = serde_json::to_value(&json_schema).map_err(|e| {
+            super::json_schema::ExportError::Serialization(format!(
+                "Failed to serialize schema '{}': {}",
+                self.title, e
+            ))
+        })?;
 
         // Create components with schema
         let mut schemas = HashMap::new();

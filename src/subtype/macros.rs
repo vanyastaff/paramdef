@@ -42,7 +42,9 @@ macro_rules! define_number_subtype {
         // Compile-time check: Value must implement Numeric
         const _: () = {
             fn _assert_numeric<T: $crate::subtype::traits::Numeric>() {}
-            fn _check() { _assert_numeric::<$value>(); }
+            fn _check() {
+                _assert_numeric::<$value>();
+            }
         };
     };
 
@@ -63,7 +65,9 @@ macro_rules! define_number_subtype {
         // Compile-time check: Value must implement Numeric
         const _: () = {
             fn _assert_numeric<T: $crate::subtype::traits::Numeric>() {}
-            fn _check() { _assert_numeric::<$value>(); }
+            fn _check() {
+                _assert_numeric::<$value>();
+            }
         };
     };
 }

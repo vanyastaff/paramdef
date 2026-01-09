@@ -90,10 +90,10 @@
 
 mod expr;
 mod traits;
-mod transforms;
 mod transformers;
+mod transforms;
 
 pub use expr::Transform;
 pub use traits::{FnTransformer, Transformer};
-pub use transforms::Transforms;
 pub use transformers::{Clamp, Default, Replace, Round, Truncate};
+pub use transforms::Transforms;

@@ -374,10 +374,7 @@ mod tests {
     #[test]
     fn test_round_float() {
         let round = Round::new(2);
-        assert_eq!(
-            round.transform(&Value::Float(3.14159)),
-            Value::Float(3.14)
-        );
+        assert_eq!(round.transform(&Value::Float(3.14159)), Value::Float(3.14));
     }
 
     #[test]

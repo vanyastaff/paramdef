@@ -242,19 +242,43 @@ impl JsonSchemaExporter {
             }
             NodeKind::Group | NodeKind::Layout => {
                 // Groups don't have JSON Schema representation
-                return Err(ExportError::UnsupportedType(
-                    "Group/Layout nodes cannot be exported to JSON Schema".to_string(),
-                ));
+                return Err(ExportError::UnsupportedType(format!(
+                    "Group/Layout node '{}' cannot be exported to JSON Schema",
+                    node.metadata().key()
+                )));
             }
             NodeKind::Decoration => {
                 // Decorations are UI-only, skip
-                return Err(ExportError::UnsupportedType(
-                    "Decoration nodes are UI-only and cannot be exported".to_string(),
-                ));
+                return Err(ExportError::UnsupportedType(format!(
+                    "Decoration node '{}' is UI-only and cannot be exported",
+                    node.metadata().key()
+                )));
             }
         }
 
         Ok(JsonValue::Object(prop))
+    }
+
+    /// Helper to create items schema for Select with multiple selection.
+    fn create_select_items_schema(
+        select: &crate::types::leaf::Select,
+        is_static: bool,
+    ) -> JsonValue {
+        if !is_static {
+            return serde_json::json!({"type": "string"});
+        }
+
+        let enum_values: Vec<JsonValue> = select
+            .options()
+            .iter()
+            .map(|opt| JsonValue::String(opt.value.to_string()))
+            .collect();
+
+        if enum_values.is_empty() {
+            serde_json::json!({"type": "string"})
+        } else {
+            serde_json::json!({"type": "string", "enum": enum_values})
+        }
     }
 
     /// Converts a Leaf node to JSON Schema properties.
@@ -269,9 +293,38 @@ impl JsonSchemaExporter {
         }
 
         // Select
-        if any.downcast_ref::<crate::types::leaf::Select>().is_some() {
+        if let Some(select) = any.downcast_ref::<crate::types::leaf::Select>() {
+            use crate::types::leaf::{OptionSource, SelectionMode};
+
+            let is_static = matches!(select.option_source(), OptionSource::Static);
+            let is_multiple = select.selection_mode() == SelectionMode::Multiple;
+
+            // For static options with single selection, export as enum
+            if is_static && !is_multiple {
+                prop.insert("type".to_string(), JsonValue::String("string".to_string()));
+                let enum_values: Vec<JsonValue> = select
+                    .options()
+                    .iter()
+                    .map(|opt| JsonValue::String(opt.value.to_string()))
+                    .collect();
+                if !enum_values.is_empty() {
+                    prop.insert("enum".to_string(), JsonValue::Array(enum_values));
+                }
+                return;
+            }
+
+            // Multiple selection is array of strings
+            if is_multiple {
+                prop.insert("type".to_string(), JsonValue::String("array".to_string()));
+
+                let items = Self::create_select_items_schema(select, is_static);
+                prop.insert("items".to_string(), items);
+                prop.insert("uniqueItems".to_string(), JsonValue::Bool(true));
+                return;
+            }
+
+            // Dynamic single selection - just string
             prop.insert("type".to_string(), JsonValue::String("string".to_string()));
-            // TODO: Add enum values from Select options
             return;
         }
 
@@ -313,7 +366,30 @@ impl JsonSchemaExporter {
             return;
         }
 
-        // Text - fallback (most common, try last)
+        // Text - check explicit Text types
+        if any
+            .downcast_ref::<crate::types::leaf::Text<crate::subtype::text::Plain>>()
+            .is_some()
+            || any
+                .downcast_ref::<crate::types::leaf::Text<crate::subtype::text::Email>>()
+                .is_some()
+            || any
+                .downcast_ref::<crate::types::leaf::Text<crate::subtype::text::Url>>()
+                .is_some()
+            || any
+                .downcast_ref::<crate::types::leaf::Text<crate::subtype::text::Password>>()
+                .is_some()
+        {
+            prop.insert("type".to_string(), JsonValue::String("string".to_string()));
+            return;
+        }
+
+        // Unknown type - fallback to string with warning
+        eprintln!(
+            "Warning: Unrecognized leaf node type '{}' for key '{}', defaulting to string type",
+            std::any::type_name_of_val(any),
+            node.metadata().key()
+        );
         prop.insert("type".to_string(), JsonValue::String("string".to_string()));
     }
 
@@ -322,16 +398,69 @@ impl JsonSchemaExporter {
         let any = node.as_any();
 
         // Object
-        if let Some(_obj) = any.downcast_ref::<crate::types::container::Object>() {
+        if let Some(obj) = any.downcast_ref::<crate::types::container::Object>() {
             prop.insert("type".to_string(), JsonValue::String("object".to_string()));
-            // TODO: Add properties from Object fields
+
+            // Export nested properties recursively
+            let mut properties = Map::new();
+            let mut required_fields = Vec::new();
+
+            for (field_key, field_node) in obj.fields() {
+                let Ok(field_schema) = Self::convert_node(field_node.as_ref()) else {
+                    continue;
+                };
+
+                properties.insert(field_key.to_string(), field_schema);
+
+                // Check if field is required
+                if Self::is_required(field_node.as_ref()) {
+                    required_fields.push(field_key.to_string());
+                }
+            }
+
+            if !properties.is_empty() {
+                prop.insert("properties".to_string(), JsonValue::Object(properties));
+            }
+
+            if !required_fields.is_empty() {
+                prop.insert(
+                    "required".to_string(),
+                    JsonValue::Array(required_fields.into_iter().map(JsonValue::String).collect()),
+                );
+            }
+
+            // Set additionalProperties based on extensibility
+            prop.insert(
+                "additionalProperties".to_string(),
+                JsonValue::Bool(obj.is_extensible()),
+            );
+
             return;
         }
 
         // List
-        if let Some(_list) = any.downcast_ref::<crate::types::container::List>() {
+        if let Some(list) = any.downcast_ref::<crate::types::container::List>() {
             prop.insert("type".to_string(), JsonValue::String("array".to_string()));
-            // TODO: Add items schema from List template
+
+            // Export item template schema
+            let template = list.item_template();
+            if let Ok(item_schema) = Self::convert_node(template.as_ref()) {
+                prop.insert("items".to_string(), item_schema);
+            }
+
+            // Add min/max items constraints
+            if let Some(min) = list.min_items() {
+                prop.insert("minItems".to_string(), JsonValue::Number(min.into()));
+            }
+            if let Some(max) = list.max_items() {
+                prop.insert("maxItems".to_string(), JsonValue::Number(max.into()));
+            }
+
+            // Add uniqueItems if the list requires unique items
+            if list.is_unique() {
+                prop.insert("uniqueItems".to_string(), JsonValue::Bool(true));
+            }
+
             return;
         }
 
@@ -342,7 +471,6 @@ impl JsonSchemaExporter {
     /// Checks if a node has the REQUIRED flag set.
     fn is_required(node: &dyn Node) -> bool {
         let any = node.as_any();
-        let type_name = std::any::type_name_of_val(any);
 
         // Text (try common subtypes)
         if let Some(text) =
@@ -367,39 +495,35 @@ impl JsonSchemaExporter {
         }
 
         // Number (try common subtypes)
-        if type_name.contains("::Number<") {
-            if let Some(num) = any
-                .downcast_ref::<crate::types::leaf::Number<crate::subtype::number::GenericNumber>>()
-            {
-                return num.flags().is_required();
-            }
-            if let Some(num) =
-                any.downcast_ref::<crate::types::leaf::Number<crate::subtype::number::Port>>()
-            {
-                return num.flags().is_required();
-            }
-            if let Some(num) =
-                any.downcast_ref::<crate::types::leaf::Number<crate::subtype::number::Count>>()
-            {
-                return num.flags().is_required();
-            }
-            if let Some(num) =
-                any.downcast_ref::<crate::types::leaf::Number<crate::subtype::number::Percentage>>()
-            {
-                return num.flags().is_required();
-            }
-            if let Some(num) =
-                any.downcast_ref::<crate::types::leaf::Number<crate::subtype::number::Angle>>()
-            {
-                return num.flags().is_required();
-            }
-            if let Some(num) =
-                any.downcast_ref::<crate::types::leaf::Number<crate::subtype::number::Distance>>()
-            {
-                return num.flags().is_required();
-            }
-            // Default: assume not required if subtype not recognized
-            return false;
+        if let Some(num) =
+            any.downcast_ref::<crate::types::leaf::Number<crate::subtype::number::GenericNumber>>()
+        {
+            return num.flags().is_required();
+        }
+        if let Some(num) =
+            any.downcast_ref::<crate::types::leaf::Number<crate::subtype::number::Port>>()
+        {
+            return num.flags().is_required();
+        }
+        if let Some(num) =
+            any.downcast_ref::<crate::types::leaf::Number<crate::subtype::number::Count>>()
+        {
+            return num.flags().is_required();
+        }
+        if let Some(num) =
+            any.downcast_ref::<crate::types::leaf::Number<crate::subtype::number::Percentage>>()
+        {
+            return num.flags().is_required();
+        }
+        if let Some(num) =
+            any.downcast_ref::<crate::types::leaf::Number<crate::subtype::number::Angle>>()
+        {
+            return num.flags().is_required();
+        }
+        if let Some(num) =
+            any.downcast_ref::<crate::types::leaf::Number<crate::subtype::number::Distance>>()
+        {
+            return num.flags().is_required();
         }
 
         // Boolean
@@ -437,7 +561,7 @@ impl JsonSchemaExporter {
             return mode.flags().is_required();
         }
 
-        // Default: not required
+        // Default: not required (no warning - likely a specialized subtype)
         false
     }
 }

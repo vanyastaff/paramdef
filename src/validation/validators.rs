@@ -15,10 +15,10 @@
 
 #![allow(clippy::cast_precision_loss)]
 
-use crate::core::Value;
 use super::context::ValidationContext;
 use super::result::{Error, ValidationResult};
 use super::traits::Validator;
+use crate::core::Value;
 
 /// Validates that a value is present and non-empty.
 #[derive(Debug, Clone, Copy, Default)]
@@ -448,7 +448,11 @@ mod tests {
 
     #[test]
     fn test_required() {
-        let schema = Arc::new(Schema::builder().parameter(Text::builder("test").build()).build());
+        let schema = Arc::new(
+            Schema::builder()
+                .parameter(Text::builder("test").build())
+                .build(),
+        );
         let key = "test".into();
         let values = NoValues;
         let ctx = create_test_context(&key, &schema, &values);
@@ -462,7 +466,11 @@ mod tests {
 
     #[test]
     fn test_length() {
-        let schema = Arc::new(Schema::builder().parameter(Text::builder("test").build()).build());
+        let schema = Arc::new(
+            Schema::builder()
+                .parameter(Text::builder("test").build())
+                .build(),
+        );
         let key = "test".into();
         let values = NoValues;
         let ctx = create_test_context(&key, &schema, &values);
@@ -476,7 +484,11 @@ mod tests {
 
     #[test]
     fn test_range() {
-        let schema = Arc::new(Schema::builder().parameter(Text::builder("test").build()).build());
+        let schema = Arc::new(
+            Schema::builder()
+                .parameter(Text::builder("test").build())
+                .build(),
+        );
         let key = "test".into();
         let values = NoValues;
         let ctx = create_test_context(&key, &schema, &values);
@@ -523,7 +535,11 @@ mod tests {
 
     #[test]
     fn test_password_strength() {
-        let schema = Arc::new(Schema::builder().parameter(Text::builder("test").build()).build());
+        let schema = Arc::new(
+            Schema::builder()
+                .parameter(Text::builder("test").build())
+                .build(),
+        );
         let key = "test".into();
         let values = NoValues;
         let ctx = create_test_context(&key, &schema, &values);

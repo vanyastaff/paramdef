@@ -39,8 +39,8 @@
 // Allow i64 to f64 casts - precision loss is acceptable for validation comparisons
 #![allow(clippy::cast_precision_loss)]
 
-use crate::core::{SmartStr, Value};
 use super::result::{Error, ValidationResult};
+use crate::core::{SmartStr, Value};
 
 /// Declarative validation expression.
 ///
@@ -52,12 +52,10 @@ use super::result::{Error, ValidationResult};
 #[non_exhaustive]
 pub enum Expr {
     // === Presence ===
-
     /// Value must not be null or empty.
     Required,
 
     // === String Constraints ===
-
     /// Minimum string length (inclusive).
     MinLength(usize),
 
@@ -89,7 +87,6 @@ pub enum Expr {
     Contains(SmartStr),
 
     // === Numeric Constraints ===
-
     /// Minimum value (inclusive).
     Min(f64),
 
@@ -118,7 +115,6 @@ pub enum Expr {
     Integer,
 
     // === Array Constraints ===
-
     /// Minimum number of items.
     MinItems(usize),
 
@@ -132,7 +128,6 @@ pub enum Expr {
     UniqueItems,
 
     // === Enum/Const Constraints ===
-
     /// Value must be one of the specified values.
     OneOf(Vec<Value>),
 
@@ -140,7 +135,6 @@ pub enum Expr {
     Const(Value),
 
     // === Logical Operators ===
-
     /// All expressions must pass.
     And(Vec<Expr>),
 
@@ -161,7 +155,6 @@ pub enum Expr {
     },
 
     // === Cross-Field (requires ValidationContext) ===
-
     /// Value must equal the value of another field.
     EqualTo(SmartStr),
 
@@ -248,7 +241,11 @@ impl Expr {
                     Ok(())
                 }
             }
-            Self::If { condition, then, otherwise } => {
+            Self::If {
+                condition,
+                then,
+                otherwise,
+            } => {
                 if condition.validate(value).is_ok() {
                     then.validate(value)
                 } else if let Some(else_expr) = otherwise {
@@ -259,10 +256,9 @@ impl Expr {
             }
 
             // === Cross-Field (no-op without context) ===
-            Self::EqualTo(_)
-            | Self::NotEqualTo(_)
-            | Self::LessThan(_)
-            | Self::GreaterThan(_) => Ok(()),
+            Self::EqualTo(_) | Self::NotEqualTo(_) | Self::LessThan(_) | Self::GreaterThan(_) => {
+                Ok(())
+            }
         }
     }
 
@@ -285,7 +281,8 @@ impl Expr {
                         return Err(Error::custom(
                             "equal_to",
                             format!("Value must equal {other_key}"),
-                        ).into());
+                        )
+                        .into());
                     }
                 }
                 Ok(())
@@ -296,17 +293,14 @@ impl Expr {
                         return Err(Error::custom(
                             "not_equal_to",
                             format!("Value must not equal {other_key}"),
-                        ).into());
+                        )
+                        .into());
                     }
                 }
                 Ok(())
             }
-            Self::LessThan(other_key) => {
-                validate_less_than(value, other_key, ctx)
-            }
-            Self::GreaterThan(other_key) => {
-                validate_greater_than(value, other_key, ctx)
-            }
+            Self::LessThan(other_key) => validate_less_than(value, other_key, ctx),
+            Self::GreaterThan(other_key) => validate_greater_than(value, other_key, ctx),
             // All other expressions delegate to simple validate
             _ => self.validate(value),
         }
@@ -352,7 +346,8 @@ fn validate_length(value: &Value, expected: usize) -> ValidationResult {
             return Err(Error::custom(
                 "length",
                 format!("Length must be exactly {expected}, got {len}"),
-            ).into());
+            )
+            .into());
         }
     }
     Ok(())
@@ -364,6 +359,9 @@ fn validate_pattern(value: &Value, pattern: &str) -> ValidationResult {
         use std::cell::RefCell;
         use std::collections::HashMap;
 
+        // Limit cache size to prevent unbounded growth with user-supplied patterns
+        const MAX_CACHE_SIZE: usize = 100;
+
         thread_local! {
             static REGEX_CACHE: RefCell<HashMap<String, Result<regex::Regex, regex::Error>>> =
                 RefCell::new(HashMap::new());
@@ -371,9 +369,17 @@ fn validate_pattern(value: &Value, pattern: &str) -> ValidationResult {
 
         let result = REGEX_CACHE.with(|cache| {
             let mut cache = cache.borrow_mut();
-            let entry = cache.entry(pattern.to_string()).or_insert_with(|| {
-                regex::Regex::new(pattern)
-            });
+
+            // If cache is at capacity and pattern is not cached, clear oldest entries
+            if cache.len() >= MAX_CACHE_SIZE && !cache.contains_key(pattern) {
+                // Simple strategy: clear entire cache when full
+                // More sophisticated LRU would track access times
+                cache.clear();
+            }
+
+            let entry = cache
+                .entry(pattern.to_string())
+                .or_insert_with(|| regex::Regex::new(pattern));
 
             match entry {
                 Ok(re) => {
@@ -414,9 +420,8 @@ fn validate_email(value: &Value) -> ValidationResult {
 fn validate_url(value: &Value) -> ValidationResult {
     if let Value::Text(s) = value {
         // Simple URL validation
-        let valid = s.starts_with("http://")
-            || s.starts_with("https://")
-            || s.starts_with("ftp://");
+        let valid =
+            s.starts_with("http://") || s.starts_with("https://") || s.starts_with("ftp://");
 
         if !valid {
             return Err(Error::url().into());
@@ -447,10 +452,9 @@ fn validate_uuid(value: &Value) -> ValidationResult {
 fn validate_starts_with(value: &Value, prefix: &str) -> ValidationResult {
     if let Value::Text(s) = value {
         if !s.starts_with(prefix) {
-            return Err(Error::custom(
-                "starts_with",
-                format!("Value must start with '{prefix}'"),
-            ).into());
+            return Err(
+                Error::custom("starts_with", format!("Value must start with '{prefix}'")).into(),
+            );
         }
     }
     Ok(())
@@ -459,10 +463,9 @@ fn validate_starts_with(value: &Value, prefix: &str) -> ValidationResult {
 fn validate_ends_with(value: &Value, suffix: &str) -> ValidationResult {
     if let Value::Text(s) = value {
         if !s.ends_with(suffix) {
-            return Err(Error::custom(
-                "ends_with",
-                format!("Value must end with '{suffix}'"),
-            ).into());
+            return Err(
+                Error::custom("ends_with", format!("Value must end with '{suffix}'")).into(),
+            );
         }
     }
     Ok(())
@@ -471,10 +474,7 @@ fn validate_ends_with(value: &Value, suffix: &str) -> ValidationResult {
 fn validate_contains(value: &Value, substr: &str) -> ValidationResult {
     if let Value::Text(s) = value {
         if !s.contains(substr) {
-            return Err(Error::custom(
-                "contains",
-                format!("Value must contain '{substr}'"),
-            ).into());
+            return Err(Error::custom("contains", format!("Value must contain '{substr}'")).into());
         }
     }
     Ok(())
@@ -583,7 +583,11 @@ fn validate_non_negative(value: &Value) -> ValidationResult {
     };
 
     if num < 0.0 {
-        return Err(Error::custom("non_negative", format!("Value must be non-negative, got {num}")).into());
+        return Err(Error::custom(
+            "non_negative",
+            format!("Value must be non-negative, got {num}"),
+        )
+        .into());
     }
     Ok(())
 }
@@ -591,7 +595,9 @@ fn validate_non_negative(value: &Value) -> ValidationResult {
 fn validate_integer(value: &Value) -> ValidationResult {
     if let Value::Float(n) = value {
         if n.fract() != 0.0 {
-            return Err(Error::custom("integer", format!("Value must be an integer, got {n}")).into());
+            return Err(
+                Error::custom("integer", format!("Value must be an integer, got {n}")).into(),
+            );
         }
     }
     Ok(())
@@ -620,8 +626,12 @@ fn validate_item_count(value: &Value, expected: usize) -> ValidationResult {
         if arr.len() != expected {
             return Err(Error::custom(
                 "item_count",
-                format!("Array must have exactly {expected} items, got {}", arr.len()),
-            ).into());
+                format!(
+                    "Array must have exactly {expected} items, got {}",
+                    arr.len()
+                ),
+            )
+            .into());
         }
     }
     Ok(())
@@ -629,7 +639,9 @@ fn validate_item_count(value: &Value, expected: usize) -> ValidationResult {
 
 fn validate_unique_items(value: &Value) -> ValidationResult {
     if let Value::Array(arr) = value {
-        // O(n²) but simple - could optimize with HashSet for large arrays
+        // O(n²) comparison but with early exit on first duplicate
+        // Can't use HashSet because Value doesn't implement Hash+Eq
+        // (Float values make Hash implementation non-trivial due to NaN)
         for i in 0..arr.len() {
             for j in (i + 1)..arr.len() {
                 if arr[i] == arr[j] {
@@ -643,14 +655,26 @@ fn validate_unique_items(value: &Value) -> ValidationResult {
 
 fn validate_one_of(value: &Value, allowed: &[Value]) -> ValidationResult {
     if !allowed.contains(value) {
-        let allowed_strs: Vec<&str> = allowed
+        // Format all Value types for better error messages
+        let allowed_strs: Vec<String> = allowed
             .iter()
-            .filter_map(|v| match v {
-                Value::Text(s) => Some(s.as_str()),
-                _ => None,
+            .map(|v| match v {
+                Value::Text(s) => format!("\"{s}\""),
+                Value::Int(n) => n.to_string(),
+                Value::Float(f) => f.to_string(),
+                Value::Bool(b) => b.to_string(),
+                Value::Null => "null".to_string(),
+                Value::Array(_) => "[array]".to_string(),
+                Value::Object(_) => "{object}".to_string(),
+                Value::Binary(_) => "[binary]".to_string(),
             })
             .collect();
-        return Err(Error::not_in_enum(&allowed_strs).into());
+
+        let allowed_refs: Vec<&str> = allowed_strs
+            .iter()
+            .map(std::string::String::as_str)
+            .collect();
+        return Err(Error::not_in_enum(&allowed_refs).into());
     }
     Ok(())
 }
@@ -685,10 +709,9 @@ fn validate_less_than(
         };
 
         if num >= other_num {
-            return Err(Error::custom(
-                "less_than",
-                format!("Value must be less than {other_key}"),
-            ).into());
+            return Err(
+                Error::custom("less_than", format!("Value must be less than {other_key}")).into(),
+            );
         }
     }
     Ok(())
@@ -716,7 +739,8 @@ fn validate_greater_than(
             return Err(Error::custom(
                 "greater_than",
                 format!("Value must be greater than {other_key}"),
-            ).into());
+            )
+            .into());
         }
     }
     Ok(())
@@ -750,13 +774,25 @@ mod tests {
 
     #[test]
     fn test_pattern() {
-        assert!(Expr::Pattern(r"^\d+$".into()).validate(&Value::text("123")).is_ok());
-        assert!(Expr::Pattern(r"^\d+$".into()).validate(&Value::text("abc")).is_err());
+        assert!(
+            Expr::Pattern(r"^\d+$".into())
+                .validate(&Value::text("123"))
+                .is_ok()
+        );
+        assert!(
+            Expr::Pattern(r"^\d+$".into())
+                .validate(&Value::text("abc"))
+                .is_err()
+        );
     }
 
     #[test]
     fn test_email() {
-        assert!(Expr::Email.validate(&Value::text("test@example.com")).is_ok());
+        assert!(
+            Expr::Email
+                .validate(&Value::text("test@example.com"))
+                .is_ok()
+        );
         assert!(Expr::Email.validate(&Value::text("invalid")).is_err());
         assert!(Expr::Email.validate(&Value::text("@example.com")).is_err());
         assert!(Expr::Email.validate(&Value::text("test@")).is_err());
@@ -764,14 +800,26 @@ mod tests {
 
     #[test]
     fn test_url() {
-        assert!(Expr::Url.validate(&Value::text("https://example.com")).is_ok());
-        assert!(Expr::Url.validate(&Value::text("http://example.com")).is_ok());
+        assert!(
+            Expr::Url
+                .validate(&Value::text("https://example.com"))
+                .is_ok()
+        );
+        assert!(
+            Expr::Url
+                .validate(&Value::text("http://example.com"))
+                .is_ok()
+        );
         assert!(Expr::Url.validate(&Value::text("example.com")).is_err());
     }
 
     #[test]
     fn test_uuid() {
-        assert!(Expr::Uuid.validate(&Value::text("550e8400-e29b-41d4-a716-446655440000")).is_ok());
+        assert!(
+            Expr::Uuid
+                .validate(&Value::text("550e8400-e29b-41d4-a716-446655440000"))
+                .is_ok()
+        );
         assert!(Expr::Uuid.validate(&Value::text("invalid-uuid")).is_err());
     }
 
@@ -787,7 +835,11 @@ mod tests {
     fn test_exclusive_min_max() {
         assert!(Expr::ExclusiveMin(0.0).validate(&Value::Int(0)).is_err());
         assert!(Expr::ExclusiveMin(0.0).validate(&Value::Int(1)).is_ok());
-        assert!(Expr::ExclusiveMax(100.0).validate(&Value::Int(100)).is_err());
+        assert!(
+            Expr::ExclusiveMax(100.0)
+                .validate(&Value::Int(100))
+                .is_err()
+        );
         assert!(Expr::ExclusiveMax(100.0).validate(&Value::Int(99)).is_ok());
     }
 
@@ -834,7 +886,11 @@ mod tests {
     #[test]
     fn test_one_of() {
         let allowed = vec![Value::text("a"), Value::text("b"), Value::text("c")];
-        assert!(Expr::OneOf(allowed.clone()).validate(&Value::text("a")).is_ok());
+        assert!(
+            Expr::OneOf(allowed.clone())
+                .validate(&Value::text("a"))
+                .is_ok()
+        );
         assert!(Expr::OneOf(allowed).validate(&Value::text("d")).is_err());
     }
 

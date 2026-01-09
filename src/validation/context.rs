@@ -47,7 +47,11 @@ impl<'a> ValidationContext<'a> {
     /// Creates a new validation context.
     #[must_use]
     pub fn new(key: &'a Key, schema: &'a Arc<Schema>, values: &'a dyn ValueAccess) -> Self {
-        Self { key, schema, values }
+        Self {
+            key,
+            schema,
+            values,
+        }
     }
 
     /// Returns the key of the parameter being validated.

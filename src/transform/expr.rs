@@ -187,15 +187,15 @@ impl Transform {
             Transform::Uppercase => apply_to_text(value, str::to_uppercase),
             Transform::Capitalize => apply_to_text(value, capitalize_words),
             Transform::CollapseWhitespace => apply_to_text(value, collapse_whitespace),
-            Transform::RemoveWhitespace => {
-                apply_to_text(value, |s| s.chars().filter(|c| !c.is_whitespace()).collect())
-            }
+            Transform::RemoveWhitespace => apply_to_text(value, |s| {
+                s.chars().filter(|c| !c.is_whitespace()).collect()
+            }),
             Transform::Replace { from, to } => {
                 apply_to_text(value, |s| s.replace(from.as_str(), to.as_str()))
             }
-            Transform::Truncate { max_length, suffix } => {
-                apply_to_text(value, |s| truncate_string(s, *max_length, suffix.as_deref()))
-            }
+            Transform::Truncate { max_length, suffix } => apply_to_text(value, |s| {
+                truncate_string(s, *max_length, suffix.as_deref())
+            }),
             Transform::Pad {
                 min_length,
                 char,
@@ -412,14 +412,21 @@ fn truncate_string(s: &str, max_length: usize, suffix: Option<&str>) -> String {
         return s.to_string();
     }
 
-    let suffix_len = suffix.map_or(0, |s| s.chars().count());
-    let target_len = max_length.saturating_sub(suffix_len);
-
-    let truncated: String = s.chars().take(target_len).collect();
-
     match suffix {
-        Some(suf) => format!("{truncated}{suf}"),
-        None => truncated,
+        Some(suf) => {
+            let suffix_len = suf.chars().count();
+
+            // If suffix alone is longer than max_length, truncate the suffix itself
+            if suffix_len >= max_length {
+                return suf.chars().take(max_length).collect();
+            }
+
+            // Otherwise, take (max_length - suffix_len) chars from string + suffix
+            let target_len = max_length - suffix_len;
+            let truncated: String = s.chars().take(target_len).collect();
+            format!("{truncated}{suf}")
+        }
+        None => s.chars().take(max_length).collect(),
     }
 }
 
@@ -463,10 +470,7 @@ mod tests {
     #[test]
     fn test_trim_end() {
         let value = Value::text("  hello  ");
-        assert_eq!(
-            Transform::TrimEnd.apply(&value).as_text(),
-            Some("  hello")
-        );
+        assert_eq!(Transform::TrimEnd.apply(&value).as_text(), Some("  hello"));
     }
 
     #[test]
@@ -552,6 +556,30 @@ mod tests {
             suffix: None,
         };
         assert_eq!(transform.apply(&value).as_text(), Some("hello"));
+    }
+
+    #[test]
+    fn test_truncate_suffix_longer_than_max() {
+        // Edge case: suffix itself is longer than max_length
+        let value = Value::text("hello world");
+        let transform = Transform::Truncate {
+            max_length: 2,
+            suffix: Some("...".to_string()),
+        };
+        // Should truncate suffix itself to max_length
+        assert_eq!(transform.apply(&value).as_text(), Some(".."));
+    }
+
+    #[test]
+    fn test_truncate_suffix_equals_max() {
+        // Edge case: suffix length equals max_length
+        let value = Value::text("hello world");
+        let transform = Transform::Truncate {
+            max_length: 3,
+            suffix: Some("...".to_string()),
+        };
+        // Should return just the suffix
+        assert_eq!(transform.apply(&value).as_text(), Some("..."));
     }
 
     #[test]
@@ -709,8 +737,11 @@ mod tests {
     #[test]
     fn test_sequence() {
         let value = Value::text("  HELLO WORLD  ");
-        let transform =
-            Transform::Sequence(vec![Transform::Trim, Transform::Lowercase, Transform::Capitalize]);
+        let transform = Transform::Sequence(vec![
+            Transform::Trim,
+            Transform::Lowercase,
+            Transform::Capitalize,
+        ]);
         assert_eq!(transform.apply(&value).as_text(), Some("Hello World"));
     }
 

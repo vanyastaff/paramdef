@@ -99,5 +99,5 @@
 mod bus;
 mod types;
 
-pub use bus::{EventBus, RecvError, Subscription, DEFAULT_CAPACITY};
+pub use bus::{DEFAULT_CAPACITY, EventBus, RecvError, Subscription};
 pub use types::{Event, ValidationError};

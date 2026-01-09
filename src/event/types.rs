@@ -164,7 +164,10 @@ impl Event {
             | Self::Dirtied { key }
             | Self::Cleaned { key }
             | Self::Reset { key } => Some(key),
-            Self::BatchBegin { .. } | Self::BatchEnd { .. } | Self::ContextReset | Self::AllCleaned => None,
+            Self::BatchBegin { .. }
+            | Self::BatchEnd { .. }
+            | Self::ContextReset
+            | Self::AllCleaned => None,
         }
     }
 
@@ -236,7 +239,11 @@ impl Event {
 
     /// Creates a `Validated` event.
     #[must_use]
-    pub fn validated(key: impl Into<Key>, is_valid: bool, errors: impl Into<Arc<[ValidationError]>>) -> Self {
+    pub fn validated(
+        key: impl Into<Key>,
+        is_valid: bool,
+        errors: impl Into<Arc<[ValidationError]>>,
+    ) -> Self {
         Self::Validated {
             key: key.into(),
             is_valid,
@@ -354,7 +361,10 @@ impl ValidationError {
     /// Creates a "pattern" validation error.
     #[must_use]
     pub fn pattern(pattern: &str) -> Self {
-        Self::new("pattern", format!("Value does not match pattern: {pattern}"))
+        Self::new(
+            "pattern",
+            format!("Value does not match pattern: {pattern}"),
+        )
     }
 
     /// Creates a custom validation error.
@@ -420,7 +430,9 @@ mod tests {
         let cloned = event.clone();
 
         // Arc should be shared, not deep cloned
-        if let (Event::Validated { errors: e1, .. }, Event::Validated { errors: e2, .. }) = (&event, &cloned) {
+        if let (Event::Validated { errors: e1, .. }, Event::Validated { errors: e2, .. }) =
+            (&event, &cloned)
+        {
             assert!(Arc::ptr_eq(e1, e2));
         }
     }

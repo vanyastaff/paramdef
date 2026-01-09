@@ -113,16 +113,12 @@ impl EventBus {
     ///
     /// This method never blocks - if the channel is full, the oldest
     /// event is dropped for lagging subscribers.
-    #[allow(clippy::manual_unwrap_or_default, clippy::manual_unwrap_or)]
     pub fn emit(&self, event: Event) -> usize {
-        match self.tx.send(event) {
-            Ok(count) => count,
-            Err(_) => {
-                // No active subscribers - event is intentionally dropped
-                // This is expected behavior, not an error condition
-                0
-            }
-        }
+        self.tx.send(event).unwrap_or({
+            // No active subscribers - event is intentionally dropped
+            // This is expected behavior, not an error condition
+            0
+        })
     }
 
     /// Emits multiple events in sequence.

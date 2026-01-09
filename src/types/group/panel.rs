@@ -230,10 +230,10 @@ impl PanelBuilder {
 
     /// Adds a child node with an already-wrapped Arc.
     ///
-    /// # Panics
+    /// # Panics (Debug Mode Only)
     ///
-    /// Panics if the child is a Panel (Layout) or Group node,
-    /// as these cannot be nested inside a Panel.
+    /// In debug builds, panics if the child is a Panel (Layout) or Group node,
+    /// as these cannot be nested inside a Panel. This check is compiled away in release builds.
     #[must_use]
     pub fn child_arc(mut self, node: Arc<dyn Node>) -> Self {
         Self::validate_child(&node);
@@ -243,22 +243,21 @@ impl PanelBuilder {
 
     /// Validates that a child node is allowed inside a Panel.
     ///
-    /// # Panics
+    /// # Panics (Debug Mode Only)
     ///
-    /// Panics if the node is a Layout (Panel) or Group.
+    /// In debug builds, panics if the node is a Layout (Panel) or Group.
+    /// This is a design-time invariant check that is compiled away in release builds.
     fn validate_child(node: &Arc<dyn Node>) {
-        match node.kind() {
-            NodeKind::Layout => {
-                panic!(
-                    "Panel cannot contain Layout (Panel) nodes: '{}'",
-                    node.key()
-                );
-            }
-            NodeKind::Group => {
-                panic!("Panel cannot contain Group nodes: '{}'", node.key());
-            }
-            _ => {}
-        }
+        debug_assert!(
+            !matches!(node.kind(), NodeKind::Layout),
+            "Panel cannot contain Layout (Panel) nodes: '{}'",
+            node.key()
+        );
+        debug_assert!(
+            !matches!(node.kind(), NodeKind::Group),
+            "Panel cannot contain Group nodes: '{}'",
+            node.key()
+        );
     }
 
     /// Sets the display type.

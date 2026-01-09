@@ -32,9 +32,9 @@
 //! }
 //! ```
 
-use crate::core::Value;
 use super::context::ValidationContext;
 use super::result::ValidationResult;
+use crate::core::Value;
 
 /// Trait for custom validation logic.
 ///
@@ -197,7 +197,11 @@ mod tests {
 
     #[test]
     fn test_always_valid() {
-        let schema = Arc::new(Schema::builder().parameter(Text::builder("test").build()).build());
+        let schema = Arc::new(
+            Schema::builder()
+                .parameter(Text::builder("test").build())
+                .build(),
+        );
         let key = "test".into();
         let values = NoValues;
         let ctx = create_test_context(&key, &schema, &values);
@@ -208,7 +212,11 @@ mod tests {
 
     #[test]
     fn test_always_invalid() {
-        let schema = Arc::new(Schema::builder().parameter(Text::builder("test").build()).build());
+        let schema = Arc::new(
+            Schema::builder()
+                .parameter(Text::builder("test").build())
+                .build(),
+        );
         let key = "test".into();
         let values = NoValues;
         let ctx = create_test_context(&key, &schema, &values);
@@ -219,7 +227,11 @@ mod tests {
 
     #[test]
     fn test_fn_validator() {
-        let schema = Arc::new(Schema::builder().parameter(Text::builder("test").build()).build());
+        let schema = Arc::new(
+            Schema::builder()
+                .parameter(Text::builder("test").build())
+                .build(),
+        );
         let key = "test".into();
         let values = NoValues;
         let ctx = create_test_context(&key, &schema, &values);

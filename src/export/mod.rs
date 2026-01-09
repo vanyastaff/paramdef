@@ -28,7 +28,7 @@ mod json_schema;
 mod openapi;
 
 #[cfg(feature = "serde")]
-pub use json_schema::{JsonSchema, JsonSchemaExporter};
+pub use json_schema::{ExportError, JsonSchema, JsonSchemaExporter};
 
 #[cfg(feature = "serde")]
 pub use openapi::{OpenApiGenerator, OpenApiSpec};

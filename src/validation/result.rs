@@ -110,13 +110,19 @@ impl Error {
     /// Creates a `min_length` error.
     #[must_use]
     pub fn min_length(min: usize, actual: usize) -> Self {
-        Self::new("min_length", format!("Minimum length is {min}, got {actual}"))
+        Self::new(
+            "min_length",
+            format!("Minimum length is {min}, got {actual}"),
+        )
     }
 
     /// Creates a `max_length` error.
     #[must_use]
     pub fn max_length(max: usize, actual: usize) -> Self {
-        Self::new("max_length", format!("Maximum length is {max}, got {actual}"))
+        Self::new(
+            "max_length",
+            format!("Maximum length is {max}, got {actual}"),
+        )
     }
 
     /// Creates a "min" error for numeric values.
@@ -134,19 +140,28 @@ impl Error {
     /// Creates an `exclusive_min` error.
     #[must_use]
     pub fn exclusive_min(min: f64, actual: f64) -> Self {
-        Self::new("exclusive_min", format!("Value must be greater than {min}, got {actual}"))
+        Self::new(
+            "exclusive_min",
+            format!("Value must be greater than {min}, got {actual}"),
+        )
     }
 
     /// Creates an `exclusive_max` error.
     #[must_use]
     pub fn exclusive_max(max: f64, actual: f64) -> Self {
-        Self::new("exclusive_max", format!("Value must be less than {max}, got {actual}"))
+        Self::new(
+            "exclusive_max",
+            format!("Value must be less than {max}, got {actual}"),
+        )
     }
 
     /// Creates a "pattern" error.
     #[must_use]
     pub fn pattern(pattern: &str) -> Self {
-        Self::new("pattern", format!("Value does not match pattern: {pattern}"))
+        Self::new(
+            "pattern",
+            format!("Value does not match pattern: {pattern}"),
+        )
     }
 
     /// Creates an "email" error.
@@ -182,7 +197,10 @@ impl Error {
     /// Creates an "enum" error for value not in allowed set.
     #[must_use]
     pub fn not_in_enum(allowed: &[&str]) -> Self {
-        Self::new("enum", format!("Value must be one of: {}", allowed.join(", ")))
+        Self::new(
+            "enum",
+            format!("Value must be one of: {}", allowed.join(", ")),
+        )
     }
 
     /// Creates a "const" error for value not matching constant.
@@ -194,7 +212,10 @@ impl Error {
     /// Creates a `multiple_of` error.
     #[must_use]
     pub fn multiple_of(divisor: f64, actual: f64) -> Self {
-        Self::new("multiple_of", format!("Value must be a multiple of {divisor}, got {actual}"))
+        Self::new(
+            "multiple_of",
+            format!("Value must be a multiple of {divisor}, got {actual}"),
+        )
     }
 
     /// Creates a custom error.
@@ -236,10 +257,7 @@ mod tests {
 
     #[test]
     fn test_validation_outcome_multiple() {
-        let outcome = ValidationOutcome::multiple([
-            Error::required(),
-            Error::min_length(5, 3),
-        ]);
+        let outcome = ValidationOutcome::multiple([Error::required(), Error::min_length(5, 3)]);
         assert_eq!(outcome.len(), 2);
     }
 

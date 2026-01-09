@@ -162,13 +162,13 @@ fn bench_context_operations(c: &mut Criterion) {
     c.bench_function("context_set_value", |b| {
         let mut ctx = Context::new(Arc::clone(&schema));
         b.iter(|| {
-            black_box(ctx.set("field_25", Value::text("test")));
+            let _ = black_box(ctx.set("field_25", Value::text("test")));
         });
     });
 
     c.bench_function("context_get_value", |b| {
         let mut ctx = Context::new(Arc::clone(&schema));
-        ctx.set("field_25", Value::text("test"));
+        let _ = ctx.set("field_25", Value::text("test"));
         b.iter(|| {
             black_box(ctx.get("field_25"));
         });
@@ -183,9 +183,9 @@ fn bench_context_operations(c: &mut Criterion) {
 
     c.bench_function("context_is_dirty", |b| {
         let mut ctx = Context::new(Arc::clone(&schema));
-        ctx.set("field_0", Value::text("a"));
-        ctx.set("field_25", Value::text("b"));
-        ctx.set("field_49", Value::text("c"));
+        let _ = ctx.set("field_0", Value::text("a"));
+        let _ = ctx.set("field_25", Value::text("b"));
+        let _ = ctx.set("field_49", Value::text("c"));
         b.iter(|| {
             black_box(ctx.is_dirty());
         });
@@ -194,7 +194,7 @@ fn bench_context_operations(c: &mut Criterion) {
     c.bench_function("context_collect_values", |b| {
         let mut ctx = Context::new(Arc::clone(&schema));
         for i in 0..10 {
-            ctx.set(&format!("field_{i}"), Value::text("value"));
+            let _ = ctx.set(&format!("field_{i}"), Value::text("value"));
         }
         b.iter(|| {
             black_box(ctx.collect_values());
@@ -204,7 +204,7 @@ fn bench_context_operations(c: &mut Criterion) {
     c.bench_function("context_collect_dirty", |b| {
         let mut ctx = Context::new(Arc::clone(&schema));
         for i in 0..10 {
-            ctx.set(&format!("field_{i}"), Value::text("value"));
+            let _ = ctx.set(&format!("field_{i}"), Value::text("value"));
         }
         // Mark some as clean
         for i in 0..5 {
@@ -225,7 +225,7 @@ fn bench_context_bulk(c: &mut Criterion) {
         b.iter(|| {
             let mut ctx = Context::new(Arc::clone(&schema));
             for i in 0..200 {
-                ctx.set(&format!("field_{i}"), Value::text("value"));
+                let _ = ctx.set(&format!("field_{i}"), Value::text("value"));
             }
             black_box(ctx);
         });
@@ -234,24 +234,24 @@ fn bench_context_bulk(c: &mut Criterion) {
     c.bench_function("context_mark_all_clean", |b| {
         let mut ctx = Context::new(Arc::clone(&schema));
         for i in 0..200 {
-            ctx.set(&format!("field_{i}"), Value::text("value"));
+            let _ = ctx.set(&format!("field_{i}"), Value::text("value"));
         }
         b.iter(|| {
             ctx.mark_all_clean();
             // Re-dirty for next iteration
-            ctx.set("field_0", Value::text("x"));
+            let _ = ctx.set("field_0", Value::text("x"));
         });
     });
 
     c.bench_function("context_reset", |b| {
         let mut ctx = Context::new(Arc::clone(&schema));
         for i in 0..50 {
-            ctx.set(&format!("field_{i}"), Value::text("value"));
+            let _ = ctx.set(&format!("field_{i}"), Value::text("value"));
         }
         b.iter(|| {
             ctx.reset();
             // Re-set for next iteration
-            ctx.set("field_0", Value::text("x"));
+            let _ = ctx.set("field_0", Value::text("x"));
         });
     });
 }
