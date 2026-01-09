@@ -195,6 +195,9 @@ pub mod context;
 pub mod runtime;
 pub mod schema;
 
+// Unified expression system (used by validation and visibility)
+pub mod expr;
+
 // Feature-gated modules
 #[cfg(feature = "validation")]
 pub mod validation;
