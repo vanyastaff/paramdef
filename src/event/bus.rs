@@ -241,7 +241,7 @@ impl Subscription {
     /// # Errors
     ///
     /// - [`RecvError::Closed`] - The event bus was dropped
-    /// - [`RecvError::Lagged(n)`] - Missed `n` events due to slow processing
+    /// - [`RecvError::Lagged`] - Missed events due to slow processing
     pub async fn recv(&mut self) -> Result<Event, RecvError> {
         self.rx.recv().await.map_err(|e| match e {
             broadcast::error::RecvError::Closed => RecvError::Closed,
@@ -256,7 +256,7 @@ impl Subscription {
     /// # Errors
     ///
     /// - [`RecvError::Closed`] - The event bus was dropped
-    /// - [`RecvError::Lagged(n)`] - Missed `n` events
+    /// - [`RecvError::Lagged`] - Missed events
     pub fn try_recv(&mut self) -> Result<Option<Event>, RecvError> {
         match self.rx.try_recv() {
             Ok(event) => Ok(Some(event)),

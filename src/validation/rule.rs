@@ -35,11 +35,11 @@
 
 use std::sync::Arc;
 
-use crate::core::Value;
 use super::context::ValidationContext;
 use super::expr::Expr;
 use super::result::ValidationResult;
 use super::traits::{FnValidator, Validator};
+use crate::core::Value;
 
 /// A validation rule that can be either declarative or programmatic.
 ///
@@ -70,7 +70,7 @@ impl std::fmt::Debug for Rule {
 impl Rule {
     /// Validates a value with this rule.
     ///
-    /// For rules without cross-field dependencies, context can use [`NoValues`].
+    /// For rules without cross-field dependencies, context provides access to other fields.
     ///
     /// # Errors
     ///
@@ -461,7 +461,11 @@ mod tests {
 
     #[test]
     fn test_rule_required() {
-        let schema = Arc::new(Schema::builder().parameter(Text::builder("test").build()).build());
+        let schema = Arc::new(
+            Schema::builder()
+                .parameter(Text::builder("test").build())
+                .build(),
+        );
         let key = "test".into();
         let values = NoValues;
         let ctx = create_test_context(&key, &schema, &values);
@@ -473,7 +477,11 @@ mod tests {
 
     #[test]
     fn test_rule_min_max_length() {
-        let schema = Arc::new(Schema::builder().parameter(Text::builder("test").build()).build());
+        let schema = Arc::new(
+            Schema::builder()
+                .parameter(Text::builder("test").build())
+                .build(),
+        );
         let key = "test".into();
         let values = NoValues;
         let ctx = create_test_context(&key, &schema, &values);
@@ -485,12 +493,19 @@ mod tests {
         assert!(min.validate(&Value::text("ab"), &ctx).is_err());
 
         assert!(max.validate(&Value::text("short"), &ctx).is_ok());
-        assert!(max.validate(&Value::text("this is too long"), &ctx).is_err());
+        assert!(
+            max.validate(&Value::text("this is too long"), &ctx)
+                .is_err()
+        );
     }
 
     #[test]
     fn test_rule_range() {
-        let schema = Arc::new(Schema::builder().parameter(Text::builder("test").build()).build());
+        let schema = Arc::new(
+            Schema::builder()
+                .parameter(Text::builder("test").build())
+                .build(),
+        );
         let key = "test".into();
         let values = NoValues;
         let ctx = create_test_context(&key, &schema, &values);
@@ -506,20 +521,31 @@ mod tests {
 
     #[test]
     fn test_rule_email() {
-        let schema = Arc::new(Schema::builder().parameter(Text::builder("test").build()).build());
+        let schema = Arc::new(
+            Schema::builder()
+                .parameter(Text::builder("test").build())
+                .build(),
+        );
         let key = "test".into();
         let values = NoValues;
         let ctx = create_test_context(&key, &schema, &values);
 
         let rule = Rule::email();
 
-        assert!(rule.validate(&Value::text("test@example.com"), &ctx).is_ok());
+        assert!(
+            rule.validate(&Value::text("test@example.com"), &ctx)
+                .is_ok()
+        );
         assert!(rule.validate(&Value::text("invalid"), &ctx).is_err());
     }
 
     #[test]
     fn test_rule_string_enum() {
-        let schema = Arc::new(Schema::builder().parameter(Text::builder("test").build()).build());
+        let schema = Arc::new(
+            Schema::builder()
+                .parameter(Text::builder("test").build())
+                .build(),
+        );
         let key = "test".into();
         let values = NoValues;
         let ctx = create_test_context(&key, &schema, &values);
@@ -532,7 +558,11 @@ mod tests {
 
     #[test]
     fn test_rule_custom() {
-        let schema = Arc::new(Schema::builder().parameter(Text::builder("test").build()).build());
+        let schema = Arc::new(
+            Schema::builder()
+                .parameter(Text::builder("test").build())
+                .build(),
+        );
         let key = "test".into();
         let values = NoValues;
         let ctx = create_test_context(&key, &schema, &values);
@@ -554,7 +584,11 @@ mod tests {
 
     #[test]
     fn test_rules_collection() {
-        let schema = Arc::new(Schema::builder().parameter(Text::builder("test").build()).build());
+        let schema = Arc::new(
+            Schema::builder()
+                .parameter(Text::builder("test").build())
+                .build(),
+        );
         let key = "test".into();
         let values = NoValues;
         let ctx = create_test_context(&key, &schema, &values);
@@ -571,7 +605,11 @@ mod tests {
 
     #[test]
     fn test_rules_validate_all() {
-        let schema = Arc::new(Schema::builder().parameter(Text::builder("test").build()).build());
+        let schema = Arc::new(
+            Schema::builder()
+                .parameter(Text::builder("test").build())
+                .build(),
+        );
         let key = "test".into();
         let values = NoValues;
         let ctx = create_test_context(&key, &schema, &values);
