@@ -6,7 +6,7 @@
 //! # Trait Hierarchy
 //!
 //! ```text
-//! Node (base trait - all 14 types implement this)
+//! Node (base trait - all 23 types implement this)
 //! ├── GroupNode: Node       (1 type:  Group)
 //! ├── Layout: Node          (1 type:  Panel)
 //! ├── Decoration: Node      (5 types: Notice, Separator, Link, Code, Image)

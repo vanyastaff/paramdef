@@ -6,7 +6,7 @@ use crate::types::traits::Node;
 
 /// Trait for nodes that can be validated.
 ///
-/// Implemented by Container and Leaf nodes (11 out of 14 types) when the
+/// Implemented by Container and Leaf nodes (13 out of 23 types) when the
 /// `validation` feature is enabled. Group, Layout, and Decoration do not
 /// have values to validate.
 ///
