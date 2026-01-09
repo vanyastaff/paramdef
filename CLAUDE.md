@@ -25,7 +25,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `paramdef` is a type-safe parameter definition system for Rust, inspired by Blender RNA, Unreal Engine UPROPERTY, and Qt Property System. The goal is to create the "serde of parameter schemas" - a production-ready library for workflow engines, visual programming tools, no-code platforms, and game engines.
 
-**Current Status:** Active development - Phase 1-5 complete (Event System, Validation, Transformers, History, Visibility), Phase 6+ in progress.
+**Current Status:** Active development - Phase 1-6 complete (Core, Types, Event System, Validation, Transformers, History, Visibility, Polish), Phase 7 optional.
 
 ## Build and Test Commands
 
