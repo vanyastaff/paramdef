@@ -66,6 +66,9 @@ mod expr;
 mod rule;
 mod target;
 
+#[cfg(feature = "validation")]
+mod validate;
+
 pub use expr::Expr;
 pub use rule::Rule;
 pub use target::ExprTarget;
