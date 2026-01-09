@@ -18,13 +18,26 @@ use std::sync::Arc;
 /// - `Gt` - Greater than (numeric comparison)
 /// - `Lte` - Less than or equal (numeric comparison)
 /// - `Gte` - Greater than or equal (numeric comparison)
+/// - `Between` - Numeric value is between min and max (inclusive)
 ///
 /// ### State Checks
 /// - `IsSet` - Parameter has a value (not null/undefined)
 /// - `IsEmpty` - Parameter is empty (null, empty string, empty array)
+/// - `IsNull` - Parameter is explicitly null
+/// - `IsNotEmpty` - Parameter is not empty (inverse of `IsEmpty`)
 /// - `IsTrue` - Boolean parameter is true
 /// - `IsFalse` - Boolean parameter is false
 /// - `IsValid` - Parameter passes validation
+///
+/// ### String Operations
+/// - `StartsWith` - String starts with a prefix
+/// - `EndsWith` - String ends with a suffix
+/// - `Matches` - String matches a regular expression pattern (requires `validation` feature)
+///
+/// ### Length Checks
+/// - `LengthMin` - String/array length is at least min
+/// - `LengthMax` - String/array length is at most max
+/// - `LengthBetween` - String/array length is between min and max (inclusive)
 ///
 /// ### Collection Operations
 /// - `OneOf` - Value is in a list of allowed values
@@ -71,6 +84,7 @@ use std::sync::Arc;
 /// ```
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", allow(clippy::unsafe_derive_deserialize))]
 pub enum Expr {
     /// Value equals the specified value.
     Eq(Key, Value),
@@ -113,6 +127,36 @@ pub enum Expr {
 
     /// Parameter passes validation (has no errors).
     IsValid(Key),
+
+    /// String starts with the specified prefix.
+    StartsWith(Key, crate::core::SmartStr),
+
+    /// String ends with the specified suffix.
+    EndsWith(Key, crate::core::SmartStr),
+
+    /// String matches the regular expression pattern.
+    ///
+    /// Requires the `validation` feature for regex support.
+    #[cfg(feature = "validation")]
+    Matches(Key, String),
+
+    /// Numeric value is between min and max (inclusive).
+    Between(Key, f64, f64),
+
+    /// String or collection length is at least min.
+    LengthMin(Key, usize),
+
+    /// String or collection length is at most max.
+    LengthMax(Key, usize),
+
+    /// String or collection length is between min and max (inclusive).
+    LengthBetween(Key, usize, usize),
+
+    /// Parameter is explicitly null.
+    IsNull(Key),
+
+    /// Parameter is not empty (inverse of `IsEmpty`).
+    IsNotEmpty(Key),
 
     /// All sub-expressions must be true.
     And(#[cfg_attr(feature = "serde", serde(with = "arc_slice_serde"))] Arc<[Expr]>),
@@ -201,6 +245,63 @@ impl Expr {
     #[must_use]
     pub fn is_valid(key: impl Into<Key>) -> Self {
         Self::IsValid(key.into())
+    }
+
+    /// Create a starts-with expression.
+    #[must_use]
+    pub fn starts_with(key: impl Into<Key>, prefix: impl Into<crate::core::SmartStr>) -> Self {
+        Self::StartsWith(key.into(), prefix.into())
+    }
+
+    /// Create an ends-with expression.
+    #[must_use]
+    pub fn ends_with(key: impl Into<Key>, suffix: impl Into<crate::core::SmartStr>) -> Self {
+        Self::EndsWith(key.into(), suffix.into())
+    }
+
+    /// Create a regex match expression.
+    ///
+    /// Requires the `validation` feature for regex support.
+    #[cfg(feature = "validation")]
+    #[must_use]
+    pub fn matches(key: impl Into<Key>, pattern: impl Into<String>) -> Self {
+        Self::Matches(key.into(), pattern.into())
+    }
+
+    /// Create a between expression (min <= value <= max).
+    #[must_use]
+    pub fn between(key: impl Into<Key>, min: f64, max: f64) -> Self {
+        Self::Between(key.into(), min, max)
+    }
+
+    /// Create a length-min expression.
+    #[must_use]
+    pub fn length_min(key: impl Into<Key>, min: usize) -> Self {
+        Self::LengthMin(key.into(), min)
+    }
+
+    /// Create a length-max expression.
+    #[must_use]
+    pub fn length_max(key: impl Into<Key>, max: usize) -> Self {
+        Self::LengthMax(key.into(), max)
+    }
+
+    /// Create a length-between expression (min <= len <= max).
+    #[must_use]
+    pub fn length_between(key: impl Into<Key>, min: usize, max: usize) -> Self {
+        Self::LengthBetween(key.into(), min, max)
+    }
+
+    /// Create an is-null expression.
+    #[must_use]
+    pub fn is_null(key: impl Into<Key>) -> Self {
+        Self::IsNull(key.into())
+    }
+
+    /// Create an is-not-empty expression.
+    #[must_use]
+    pub fn is_not_empty(key: impl Into<Key>) -> Self {
+        Self::IsNotEmpty(key.into())
     }
 
     /// Create an AND expression (all must be true).
@@ -309,6 +410,69 @@ impl Expr {
                 ctx.get(key.as_str()).is_some()
             }
 
+            Self::StartsWith(key, prefix) => ctx
+                .get(key.as_str())
+                .and_then(Value::as_text)
+                .is_some_and(|s| s.starts_with(prefix.as_str())),
+
+            Self::EndsWith(key, suffix) => ctx
+                .get(key.as_str())
+                .and_then(Value::as_text)
+                .is_some_and(|s| s.ends_with(suffix.as_str())),
+
+            #[cfg(feature = "validation")]
+            Self::Matches(key, pattern) => {
+                use std::cell::RefCell;
+                use std::collections::HashMap;
+
+                thread_local! {
+                    static REGEX_CACHE: RefCell<HashMap<String, Option<regex::Regex>>> =
+                        RefCell::new(HashMap::new());
+                }
+
+                ctx.get(key.as_str())
+                    .and_then(Value::as_text)
+                    .is_some_and(|s| {
+                        REGEX_CACHE.with(|cache| {
+                            let mut cache = cache.borrow_mut();
+                            let re = cache
+                                .entry(pattern.clone())
+                                .or_insert_with(|| regex::Regex::new(pattern).ok());
+                            re.as_ref().is_some_and(|r| r.is_match(s))
+                        })
+                    })
+            }
+
+            Self::Between(key, min, max) => ctx
+                .get(key.as_str())
+                .and_then(Value::as_f64)
+                .is_some_and(|n| n >= *min && n <= *max),
+
+            Self::LengthMin(key, min) => ctx.get(key.as_str()).is_some_and(|v| match v {
+                Value::Text(s) => s.len() >= *min,
+                Value::Array(arr) => arr.len() >= *min,
+                _ => false,
+            }),
+
+            Self::LengthMax(key, max) => ctx.get(key.as_str()).is_some_and(|v| match v {
+                Value::Text(s) => s.len() <= *max,
+                Value::Array(arr) => arr.len() <= *max,
+                _ => false,
+            }),
+
+            Self::LengthBetween(key, min, max) => ctx.get(key.as_str()).is_some_and(|v| {
+                let len = match v {
+                    Value::Text(s) => s.len(),
+                    Value::Array(arr) => arr.len(),
+                    _ => return false,
+                };
+                len >= *min && len <= *max
+            }),
+
+            Self::IsNull(key) => ctx.get(key.as_str()).is_some_and(Value::is_null),
+
+            Self::IsNotEmpty(key) => ctx.get(key.as_str()).is_some_and(|v| !v.is_empty()),
+
             Self::And(exprs) => exprs.iter().all(|e| e.eval(ctx)),
 
             Self::Or(exprs) => exprs.iter().any(|e| e.eval(ctx)),
@@ -361,7 +525,20 @@ impl Expr {
             | Self::Gte(key, _)
             | Self::OneOf(key, _)
             | Self::Contains(key, _)
-            | Self::IsValid(key) => {
+            | Self::IsValid(key)
+            | Self::StartsWith(key, _)
+            | Self::EndsWith(key, _)
+            | Self::Between(key, _, _)
+            | Self::LengthMin(key, _)
+            | Self::LengthMax(key, _)
+            | Self::LengthBetween(key, _, _)
+            | Self::IsNull(key)
+            | Self::IsNotEmpty(key) => {
+                deps.push(key.clone());
+            }
+
+            #[cfg(feature = "validation")]
+            Self::Matches(key, _) => {
                 deps.push(key.clone());
             }
 
@@ -576,6 +753,365 @@ mod tests {
 
         let deps = expr.dependencies();
         assert_eq!(deps.len(), 3);
+    }
+
+    #[test]
+    fn test_expr_starts_with() {
+        let mut ctx = create_test_context();
+        let expr = Expr::starts_with("name", "Ali");
+
+        assert_eq!(expr.eval(&ctx), false);
+
+        let _ = ctx.set("name", Value::text("Alice"));
+        assert_eq!(expr.eval(&ctx), true);
+
+        let _ = ctx.set("name", Value::text("Bob"));
+        assert_eq!(expr.eval(&ctx), false);
+
+        let _ = ctx.set("name", Value::text("Alison"));
+        assert_eq!(expr.eval(&ctx), true);
+    }
+
+    #[test]
+    fn test_expr_ends_with() {
+        let mut ctx = create_test_context();
+        let expr = Expr::ends_with("name", "ice");
+
+        assert_eq!(expr.eval(&ctx), false);
+
+        let _ = ctx.set("name", Value::text("Alice"));
+        assert_eq!(expr.eval(&ctx), true);
+
+        let _ = ctx.set("name", Value::text("Bob"));
+        assert_eq!(expr.eval(&ctx), false);
+
+        let _ = ctx.set("name", Value::text("Janice"));
+        assert_eq!(expr.eval(&ctx), true);
+    }
+
+    #[cfg(feature = "validation")]
+    #[test]
+    fn test_expr_matches() {
+        let mut ctx = create_test_context();
+        let expr = Expr::matches("name", r"^[A-Z][a-z]+$");
+
+        assert_eq!(expr.eval(&ctx), false);
+
+        let _ = ctx.set("name", Value::text("Alice"));
+        assert_eq!(expr.eval(&ctx), true);
+
+        let _ = ctx.set("name", Value::text("alice"));
+        assert_eq!(expr.eval(&ctx), false);
+
+        let _ = ctx.set("name", Value::text("ALICE"));
+        assert_eq!(expr.eval(&ctx), false);
+
+        let _ = ctx.set("name", Value::text("Bob"));
+        assert_eq!(expr.eval(&ctx), true);
+    }
+
+    #[cfg(feature = "validation")]
+    #[test]
+    fn test_expr_matches_invalid_regex() {
+        let mut ctx = create_test_context();
+        let _ = ctx.set("name", Value::text("Alice"));
+
+        // Invalid regex pattern should return false
+        let expr = Expr::matches("name", "[invalid(");
+        assert_eq!(expr.eval(&ctx), false);
+    }
+
+    #[test]
+    fn test_expr_between() {
+        let mut ctx = create_test_context();
+        let expr = Expr::between("age", 18.0, 65.0);
+
+        assert_eq!(expr.eval(&ctx), false);
+
+        let _ = ctx.set("age", Value::Int(25));
+        assert_eq!(expr.eval(&ctx), true);
+
+        let _ = ctx.set("age", Value::Int(18));
+        assert_eq!(expr.eval(&ctx), true);
+
+        let _ = ctx.set("age", Value::Int(65));
+        assert_eq!(expr.eval(&ctx), true);
+
+        let _ = ctx.set("age", Value::Int(17));
+        assert_eq!(expr.eval(&ctx), false);
+
+        let _ = ctx.set("age", Value::Int(66));
+        assert_eq!(expr.eval(&ctx), false);
+
+        let _ = ctx.set("age", Value::Float(25.5));
+        assert_eq!(expr.eval(&ctx), true);
+    }
+
+    #[test]
+    fn test_expr_length_min() {
+        let mut ctx = create_test_context();
+        let expr = Expr::length_min("name", 3);
+
+        assert_eq!(expr.eval(&ctx), false);
+
+        let _ = ctx.set("name", Value::text("Al"));
+        assert_eq!(expr.eval(&ctx), false);
+
+        let _ = ctx.set("name", Value::text("Ali"));
+        assert_eq!(expr.eval(&ctx), true);
+
+        let _ = ctx.set("name", Value::text("Alice"));
+        assert_eq!(expr.eval(&ctx), true);
+
+        // Test with array
+        let schema = Arc::new(
+            Schema::builder()
+                .parameter(Text::builder("items").build())
+                .build(),
+        );
+        let mut ctx = Context::new(schema);
+        let array_expr = Expr::length_min("items", 3);
+
+        let _ = ctx.set("items", Value::array(vec![Value::Int(1), Value::Int(2)]));
+        assert_eq!(array_expr.eval(&ctx), false);
+
+        let _ = ctx.set(
+            "items",
+            Value::array(vec![Value::Int(1), Value::Int(2), Value::Int(3)]),
+        );
+        assert_eq!(array_expr.eval(&ctx), true);
+    }
+
+    #[test]
+    fn test_expr_length_max() {
+        let mut ctx = create_test_context();
+        let expr = Expr::length_max("name", 5);
+
+        assert_eq!(expr.eval(&ctx), false);
+
+        let _ = ctx.set("name", Value::text("Ali"));
+        assert_eq!(expr.eval(&ctx), true);
+
+        let _ = ctx.set("name", Value::text("Alice"));
+        assert_eq!(expr.eval(&ctx), true);
+
+        let _ = ctx.set("name", Value::text("Alison"));
+        assert_eq!(expr.eval(&ctx), false);
+
+        // Test with array
+        let schema = Arc::new(
+            Schema::builder()
+                .parameter(Text::builder("items").build())
+                .build(),
+        );
+        let mut ctx = Context::new(schema);
+        let array_expr = Expr::length_max("items", 5);
+
+        let _ = ctx.set(
+            "items",
+            Value::array(vec![
+                Value::Int(1),
+                Value::Int(2),
+                Value::Int(3),
+                Value::Int(4),
+                Value::Int(5),
+            ]),
+        );
+        assert_eq!(array_expr.eval(&ctx), true);
+
+        let _ = ctx.set(
+            "items",
+            Value::array(vec![
+                Value::Int(1),
+                Value::Int(2),
+                Value::Int(3),
+                Value::Int(4),
+                Value::Int(5),
+                Value::Int(6),
+            ]),
+        );
+        assert_eq!(array_expr.eval(&ctx), false);
+    }
+
+    #[test]
+    fn test_expr_length_between() {
+        let mut ctx = create_test_context();
+        let expr = Expr::length_between("name", 3, 8);
+
+        assert_eq!(expr.eval(&ctx), false);
+
+        let _ = ctx.set("name", Value::text("Al"));
+        assert_eq!(expr.eval(&ctx), false);
+
+        let _ = ctx.set("name", Value::text("Ali"));
+        assert_eq!(expr.eval(&ctx), true);
+
+        let _ = ctx.set("name", Value::text("Alice"));
+        assert_eq!(expr.eval(&ctx), true);
+
+        let _ = ctx.set("name", Value::text("Alison"));
+        assert_eq!(expr.eval(&ctx), true);
+
+        let _ = ctx.set("name", Value::text("Alexandra"));
+        assert_eq!(expr.eval(&ctx), false);
+
+        // Test with array
+        let schema = Arc::new(
+            Schema::builder()
+                .parameter(Text::builder("items").build())
+                .build(),
+        );
+        let mut ctx = Context::new(schema);
+        let array_expr = Expr::length_between("items", 3, 8);
+
+        let _ = ctx.set("items", Value::array(vec![Value::Int(1), Value::Int(2)]));
+        assert_eq!(array_expr.eval(&ctx), false);
+
+        let _ = ctx.set(
+            "items",
+            Value::array(vec![Value::Int(1), Value::Int(2), Value::Int(3)]),
+        );
+        assert_eq!(array_expr.eval(&ctx), true);
+
+        let _ = ctx.set(
+            "items",
+            Value::array(vec![
+                Value::Int(1),
+                Value::Int(2),
+                Value::Int(3),
+                Value::Int(4),
+                Value::Int(5),
+                Value::Int(6),
+                Value::Int(7),
+                Value::Int(8),
+            ]),
+        );
+        assert_eq!(array_expr.eval(&ctx), true);
+
+        let _ = ctx.set(
+            "items",
+            Value::array(vec![
+                Value::Int(1),
+                Value::Int(2),
+                Value::Int(3),
+                Value::Int(4),
+                Value::Int(5),
+                Value::Int(6),
+                Value::Int(7),
+                Value::Int(8),
+                Value::Int(9),
+            ]),
+        );
+        assert_eq!(array_expr.eval(&ctx), false);
+    }
+
+    #[test]
+    fn test_expr_is_null() {
+        let mut ctx = create_test_context();
+        let expr = Expr::is_null("name");
+
+        // Not set - is_null returns false (no value)
+        assert_eq!(expr.eval(&ctx), false);
+
+        let _ = ctx.set("name", Value::Null);
+        assert_eq!(expr.eval(&ctx), true);
+
+        let _ = ctx.set("name", Value::text(""));
+        assert_eq!(expr.eval(&ctx), false);
+
+        let _ = ctx.set("name", Value::text("Alice"));
+        assert_eq!(expr.eval(&ctx), false);
+    }
+
+    #[test]
+    fn test_expr_is_not_empty() {
+        let mut ctx = create_test_context();
+        let expr = Expr::is_not_empty("name");
+
+        assert_eq!(expr.eval(&ctx), false);
+
+        let _ = ctx.set("name", Value::text(""));
+        assert_eq!(expr.eval(&ctx), false);
+
+        let _ = ctx.set("name", Value::Null);
+        assert_eq!(expr.eval(&ctx), false);
+
+        let _ = ctx.set("name", Value::text("Alice"));
+        assert_eq!(expr.eval(&ctx), true);
+
+        let _ = ctx.set("name", Value::array(vec![]));
+        assert_eq!(expr.eval(&ctx), false);
+
+        let _ = ctx.set("name", Value::array(vec![Value::Int(1)]));
+        assert_eq!(expr.eval(&ctx), true);
+    }
+
+    #[test]
+    fn test_expr_new_variants_dependencies() {
+        // Test StartsWith
+        let expr = Expr::starts_with("name", "Ali");
+        let deps = expr.dependencies();
+        assert_eq!(deps.len(), 1);
+        assert!(deps.contains(&Key::from("name")));
+
+        // Test Between
+        let expr = Expr::between("age", 18.0, 65.0);
+        let deps = expr.dependencies();
+        assert_eq!(deps.len(), 1);
+        assert!(deps.contains(&Key::from("age")));
+
+        // Test LengthBetween
+        let expr = Expr::length_between("name", 3, 8);
+        let deps = expr.dependencies();
+        assert_eq!(deps.len(), 1);
+        assert!(deps.contains(&Key::from("name")));
+
+        // Test compound with new variants
+        let expr = Expr::and(vec![
+            Expr::starts_with("name", "A"),
+            Expr::length_min("name", 3),
+            Expr::between("age", 18.0, 65.0),
+        ]);
+        let deps = expr.dependencies();
+        assert_eq!(deps.len(), 2);
+        assert!(deps.contains(&Key::from("name")));
+        assert!(deps.contains(&Key::from("age")));
+    }
+
+    #[test]
+    fn test_expr_length_with_wrong_type() {
+        let mut ctx = create_test_context();
+
+        // Set age to a number
+        let _ = ctx.set("age", Value::Int(42));
+
+        // Length checks should return false for non-text, non-array types
+        assert_eq!(Expr::length_min("age", 1).eval(&ctx), false);
+        assert_eq!(Expr::length_max("age", 10).eval(&ctx), false);
+        assert_eq!(Expr::length_between("age", 1, 10).eval(&ctx), false);
+    }
+
+    #[test]
+    fn test_expr_between_with_wrong_type() {
+        let mut ctx = create_test_context();
+
+        // Set name to a string
+        let _ = ctx.set("name", Value::text("Alice"));
+
+        // Between should return false for non-numeric types
+        assert_eq!(Expr::between("name", 1.0, 10.0).eval(&ctx), false);
+    }
+
+    #[test]
+    fn test_expr_string_ops_with_wrong_type() {
+        let mut ctx = create_test_context();
+
+        // Set age to a number
+        let _ = ctx.set("age", Value::Int(42));
+
+        // String operations should return false for non-text types
+        assert_eq!(Expr::starts_with("age", "4").eval(&ctx), false);
+        assert_eq!(Expr::ends_with("age", "2").eval(&ctx), false);
     }
 }
 
