@@ -46,6 +46,8 @@ pub struct Notice {
     kind: NoticeType,
     message: SmartStr,
     dismissible: bool,
+    #[cfg(feature = "visibility")]
+    visibility: Option<crate::visibility::Expr>,
 }
 
 impl Notice {
@@ -163,6 +165,8 @@ pub struct NoticeBuilder {
     notice_type: NoticeType,
     message: SmartStr,
     dismissible: bool,
+    #[cfg(feature = "visibility")]
+    visibility: Option<crate::visibility::Expr>,
 }
 
 impl NoticeBuilder {
@@ -177,6 +181,8 @@ impl NoticeBuilder {
             notice_type: NoticeType::Info,
             message: SmartStr::new(),
             dismissible: false,
+            #[cfg(feature = "visibility")]
+            visibility: None,
         }
     }
 
@@ -222,6 +228,14 @@ impl NoticeBuilder {
         self
     }
 
+    /// Sets the visibility expression.
+    #[cfg(feature = "visibility")]
+    #[must_use]
+    pub fn visible_when(mut self, expr: crate::visibility::Expr) -> Self {
+        self.visibility = Some(expr);
+        self
+    }
+
     /// Builds the Notice.
     #[must_use]
     pub fn build(self) -> Notice {
@@ -239,7 +253,20 @@ impl NoticeBuilder {
             kind: self.notice_type,
             message: self.message,
             dismissible: self.dismissible,
+            #[cfg(feature = "visibility")]
+            visibility: self.visibility,
         }
+    }
+}
+
+#[cfg(feature = "visibility")]
+impl crate::types::traits::Visibility for Notice {
+    fn visibility_expr(&self) -> Option<&crate::visibility::Expr> {
+        self.visibility.as_ref()
+    }
+
+    fn set_visibility_expr(&mut self, expr: Option<crate::visibility::Expr>) {
+        self.visibility = expr;
     }
 }
 

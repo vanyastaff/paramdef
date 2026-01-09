@@ -79,17 +79,24 @@ pub struct Panel {
     children: Vec<Arc<dyn Node>>,
     display_type: PanelDisplayType,
     collapsed: bool,
+    #[cfg(feature = "visibility")]
+    visibility: Option<crate::visibility::Expr>,
 }
 
 impl fmt::Debug for Panel {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Panel")
+        let mut debug = f.debug_struct("Panel");
+        debug
             .field("metadata", &self.metadata)
             .field("flags", &self.flags)
             .field("child_count", &self.children.len())
             .field("display_type", &self.display_type)
-            .field("collapsed", &self.collapsed)
-            .finish()
+            .field("collapsed", &self.collapsed);
+
+        #[cfg(feature = "visibility")]
+        debug.field("visibility", &self.visibility);
+
+        debug.finish()
     }
 }
 
@@ -162,19 +169,26 @@ pub struct PanelBuilder {
     children: Vec<Arc<dyn Node>>,
     display_type: PanelDisplayType,
     collapsed: bool,
+    #[cfg(feature = "visibility")]
+    visibility: Option<crate::visibility::Expr>,
 }
 
 impl fmt::Debug for PanelBuilder {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("PanelBuilder")
+        let mut debug = f.debug_struct("PanelBuilder");
+        debug
             .field("key", &self.key)
             .field("label", &self.label)
             .field("description", &self.description)
             .field("flags", &self.flags)
             .field("child_count", &self.children.len())
             .field("display_type", &self.display_type)
-            .field("collapsed", &self.collapsed)
-            .finish()
+            .field("collapsed", &self.collapsed);
+
+        #[cfg(feature = "visibility")]
+        debug.field("visibility", &self.visibility);
+
+        debug.finish()
     }
 }
 
@@ -190,6 +204,8 @@ impl PanelBuilder {
             children: Vec::new(),
             display_type: PanelDisplayType::default(),
             collapsed: false,
+            #[cfg(feature = "visibility")]
+            visibility: None,
         }
     }
 
@@ -274,6 +290,16 @@ impl PanelBuilder {
         self
     }
 
+    /// Sets a visibility condition.
+    ///
+    /// The parameter will only be visible when the expression evaluates to true.
+    #[cfg(feature = "visibility")]
+    #[must_use]
+    pub fn visible_when(mut self, expr: crate::visibility::Expr) -> Self {
+        self.visibility = Some(expr);
+        self
+    }
+
     /// Builds the Panel.
     #[must_use]
     pub fn build(self) -> Panel {
@@ -291,7 +317,21 @@ impl PanelBuilder {
             children: self.children,
             display_type: self.display_type,
             collapsed: self.collapsed,
+            #[cfg(feature = "visibility")]
+            visibility: self.visibility,
         }
+    }
+}
+
+// Visibility trait implementation
+#[cfg(feature = "visibility")]
+impl crate::types::traits::Visibility for Panel {
+    fn visibility_expr(&self) -> Option<&crate::visibility::Expr> {
+        self.visibility.as_ref()
+    }
+
+    fn set_visibility_expr(&mut self, expr: Option<crate::visibility::Expr>) {
+        self.visibility = expr;
     }
 }
 

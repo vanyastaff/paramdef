@@ -135,6 +135,8 @@ pub struct Select {
     searchable: bool,
     /// Whether new options can be created by the user.
     creatable: bool,
+    #[cfg(feature = "visibility")]
+    visibility: Option<crate::visibility::Expr>,
 }
 
 impl Select {
@@ -249,6 +251,8 @@ pub struct SelectBuilder {
     default_multiple: Option<Vec<Key>>,
     searchable: bool,
     creatable: bool,
+    #[cfg(feature = "visibility")]
+    visibility: Option<crate::visibility::Expr>,
 }
 
 impl SelectBuilder {
@@ -267,6 +271,8 @@ impl SelectBuilder {
             default_multiple: None,
             searchable: false,
             creatable: false,
+            #[cfg(feature = "visibility")]
+            visibility: None,
         }
     }
 
@@ -355,6 +361,16 @@ impl SelectBuilder {
         self
     }
 
+    /// Sets a visibility condition.
+    ///
+    /// The parameter will only be visible when the expression evaluates to true.
+    #[cfg(feature = "visibility")]
+    #[must_use]
+    pub fn visible_when(mut self, expr: crate::visibility::Expr) -> Self {
+        self.visibility = Some(expr);
+        self
+    }
+
     /// Builds the select parameter.
     #[must_use]
     pub fn build(self) -> Select {
@@ -380,7 +396,21 @@ impl SelectBuilder {
             default_multiple: self.default_multiple,
             searchable: self.searchable,
             creatable: self.creatable,
+            #[cfg(feature = "visibility")]
+            visibility: self.visibility,
         }
+    }
+}
+
+// Visibility trait implementation
+#[cfg(feature = "visibility")]
+impl crate::types::traits::Visibility for Select {
+    fn visibility_expr(&self) -> Option<&crate::visibility::Expr> {
+        self.visibility.as_ref()
+    }
+
+    fn set_visibility_expr(&mut self, expr: Option<crate::visibility::Expr>) {
+        self.visibility = expr;
     }
 }
 

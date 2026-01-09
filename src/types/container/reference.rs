@@ -45,6 +45,8 @@ pub struct Reference {
     metadata: Metadata,
     flags: Flags,
     target: Key,
+    #[cfg(feature = "visibility")]
+    visibility: Option<crate::visibility::Expr>,
 }
 
 impl Reference {
@@ -110,6 +112,8 @@ pub struct ReferenceBuilder {
     description: Option<SmartStr>,
     flags: Flags,
     target: Option<Key>,
+    #[cfg(feature = "visibility")]
+    visibility: Option<crate::visibility::Expr>,
 }
 
 impl ReferenceBuilder {
@@ -122,6 +126,8 @@ impl ReferenceBuilder {
             description: None,
             flags: Flags::empty(),
             target: None,
+            #[cfg(feature = "visibility")]
+            visibility: None,
         }
     }
 
@@ -153,6 +159,16 @@ impl ReferenceBuilder {
         self
     }
 
+    /// Sets a visibility condition.
+    ///
+    /// The parameter will only be visible when the expression evaluates to true.
+    #[cfg(feature = "visibility")]
+    #[must_use]
+    pub fn visible_when(mut self, expr: crate::visibility::Expr) -> Self {
+        self.visibility = Some(expr);
+        self
+    }
+
     /// Builds the Reference.
     ///
     /// # Errors
@@ -175,7 +191,21 @@ impl ReferenceBuilder {
             metadata,
             flags: self.flags,
             target,
+            #[cfg(feature = "visibility")]
+            visibility: self.visibility,
         })
+    }
+}
+
+// Visibility trait implementation
+#[cfg(feature = "visibility")]
+impl crate::types::traits::Visibility for Reference {
+    fn visibility_expr(&self) -> Option<&crate::visibility::Expr> {
+        self.visibility.as_ref()
+    }
+
+    fn set_visibility_expr(&mut self, expr: Option<crate::visibility::Expr>) {
+        self.visibility = expr;
     }
 }
 

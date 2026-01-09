@@ -68,17 +68,24 @@ pub struct Group {
     children: Vec<Arc<dyn Node>>,
     layout: GroupLayout,
     collapsed: bool,
+    #[cfg(feature = "visibility")]
+    visibility: Option<crate::visibility::Expr>,
 }
 
 impl fmt::Debug for Group {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Group")
+        let mut debug = f.debug_struct("Group");
+        debug
             .field("metadata", &self.metadata)
             .field("flags", &self.flags)
             .field("child_count", &self.children.len())
             .field("layout", &self.layout)
-            .field("collapsed", &self.collapsed)
-            .finish()
+            .field("collapsed", &self.collapsed);
+
+        #[cfg(feature = "visibility")]
+        debug.field("visibility", &self.visibility);
+
+        debug.finish()
     }
 }
 
@@ -149,19 +156,26 @@ pub struct GroupBuilder {
     children: Vec<Arc<dyn Node>>,
     layout: GroupLayout,
     collapsed: bool,
+    #[cfg(feature = "visibility")]
+    visibility: Option<crate::visibility::Expr>,
 }
 
 impl fmt::Debug for GroupBuilder {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("GroupBuilder")
+        let mut debug = f.debug_struct("GroupBuilder");
+        debug
             .field("key", &self.key)
             .field("label", &self.label)
             .field("description", &self.description)
             .field("flags", &self.flags)
             .field("child_count", &self.children.len())
             .field("layout", &self.layout)
-            .field("collapsed", &self.collapsed)
-            .finish()
+            .field("collapsed", &self.collapsed);
+
+        #[cfg(feature = "visibility")]
+        debug.field("visibility", &self.visibility);
+
+        debug.finish()
     }
 }
 
@@ -177,6 +191,8 @@ impl GroupBuilder {
             children: Vec::new(),
             layout: GroupLayout::default(),
             collapsed: false,
+            #[cfg(feature = "visibility")]
+            visibility: None,
         }
     }
 
@@ -229,6 +245,16 @@ impl GroupBuilder {
         self
     }
 
+    /// Sets a visibility condition.
+    ///
+    /// The parameter will only be visible when the expression evaluates to true.
+    #[cfg(feature = "visibility")]
+    #[must_use]
+    pub fn visible_when(mut self, expr: crate::visibility::Expr) -> Self {
+        self.visibility = Some(expr);
+        self
+    }
+
     /// Builds the Group.
     #[must_use]
     pub fn build(self) -> Group {
@@ -246,7 +272,21 @@ impl GroupBuilder {
             children: self.children,
             layout: self.layout,
             collapsed: self.collapsed,
+            #[cfg(feature = "visibility")]
+            visibility: self.visibility,
         }
+    }
+}
+
+// Visibility trait implementation
+#[cfg(feature = "visibility")]
+impl crate::types::traits::Visibility for Group {
+    fn visibility_expr(&self) -> Option<&crate::visibility::Expr> {
+        self.visibility.as_ref()
+    }
+
+    fn set_visibility_expr(&mut self, expr: Option<crate::visibility::Expr>) {
+        self.visibility = expr;
     }
 }
 

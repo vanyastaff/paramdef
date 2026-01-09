@@ -140,6 +140,8 @@ pub struct Progress {
     color: Option<SmartStr>,
     /// Size variant (small, medium, large).
     size: Option<SmartStr>,
+    #[cfg(feature = "visibility")]
+    visibility: Option<crate::visibility::Expr>,
 }
 
 impl Progress {
@@ -295,6 +297,8 @@ pub struct ProgressBuilder {
     options: ProgressOptions,
     color: Option<SmartStr>,
     size: Option<SmartStr>,
+    #[cfg(feature = "visibility")]
+    visibility: Option<crate::visibility::Expr>,
 }
 
 impl ProgressBuilder {
@@ -312,6 +316,8 @@ impl ProgressBuilder {
             options: ProgressOptions::default(),
             color: None,
             size: None,
+            #[cfg(feature = "visibility")]
+            visibility: None,
         }
     }
 
@@ -420,6 +426,14 @@ impl ProgressBuilder {
         self
     }
 
+    /// Sets the visibility expression.
+    #[cfg(feature = "visibility")]
+    #[must_use]
+    pub fn visible_when(mut self, expr: crate::visibility::Expr) -> Self {
+        self.visibility = Some(expr);
+        self
+    }
+
     /// Builds the Progress decoration.
     #[must_use]
     pub fn build(self) -> Progress {
@@ -440,7 +454,20 @@ impl ProgressBuilder {
             options: self.options,
             color: self.color,
             size: self.size,
+            #[cfg(feature = "visibility")]
+            visibility: self.visibility,
         }
+    }
+}
+
+#[cfg(feature = "visibility")]
+impl crate::types::traits::Visibility for Progress {
+    fn visibility_expr(&self) -> Option<&crate::visibility::Expr> {
+        self.visibility.as_ref()
+    }
+
+    fn set_visibility_expr(&mut self, expr: Option<crate::visibility::Expr>) {
+        self.visibility = expr;
     }
 }
 

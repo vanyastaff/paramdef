@@ -405,17 +405,17 @@ mod tests {
 
         assert_eq!(expr.eval(&ctx), false);
 
-        ctx.set("name", Value::text("Alice"));
+        let _ = ctx.set("name", Value::text("Alice"));
         assert_eq!(expr.eval(&ctx), true);
 
-        ctx.set("name", Value::text("Bob"));
+        let _ = ctx.set("name", Value::text("Bob"));
         assert_eq!(expr.eval(&ctx), false);
     }
 
     #[test]
     fn test_expr_ne() {
         let mut ctx = create_test_context();
-        ctx.set("name", Value::text("Alice"));
+        let _ = ctx.set("name", Value::text("Alice"));
 
         let expr = Expr::ne("name", Value::text("Bob"));
         assert_eq!(expr.eval(&ctx), true);
@@ -431,7 +431,7 @@ mod tests {
 
         assert_eq!(expr.eval(&ctx), false);
 
-        ctx.set("name", Value::text("Alice"));
+        let _ = ctx.set("name", Value::text("Alice"));
         assert_eq!(expr.eval(&ctx), true);
     }
 
@@ -442,10 +442,10 @@ mod tests {
 
         assert_eq!(expr.eval(&ctx), true);
 
-        ctx.set("name", Value::text(""));
+        let _ = ctx.set("name", Value::text(""));
         assert_eq!(expr.eval(&ctx), true);
 
-        ctx.set("name", Value::text("Alice"));
+        let _ = ctx.set("name", Value::text("Alice"));
         assert_eq!(expr.eval(&ctx), false);
     }
 
@@ -456,10 +456,10 @@ mod tests {
 
         assert_eq!(expr.eval(&ctx), false);
 
-        ctx.set("enabled", Value::Bool(true));
+        let _ = ctx.set("enabled", Value::Bool(true));
         assert_eq!(expr.eval(&ctx), true);
 
-        ctx.set("enabled", Value::Bool(false));
+        let _ = ctx.set("enabled", Value::Bool(false));
         assert_eq!(expr.eval(&ctx), false);
     }
 
@@ -470,17 +470,17 @@ mod tests {
 
         assert_eq!(expr.eval(&ctx), false);
 
-        ctx.set("enabled", Value::Bool(false));
+        let _ = ctx.set("enabled", Value::Bool(false));
         assert_eq!(expr.eval(&ctx), true);
 
-        ctx.set("enabled", Value::Bool(true));
+        let _ = ctx.set("enabled", Value::Bool(true));
         assert_eq!(expr.eval(&ctx), false);
     }
 
     #[test]
     fn test_expr_numeric_comparisons() {
         let mut ctx = create_test_context();
-        ctx.set("age", Value::Int(25));
+        let _ = ctx.set("age", Value::Int(25));
 
         assert_eq!(Expr::lt("age", 30.0).eval(&ctx), true);
         assert_eq!(Expr::lt("age", 20.0).eval(&ctx), false);
@@ -498,7 +498,7 @@ mod tests {
     #[test]
     fn test_expr_one_of() {
         let mut ctx = create_test_context();
-        ctx.set("mode", Value::text("advanced"));
+        let _ = ctx.set("mode", Value::text("advanced"));
 
         let expr = Expr::one_of(
             "mode",
@@ -510,45 +510,45 @@ mod tests {
         );
         assert_eq!(expr.eval(&ctx), true);
 
-        ctx.set("mode", Value::text("custom"));
+        let _ = ctx.set("mode", Value::text("custom"));
         assert_eq!(expr.eval(&ctx), false);
     }
 
     #[test]
     fn test_expr_and() {
         let mut ctx = create_test_context();
-        ctx.set("enabled", Value::Bool(true));
-        ctx.set("premium", Value::Bool(true));
+        let _ = ctx.set("enabled", Value::Bool(true));
+        let _ = ctx.set("premium", Value::Bool(true));
 
         let expr = Expr::and(vec![Expr::is_true("enabled"), Expr::is_true("premium")]);
         assert_eq!(expr.eval(&ctx), true);
 
-        ctx.set("premium", Value::Bool(false));
+        let _ = ctx.set("premium", Value::Bool(false));
         assert_eq!(expr.eval(&ctx), false);
     }
 
     #[test]
     fn test_expr_or() {
         let mut ctx = create_test_context();
-        ctx.set("enabled", Value::Bool(false));
-        ctx.set("premium", Value::Bool(true));
+        let _ = ctx.set("enabled", Value::Bool(false));
+        let _ = ctx.set("premium", Value::Bool(true));
 
         let expr = Expr::or(vec![Expr::is_true("enabled"), Expr::is_true("premium")]);
         assert_eq!(expr.eval(&ctx), true);
 
-        ctx.set("premium", Value::Bool(false));
+        let _ = ctx.set("premium", Value::Bool(false));
         assert_eq!(expr.eval(&ctx), false);
     }
 
     #[test]
     fn test_expr_not() {
         let mut ctx = create_test_context();
-        ctx.set("enabled", Value::Bool(true));
+        let _ = ctx.set("enabled", Value::Bool(true));
 
         let expr = Expr::negate(Expr::is_true("enabled"));
         assert_eq!(expr.eval(&ctx), false);
 
-        ctx.set("enabled", Value::Bool(false));
+        let _ = ctx.set("enabled", Value::Bool(false));
         assert_eq!(expr.eval(&ctx), true);
     }
 

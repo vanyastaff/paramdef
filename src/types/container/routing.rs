@@ -81,16 +81,23 @@ pub struct Routing {
     options: RoutingOptions,
     /// Cached children for Container trait
     children_cache: Arc<[Arc<dyn Node>]>,
+    #[cfg(feature = "visibility")]
+    visibility: Option<crate::visibility::Expr>,
 }
 
 impl fmt::Debug for Routing {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Routing")
+        let mut debug = f.debug_struct("Routing");
+        debug
             .field("metadata", &self.metadata)
             .field("flags", &self.flags)
             .field("has_child", &self.child.is_some())
-            .field("options", &self.options)
-            .finish_non_exhaustive()
+            .field("options", &self.options);
+
+        #[cfg(feature = "visibility")]
+        debug.field("visibility", &self.visibility);
+
+        debug.finish_non_exhaustive()
     }
 }
 
@@ -160,18 +167,25 @@ pub struct RoutingBuilder {
     flags: Flags,
     child: Option<Arc<dyn Node>>,
     options: RoutingOptions,
+    #[cfg(feature = "visibility")]
+    visibility: Option<crate::visibility::Expr>,
 }
 
 impl fmt::Debug for RoutingBuilder {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("RoutingBuilder")
+        let mut debug = f.debug_struct("RoutingBuilder");
+        debug
             .field("key", &self.key)
             .field("label", &self.label)
             .field("description", &self.description)
             .field("flags", &self.flags)
             .field("has_child", &self.child.is_some())
-            .field("options", &self.options)
-            .finish()
+            .field("options", &self.options);
+
+        #[cfg(feature = "visibility")]
+        debug.field("visibility", &self.visibility);
+
+        debug.finish()
     }
 }
 
@@ -186,6 +200,8 @@ impl RoutingBuilder {
             flags: Flags::empty(),
             child: None,
             options: RoutingOptions::default(),
+            #[cfg(feature = "visibility")]
+            visibility: None,
         }
     }
 
@@ -238,6 +254,16 @@ impl RoutingBuilder {
         self
     }
 
+    /// Sets a visibility condition.
+    ///
+    /// The parameter will only be visible when the expression evaluates to true.
+    #[cfg(feature = "visibility")]
+    #[must_use]
+    pub fn visible_when(mut self, expr: crate::visibility::Expr) -> Self {
+        self.visibility = Some(expr);
+        self
+    }
+
     /// Builds the Routing container.
     #[must_use]
     pub fn build(self) -> Routing {
@@ -261,7 +287,21 @@ impl RoutingBuilder {
             child: self.child,
             options: self.options,
             children_cache,
+            #[cfg(feature = "visibility")]
+            visibility: self.visibility,
         }
+    }
+}
+
+// Visibility trait implementation
+#[cfg(feature = "visibility")]
+impl crate::types::traits::Visibility for Routing {
+    fn visibility_expr(&self) -> Option<&crate::visibility::Expr> {
+        self.visibility.as_ref()
+    }
+
+    fn set_visibility_expr(&mut self, expr: Option<crate::visibility::Expr>) {
+        self.visibility = expr;
     }
 }
 

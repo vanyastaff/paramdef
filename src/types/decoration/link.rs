@@ -45,6 +45,8 @@ pub struct Link {
     url: SmartStr,
     kind: LinkType,
     open_in_new_tab: bool,
+    #[cfg(feature = "visibility")]
+    visibility: Option<crate::visibility::Expr>,
 }
 
 impl Link {
@@ -157,6 +159,8 @@ pub struct LinkBuilder {
     url: Option<SmartStr>,
     kind: LinkType,
     open_in_new_tab: bool,
+    #[cfg(feature = "visibility")]
+    visibility: Option<crate::visibility::Expr>,
 }
 
 impl LinkBuilder {
@@ -170,6 +174,8 @@ impl LinkBuilder {
             url: None,
             kind: LinkType::Documentation,
             open_in_new_tab: false,
+            #[cfg(feature = "visibility")]
+            visibility: None,
         }
     }
 
@@ -208,6 +214,14 @@ impl LinkBuilder {
         self
     }
 
+    /// Sets the visibility expression.
+    #[cfg(feature = "visibility")]
+    #[must_use]
+    pub fn visible_when(mut self, expr: crate::visibility::Expr) -> Self {
+        self.visibility = Some(expr);
+        self
+    }
+
     /// Builds the Link.
     ///
     /// # Errors
@@ -225,7 +239,20 @@ impl LinkBuilder {
             url,
             kind: self.kind,
             open_in_new_tab: self.open_in_new_tab,
+            #[cfg(feature = "visibility")]
+            visibility: self.visibility,
         })
+    }
+}
+
+#[cfg(feature = "visibility")]
+impl crate::types::traits::Visibility for Link {
+    fn visibility_expr(&self) -> Option<&crate::visibility::Expr> {
+        self.visibility.as_ref()
+    }
+
+    fn set_visibility_expr(&mut self, expr: Option<crate::visibility::Expr>) {
+        self.visibility = expr;
     }
 }
 

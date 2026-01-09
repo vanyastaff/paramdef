@@ -1,45 +1,97 @@
 //! Visibility trait for conditional display.
 
-use crate::core::Value;
-use crate::types::traits::Node;
+use crate::core::Key;
+
+#[cfg(feature = "visibility")]
+use crate::context::Context;
+#[cfg(feature = "visibility")]
+use crate::visibility::Expr;
 
 /// Trait for visibility control.
 ///
-/// All 14 node types implement this trait when the `visibility` feature is
-/// enabled. Provides methods to evaluate conditional visibility based on
-/// other parameter values.
+/// All 23 node types implement this trait when the `visibility` feature is
+/// enabled. Provides methods to set and evaluate conditional visibility based
+/// on other parameter values.
+///
+/// # Design
+///
+/// - **Schema stores the expression**: `Option<Expr>` stored in each node
+/// - **Evaluation requires Context**: `is_visible(&Context)` evaluates the expression
+/// - **Dependencies tracked**: `dependencies()` returns keys this visibility depends on
 ///
 /// # Example
 ///
-/// ```ignore
-/// use paramdef::types::traits::Visibility;
-/// use paramdef::types::leaf::Text;
-/// use paramdef::core::Value;
-///
-/// let mut text = Text::builder("advanced_option").build();
-///
-/// // Set visibility condition
-/// text.set_visibility_expr(Some(Value::text("{{show_advanced}} == true")));
-///
-/// // Check if visible (would evaluate expression in real implementation)
-/// assert!(text.is_visible());
 /// ```
-pub trait Visibility: Node {
+/// use paramdef::visibility::Expr;
+/// use paramdef::types::leaf::Text;
+/// use paramdef::context::Context;
+/// use paramdef::schema::Schema;
+/// use paramdef::core::Value;
+/// use std::sync::Arc;
+///
+/// // Build schema with visibility condition
+/// let schema = Arc::new(Schema::builder()
+///     .parameter(
+///         Text::builder("show_advanced")
+///             .default("false")
+///             .build()
+///     )
+///     .parameter(
+///         Text::builder("advanced_option")
+///             .visible_when(Expr::eq("show_advanced", Value::text("true")))
+///             .build()
+///     )
+///     .build());
+///
+/// let mut ctx = Context::new(schema);
+///
+/// // Get the node and check visibility
+/// let node = ctx.schema().get("advanced_option").unwrap();
+/// # #[cfg(feature = "visibility")]
+/// # {
+/// use paramdef::types::traits::Visibility;
+/// assert_eq!(node.is_visible(&ctx), false);
+/// # }
+///
+/// // Set show_advanced to true
+/// ctx.set("show_advanced", Value::text("true"));
+/// # #[cfg(feature = "visibility")]
+/// # {
+/// assert_eq!(node.is_visible(&ctx), true);
+/// # }
+/// ```
+#[cfg(feature = "visibility")]
+pub trait Visibility {
     /// Returns the visibility expression, if any.
-    fn visibility_expr(&self) -> Option<&Value>;
+    fn visibility_expr(&self) -> Option<&Expr>;
 
     /// Sets the visibility expression.
-    fn set_visibility_expr(&mut self, expr: Option<Value>);
-
-    /// Returns whether the node is currently visible.
     ///
-    /// If no visibility expression is set, returns `true`.
-    fn is_visible(&self) -> bool {
-        true
+    /// This is typically used by builders, not at runtime.
+    fn set_visibility_expr(&mut self, expr: Option<Expr>);
+
+    /// Evaluates whether the node is currently visible in the given context.
+    ///
+    /// Returns `true` if:
+    /// - No visibility expression is set (always visible)
+    /// - The visibility expression evaluates to `true`
+    ///
+    /// Returns `false` if the visibility expression evaluates to `false`.
+    fn is_visible(&self, ctx: &Context) -> bool {
+        match self.visibility_expr() {
+            Some(expr) => expr.eval(ctx),
+            None => true, // No condition = always visible
+        }
     }
 
-    /// Returns the keys that this node's visibility depends on.
-    fn dependencies(&self) -> Vec<String> {
-        Vec::new()
+    /// Returns the parameter keys that this node's visibility depends on.
+    ///
+    /// This is used for reactive updates - when a dependency changes,
+    /// the visibility can be re-evaluated.
+    fn dependencies(&self) -> Vec<Key> {
+        match self.visibility_expr() {
+            Some(expr) => expr.dependencies(),
+            None => Vec::new(),
+        }
     }
 }

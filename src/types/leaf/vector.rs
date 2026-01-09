@@ -33,6 +33,8 @@ pub struct Vector {
     element_type: NumericKind,
     size: usize,
     default: Option<Vec<f64>>,
+    #[cfg(feature = "visibility")]
+    visibility: Option<crate::visibility::Expr>,
 }
 
 impl Vector {
@@ -112,6 +114,8 @@ pub struct VectorBuilder<T: Numeric, const N: usize> {
     group: Option<Key>,
     flags: Flags,
     default: Option<[T; N]>,
+    #[cfg(feature = "visibility")]
+    visibility: Option<crate::visibility::Expr>,
 }
 
 impl<T: Numeric, const N: usize> VectorBuilder<T, N> {
@@ -124,6 +128,8 @@ impl<T: Numeric, const N: usize> VectorBuilder<T, N> {
             group: None,
             flags: Flags::empty(),
             default: None,
+            #[cfg(feature = "visibility")]
+            visibility: None,
         }
     }
 
@@ -176,6 +182,16 @@ impl<T: Numeric, const N: usize> VectorBuilder<T, N> {
         self
     }
 
+    /// Sets a visibility condition.
+    ///
+    /// The parameter will only be visible when the expression evaluates to true.
+    #[cfg(feature = "visibility")]
+    #[must_use]
+    pub fn visible_when(mut self, expr: crate::visibility::Expr) -> Self {
+        self.visibility = Some(expr);
+        self
+    }
+
     /// Builds the vector parameter.
     #[must_use]
     pub fn build(self) -> Vector {
@@ -199,7 +215,21 @@ impl<T: Numeric, const N: usize> VectorBuilder<T, N> {
             default: self
                 .default
                 .map(|arr| arr.iter().map(|v| v.to_f64()).collect()),
+            #[cfg(feature = "visibility")]
+            visibility: self.visibility,
         }
+    }
+}
+
+// Visibility trait implementation
+#[cfg(feature = "visibility")]
+impl crate::types::traits::Visibility for Vector {
+    fn visibility_expr(&self) -> Option<&crate::visibility::Expr> {
+        self.visibility.as_ref()
+    }
+
+    fn set_visibility_expr(&mut self, expr: Option<crate::visibility::Expr>) {
+        self.visibility = expr;
     }
 }
 

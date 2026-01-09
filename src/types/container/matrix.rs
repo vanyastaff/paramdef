@@ -249,17 +249,24 @@ pub struct Matrix {
     show_row_numbers: bool,
     /// Alternate row styling.
     alternate_rows: bool,
+    #[cfg(feature = "visibility")]
+    visibility: Option<crate::visibility::Expr>,
 }
 
 impl fmt::Debug for Matrix {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Matrix")
+        let mut debug = f.debug_struct("Matrix");
+        debug
             .field("metadata", &self.metadata)
             .field("flags", &self.flags)
             .field("row_count", &self.rows.len())
             .field("column_count", &self.columns.len())
-            .field("cell_type", &self.cell_type)
-            .finish_non_exhaustive()
+            .field("cell_type", &self.cell_type);
+
+        #[cfg(feature = "visibility")]
+        debug.field("visibility", &self.visibility);
+
+        debug.finish_non_exhaustive()
     }
 }
 
@@ -405,6 +412,8 @@ pub struct MatrixBuilder {
     all_rows_required: bool,
     show_row_numbers: bool,
     alternate_rows: bool,
+    #[cfg(feature = "visibility")]
+    visibility: Option<crate::visibility::Expr>,
 }
 
 impl MatrixBuilder {
@@ -422,6 +431,8 @@ impl MatrixBuilder {
             all_rows_required: false,
             show_row_numbers: false,
             alternate_rows: true,
+            #[cfg(feature = "visibility")]
+            visibility: None,
         }
     }
 
@@ -620,6 +631,16 @@ impl MatrixBuilder {
         self
     }
 
+    /// Sets a visibility condition.
+    ///
+    /// The parameter will only be visible when the expression evaluates to true.
+    #[cfg(feature = "visibility")]
+    #[must_use]
+    pub fn visible_when(mut self, expr: crate::visibility::Expr) -> Self {
+        self.visibility = Some(expr);
+        self
+    }
+
     /// Builds the Matrix.
     ///
     /// # Errors
@@ -677,7 +698,21 @@ impl MatrixBuilder {
             all_rows_required: self.all_rows_required,
             show_row_numbers: self.show_row_numbers,
             alternate_rows: self.alternate_rows,
+            #[cfg(feature = "visibility")]
+            visibility: self.visibility,
         })
+    }
+}
+
+// Visibility trait implementation
+#[cfg(feature = "visibility")]
+impl crate::types::traits::Visibility for Matrix {
+    fn visibility_expr(&self) -> Option<&crate::visibility::Expr> {
+        self.visibility.as_ref()
+    }
+
+    fn set_visibility_expr(&mut self, expr: Option<crate::visibility::Expr>) {
+        self.visibility = expr;
     }
 }
 

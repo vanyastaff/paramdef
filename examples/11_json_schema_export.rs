@@ -82,10 +82,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("- Title: {:?}", json_schema.title);
     println!("- Type: {}", json_schema.type_);
 
-    let prop_count = json_schema.properties.as_ref().map_or(0, |p| p.len());
+    let prop_count = json_schema
+        .properties
+        .as_ref()
+        .map(|p| p.len())
+        .unwrap_or(0);
     println!("- Properties count: {prop_count}");
 
-    let req_count = json_schema.required.as_ref().map_or(0, |r| r.len());
+    let req_count = json_schema.required.as_ref().map(|r| r.len()).unwrap_or(0);
     println!("- Required fields: {req_count}");
 
     if let Some(required) = &json_schema.required {

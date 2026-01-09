@@ -186,15 +186,22 @@ pub struct Object {
     extensible: Option<ExtensibleConfig>,
     /// Cached children for Container trait
     children_cache: Arc<[Arc<dyn Node>]>,
+    #[cfg(feature = "visibility")]
+    visibility: Option<crate::visibility::Expr>,
 }
 
 impl fmt::Debug for Object {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Object")
+        let mut debug = f.debug_struct("Object");
+        debug
             .field("metadata", &self.metadata)
             .field("flags", &self.flags)
-            .field("field_count", &self.fields.len())
-            .finish_non_exhaustive()
+            .field("field_count", &self.fields.len());
+
+        #[cfg(feature = "visibility")]
+        debug.field("visibility", &self.visibility);
+
+        debug.finish_non_exhaustive()
     }
 }
 
@@ -214,6 +221,8 @@ impl Object {
             fields: Vec::new(),
             extensible: None,
             children_cache: Arc::from([]),
+            #[cfg(feature = "visibility")]
+            visibility: None,
         }
     }
 
@@ -310,18 +319,25 @@ pub struct ObjectBuilder {
     flags: Flags,
     fields: Vec<(Key, Arc<dyn Node>)>,
     extensible: Option<ExtensibleConfig>,
+    #[cfg(feature = "visibility")]
+    visibility: Option<crate::visibility::Expr>,
 }
 
 impl fmt::Debug for ObjectBuilder {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("ObjectBuilder")
+        let mut debug = f.debug_struct("ObjectBuilder");
+        debug
             .field("key", &self.key)
             .field("label", &self.label)
             .field("description", &self.description)
             .field("flags", &self.flags)
             .field("field_count", &self.fields.len())
-            .field("extensible", &self.extensible.is_some())
-            .finish()
+            .field("extensible", &self.extensible.is_some());
+
+        #[cfg(feature = "visibility")]
+        debug.field("visibility", &self.visibility);
+
+        debug.finish()
     }
 }
 
@@ -336,6 +352,8 @@ impl ObjectBuilder {
             flags: Flags::empty(),
             fields: Vec::new(),
             extensible: None,
+            #[cfg(feature = "visibility")]
+            visibility: None,
         }
     }
 
@@ -422,6 +440,16 @@ impl ObjectBuilder {
         self
     }
 
+    /// Sets a visibility condition.
+    ///
+    /// The parameter will only be visible when the expression evaluates to true.
+    #[cfg(feature = "visibility")]
+    #[must_use]
+    pub fn visible_when(mut self, expr: crate::visibility::Expr) -> Self {
+        self.visibility = Some(expr);
+        self
+    }
+
     /// Builds the Object.
     ///
     /// # Errors
@@ -460,7 +488,21 @@ impl ObjectBuilder {
             fields: self.fields,
             extensible: self.extensible,
             children_cache,
+            #[cfg(feature = "visibility")]
+            visibility: self.visibility,
         })
+    }
+}
+
+// Visibility trait implementation
+#[cfg(feature = "visibility")]
+impl crate::types::traits::Visibility for Object {
+    fn visibility_expr(&self) -> Option<&crate::visibility::Expr> {
+        self.visibility.as_ref()
+    }
+
+    fn set_visibility_expr(&mut self, expr: Option<crate::visibility::Expr>) {
+        self.visibility = expr;
     }
 }
 

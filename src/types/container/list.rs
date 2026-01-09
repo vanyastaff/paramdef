@@ -157,19 +157,26 @@ pub struct List {
     ranking: Option<RankingConfig>,
     /// Cached children for Container trait
     children_cache: Arc<[Arc<dyn Node>]>,
+    #[cfg(feature = "visibility")]
+    visibility: Option<crate::visibility::Expr>,
 }
 
 impl fmt::Debug for List {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("List")
+        let mut debug = f.debug_struct("List");
+        debug
             .field("metadata", &self.metadata)
             .field("flags", &self.flags)
             .field("min_items", &self.min_items)
             .field("max_items", &self.max_items)
             .field("unique", &self.unique)
             .field("sortable", &self.sortable)
-            .field("ranking", &self.ranking)
-            .finish_non_exhaustive()
+            .field("ranking", &self.ranking);
+
+        #[cfg(feature = "visibility")]
+        debug.field("visibility", &self.visibility);
+
+        debug.finish_non_exhaustive()
     }
 }
 
@@ -280,11 +287,14 @@ pub struct ListBuilder {
     unique: bool,
     sortable: bool,
     ranking: Option<RankingConfig>,
+    #[cfg(feature = "visibility")]
+    visibility: Option<crate::visibility::Expr>,
 }
 
 impl fmt::Debug for ListBuilder {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("ListBuilder")
+        let mut debug = f.debug_struct("ListBuilder");
+        debug
             .field("key", &self.key)
             .field("label", &self.label)
             .field("description", &self.description)
@@ -294,8 +304,12 @@ impl fmt::Debug for ListBuilder {
             .field("max_items", &self.max_items)
             .field("unique", &self.unique)
             .field("sortable", &self.sortable)
-            .field("ranking", &self.ranking)
-            .finish()
+            .field("ranking", &self.ranking);
+
+        #[cfg(feature = "visibility")]
+        debug.field("visibility", &self.visibility);
+
+        debug.finish()
     }
 }
 
@@ -314,6 +328,8 @@ impl ListBuilder {
             unique: false,
             sortable: false,
             ranking: None,
+            #[cfg(feature = "visibility")]
+            visibility: None,
         }
     }
 
@@ -428,6 +444,16 @@ impl ListBuilder {
         self
     }
 
+    /// Sets a visibility condition.
+    ///
+    /// The parameter will only be visible when the expression evaluates to true.
+    #[cfg(feature = "visibility")]
+    #[must_use]
+    pub fn visible_when(mut self, expr: crate::visibility::Expr) -> Self {
+        self.visibility = Some(expr);
+        self
+    }
+
     /// Builds the List.
     ///
     /// # Errors
@@ -471,7 +497,21 @@ impl ListBuilder {
             sortable: self.sortable,
             ranking: self.ranking,
             children_cache,
+            #[cfg(feature = "visibility")]
+            visibility: self.visibility,
         })
+    }
+}
+
+// Visibility trait implementation
+#[cfg(feature = "visibility")]
+impl crate::types::traits::Visibility for List {
+    fn visibility_expr(&self) -> Option<&crate::visibility::Expr> {
+        self.visibility.as_ref()
+    }
+
+    fn set_visibility_expr(&mut self, expr: Option<crate::visibility::Expr>) {
+        self.visibility = expr;
     }
 }
 

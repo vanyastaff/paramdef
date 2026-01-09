@@ -58,6 +58,8 @@ pub struct File<S: FileSubtype = crate::subtype::GenericFile> {
     max_size: Option<u64>,
     /// Allow multiple files.
     multiple: bool,
+    #[cfg(feature = "visibility")]
+    visibility: Option<crate::visibility::Expr>,
 }
 
 impl<S: FileSubtype> File<S> {
@@ -212,6 +214,8 @@ pub struct FileBuilder<S: FileSubtype = crate::subtype::GenericFile> {
     accept: Vec<SmartStr>,
     max_size: Option<u64>,
     multiple: bool,
+    #[cfg(feature = "visibility")]
+    visibility: Option<crate::visibility::Expr>,
 }
 
 impl FileBuilder<crate::subtype::GenericFile> {
@@ -227,6 +231,8 @@ impl FileBuilder<crate::subtype::GenericFile> {
             accept: Vec::new(),
             max_size: None,
             multiple: false,
+            #[cfg(feature = "visibility")]
+            visibility: None,
         }
     }
 }
@@ -244,6 +250,8 @@ impl<S: FileSubtype> FileBuilder<S> {
             accept: self.accept,
             max_size: self.max_size,
             multiple: self.multiple,
+            #[cfg(feature = "visibility")]
+            visibility: self.visibility,
         }
     }
 
@@ -324,6 +332,16 @@ impl<S: FileSubtype> FileBuilder<S> {
         self
     }
 
+    /// Sets a visibility condition.
+    ///
+    /// The parameter will only be visible when the expression evaluates to true.
+    #[cfg(feature = "visibility")]
+    #[must_use]
+    pub fn visible_when(mut self, expr: crate::visibility::Expr) -> Self {
+        self.visibility = Some(expr);
+        self
+    }
+
     /// Builds the file parameter.
     #[must_use]
     pub fn build(self) -> File<S> {
@@ -346,7 +364,21 @@ impl<S: FileSubtype> FileBuilder<S> {
             accept: self.accept,
             max_size: self.max_size,
             multiple: self.multiple,
+            #[cfg(feature = "visibility")]
+            visibility: self.visibility,
         }
+    }
+}
+
+// Visibility trait implementation
+#[cfg(feature = "visibility")]
+impl<S: FileSubtype> crate::types::traits::Visibility for File<S> {
+    fn visibility_expr(&self) -> Option<&crate::visibility::Expr> {
+        self.visibility.as_ref()
+    }
+
+    fn set_visibility_expr(&mut self, expr: Option<crate::visibility::Expr>) {
+        self.visibility = expr;
     }
 }
 

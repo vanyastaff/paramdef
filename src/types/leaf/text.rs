@@ -30,6 +30,8 @@ pub struct Text<S: TextSubtype = crate::subtype::Plain> {
     flags: Flags,
     subtype: S,
     default: Option<SmartStr>,
+    #[cfg(feature = "visibility")]
+    visibility: Option<crate::visibility::Expr>,
 }
 
 impl<S: TextSubtype> Text<S> {
@@ -143,6 +145,8 @@ pub struct TextBuilder<S: TextSubtype = crate::subtype::Plain> {
     flags: Flags,
     subtype: S,
     default: Option<SmartStr>,
+    #[cfg(feature = "visibility")]
+    visibility: Option<crate::visibility::Expr>,
 }
 
 impl TextBuilder<crate::subtype::Plain> {
@@ -156,6 +160,8 @@ impl TextBuilder<crate::subtype::Plain> {
             flags: Flags::empty(),
             subtype: crate::subtype::Plain,
             default: None,
+            #[cfg(feature = "visibility")]
+            visibility: None,
         }
     }
 }
@@ -171,6 +177,8 @@ impl<S: TextSubtype> TextBuilder<S> {
             flags: self.flags,
             subtype,
             default: self.default,
+            #[cfg(feature = "visibility")]
+            visibility: self.visibility,
         }
     }
 
@@ -230,6 +238,16 @@ impl<S: TextSubtype> TextBuilder<S> {
         self
     }
 
+    /// Sets a visibility condition.
+    ///
+    /// The parameter will only be visible when the expression evaluates to true.
+    #[cfg(feature = "visibility")]
+    #[must_use]
+    pub fn visible_when(mut self, expr: crate::visibility::Expr) -> Self {
+        self.visibility = Some(expr);
+        self
+    }
+
     /// Builds the text parameter.
     #[must_use]
     pub fn build(self) -> Text<S> {
@@ -250,7 +268,21 @@ impl<S: TextSubtype> TextBuilder<S> {
             flags: self.flags,
             subtype: self.subtype,
             default: self.default,
+            #[cfg(feature = "visibility")]
+            visibility: self.visibility,
         }
+    }
+}
+
+// Visibility trait implementation
+#[cfg(feature = "visibility")]
+impl<S: TextSubtype> crate::types::traits::Visibility for Text<S> {
+    fn visibility_expr(&self) -> Option<&crate::visibility::Expr> {
+        self.visibility.as_ref()
+    }
+
+    fn set_visibility_expr(&mut self, expr: Option<crate::visibility::Expr>) {
+        self.visibility = expr;
     }
 }
 

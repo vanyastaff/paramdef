@@ -186,6 +186,8 @@ pub struct Video {
     poster: Option<SmartStr>,
     size: Option<VideoSize>,
     options: VideoOptions,
+    #[cfg(feature = "visibility")]
+    visibility: Option<crate::visibility::Expr>,
 }
 
 impl Video {
@@ -302,6 +304,8 @@ pub struct VideoBuilder {
     poster: Option<SmartStr>,
     size: Option<VideoSize>,
     options: VideoOptions,
+    #[cfg(feature = "visibility")]
+    visibility: Option<crate::visibility::Expr>,
 }
 
 impl VideoBuilder {
@@ -317,6 +321,8 @@ impl VideoBuilder {
             poster: None,
             size: None,
             options: VideoOptions::with_controls(),
+            #[cfg(feature = "visibility")]
+            visibility: None,
         }
     }
 
@@ -397,6 +403,14 @@ impl VideoBuilder {
         self
     }
 
+    /// Sets the visibility expression.
+    #[cfg(feature = "visibility")]
+    #[must_use]
+    pub fn visible_when(mut self, expr: crate::visibility::Expr) -> Self {
+        self.visibility = Some(expr);
+        self
+    }
+
     /// Builds the Video decoration.
     ///
     /// # Panics
@@ -423,7 +437,20 @@ impl VideoBuilder {
             poster: self.poster,
             size: self.size,
             options: self.options,
+            #[cfg(feature = "visibility")]
+            visibility: self.visibility,
         }
+    }
+}
+
+#[cfg(feature = "visibility")]
+impl crate::types::traits::Visibility for Video {
+    fn visibility_expr(&self) -> Option<&crate::visibility::Expr> {
+        self.visibility.as_ref()
+    }
+
+    fn set_visibility_expr(&mut self, expr: Option<crate::visibility::Expr>) {
+        self.visibility = expr;
     }
 }
 

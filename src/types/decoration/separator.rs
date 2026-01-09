@@ -43,6 +43,8 @@ pub struct Separator {
     style: SeparatorStyle,
     label: Option<SmartStr>,
     spacing: Option<f32>,
+    #[cfg(feature = "visibility")]
+    visibility: Option<crate::visibility::Expr>,
 }
 
 impl Separator {
@@ -134,6 +136,8 @@ pub struct SeparatorBuilder {
     style: SeparatorStyle,
     label: Option<SmartStr>,
     spacing: Option<f32>,
+    #[cfg(feature = "visibility")]
+    visibility: Option<crate::visibility::Expr>,
 }
 
 impl SeparatorBuilder {
@@ -146,6 +150,8 @@ impl SeparatorBuilder {
             style: SeparatorStyle::Thin,
             label: None,
             spacing: None,
+            #[cfg(feature = "visibility")]
+            visibility: None,
         }
     }
 
@@ -177,6 +183,14 @@ impl SeparatorBuilder {
         self
     }
 
+    /// Sets the visibility expression.
+    #[cfg(feature = "visibility")]
+    #[must_use]
+    pub fn visible_when(mut self, expr: crate::visibility::Expr) -> Self {
+        self.visibility = Some(expr);
+        self
+    }
+
     /// Builds the Separator.
     #[must_use]
     pub fn build(self) -> Separator {
@@ -186,7 +200,20 @@ impl SeparatorBuilder {
             style: self.style,
             label: self.label,
             spacing: self.spacing,
+            #[cfg(feature = "visibility")]
+            visibility: self.visibility,
         }
+    }
+}
+
+#[cfg(feature = "visibility")]
+impl crate::types::traits::Visibility for Separator {
+    fn visibility_expr(&self) -> Option<&crate::visibility::Expr> {
+        self.visibility.as_ref()
+    }
+
+    fn set_visibility_expr(&mut self, expr: Option<crate::visibility::Expr>) {
+        self.visibility = expr;
     }
 }
 

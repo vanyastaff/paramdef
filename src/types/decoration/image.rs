@@ -96,6 +96,8 @@ pub struct Image {
     width: Option<u32>,
     height: Option<u32>,
     alignment: ImageAlignment,
+    #[cfg(feature = "visibility")]
+    visibility: Option<crate::visibility::Expr>,
 }
 
 impl Image {
@@ -192,6 +194,8 @@ pub struct ImageBuilder {
     width: Option<u32>,
     height: Option<u32>,
     alignment: ImageAlignment,
+    #[cfg(feature = "visibility")]
+    visibility: Option<crate::visibility::Expr>,
 }
 
 impl ImageBuilder {
@@ -209,6 +213,8 @@ impl ImageBuilder {
             width: None,
             height: None,
             alignment: ImageAlignment::Center,
+            #[cfg(feature = "visibility")]
+            visibility: None,
         }
     }
 
@@ -262,6 +268,14 @@ impl ImageBuilder {
         self
     }
 
+    /// Sets the visibility expression.
+    #[cfg(feature = "visibility")]
+    #[must_use]
+    pub fn visible_when(mut self, expr: crate::visibility::Expr) -> Self {
+        self.visibility = Some(expr);
+        self
+    }
+
     /// Builds the Image.
     ///
     /// # Errors
@@ -280,7 +294,20 @@ impl ImageBuilder {
             width: self.width,
             height: self.height,
             alignment: self.alignment,
+            #[cfg(feature = "visibility")]
+            visibility: self.visibility,
         })
+    }
+}
+
+#[cfg(feature = "visibility")]
+impl crate::types::traits::Visibility for Image {
+    fn visibility_expr(&self) -> Option<&crate::visibility::Expr> {
+        self.visibility.as_ref()
+    }
+
+    fn set_visibility_expr(&mut self, expr: Option<crate::visibility::Expr>) {
+        self.visibility = expr;
     }
 }
 

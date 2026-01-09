@@ -75,6 +75,8 @@ pub struct Html {
     sanitize: SanitizeLevel,
     css_class: Option<SmartStr>,
     inline: bool,
+    #[cfg(feature = "visibility")]
+    visibility: Option<crate::visibility::Expr>,
 }
 
 impl Html {
@@ -169,6 +171,8 @@ pub struct HtmlBuilder {
     sanitize: SanitizeLevel,
     css_class: Option<SmartStr>,
     inline: bool,
+    #[cfg(feature = "visibility")]
+    visibility: Option<crate::visibility::Expr>,
 }
 
 impl HtmlBuilder {
@@ -184,6 +188,8 @@ impl HtmlBuilder {
             sanitize: SanitizeLevel::default(),
             css_class: None,
             inline: false,
+            #[cfg(feature = "visibility")]
+            visibility: None,
         }
     }
 
@@ -236,6 +242,14 @@ impl HtmlBuilder {
         self
     }
 
+    /// Sets the visibility expression.
+    #[cfg(feature = "visibility")]
+    #[must_use]
+    pub fn visible_when(mut self, expr: crate::visibility::Expr) -> Self {
+        self.visibility = Some(expr);
+        self
+    }
+
     /// Builds the Html decoration.
     #[must_use]
     pub fn build(self) -> Html {
@@ -254,7 +268,20 @@ impl HtmlBuilder {
             sanitize: self.sanitize,
             css_class: self.css_class,
             inline: self.inline,
+            #[cfg(feature = "visibility")]
+            visibility: self.visibility,
         }
+    }
+}
+
+#[cfg(feature = "visibility")]
+impl crate::types::traits::Visibility for Html {
+    fn visibility_expr(&self) -> Option<&crate::visibility::Expr> {
+        self.visibility.as_ref()
+    }
+
+    fn set_visibility_expr(&mut self, expr: Option<crate::visibility::Expr>) {
+        self.visibility = expr;
     }
 }
 
