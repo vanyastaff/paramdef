@@ -259,6 +259,31 @@ impl JsonSchemaExporter {
         Ok(JsonValue::Object(prop))
     }
 
+    /// Helper to add pattern from Text subtype if available.
+    fn add_text_pattern<S: crate::subtype::TextSubtype>(
+        _subtype: &S,
+        prop: &mut Map<String, JsonValue>,
+    ) {
+        if let Some(pattern) = S::pattern() {
+            prop.insert(
+                "pattern".to_string(),
+                JsonValue::String(pattern.to_string()),
+            );
+        }
+    }
+
+    /// Helper to add minimum/maximum from Number subtype range if available.
+    fn add_number_range<S: crate::subtype::NumberSubtype>(prop: &mut Map<String, JsonValue>) {
+        if let Some((min, max)) = S::default_range() {
+            // Convert to f64 for JSON Schema
+            let min_f64 = crate::subtype::traits::Numeric::to_f64(min);
+            let max_f64 = crate::subtype::traits::Numeric::to_f64(max);
+
+            prop.insert("minimum".to_string(), serde_json::json!(min_f64));
+            prop.insert("maximum".to_string(), serde_json::json!(max_f64));
+        }
+    }
+
     /// Helper to create items schema for Select with multiple selection.
     fn create_select_items_schema(
         select: &crate::types::leaf::Select,
@@ -282,6 +307,7 @@ impl JsonSchemaExporter {
     }
 
     /// Converts a Leaf node to JSON Schema properties.
+    #[allow(clippy::too_many_lines)]
     fn convert_leaf_type(node: &dyn Node, prop: &mut Map<String, JsonValue>) {
         // Try downcasting to specific leaf types
         let any = node.as_any();
@@ -342,22 +368,67 @@ impl JsonSchemaExporter {
             return;
         }
 
-        // Number - try common subtypes
+        // Number - try common subtypes with range constraints
+        if let Some(_num) =
+            any.downcast_ref::<crate::types::leaf::Number<crate::subtype::number::Port>>()
+        {
+            prop.insert("type".to_string(), JsonValue::String("integer".to_string()));
+            Self::add_number_range::<crate::subtype::number::Port>(prop);
+            return;
+        }
+        if any
+            .downcast_ref::<crate::types::leaf::Number<crate::subtype::number::Count>>()
+            .is_some()
+        {
+            prop.insert("type".to_string(), JsonValue::String("integer".to_string()));
+            return;
+        }
+        if let Some(_num) =
+            any.downcast_ref::<crate::types::leaf::Number<crate::subtype::number::Rating>>()
+        {
+            prop.insert("type".to_string(), JsonValue::String("integer".to_string()));
+            Self::add_number_range::<crate::subtype::number::Rating>(prop);
+            return;
+        }
+        if let Some(_num) =
+            any.downcast_ref::<crate::types::leaf::Number<crate::subtype::number::Percentage>>()
+        {
+            prop.insert("type".to_string(), JsonValue::String("number".to_string()));
+            Self::add_number_range::<crate::subtype::number::Percentage>(prop);
+            return;
+        }
+        if let Some(_num) =
+            any.downcast_ref::<crate::types::leaf::Number<crate::subtype::number::Angle>>()
+        {
+            prop.insert("type".to_string(), JsonValue::String("number".to_string()));
+            Self::add_number_range::<crate::subtype::number::Angle>(prop);
+            return;
+        }
+        if let Some(_num) =
+            any.downcast_ref::<crate::types::leaf::Number<crate::subtype::number::Factor>>()
+        {
+            prop.insert("type".to_string(), JsonValue::String("number".to_string()));
+            Self::add_number_range::<crate::subtype::number::Factor>(prop);
+            return;
+        }
+        if let Some(_num) =
+            any.downcast_ref::<crate::types::leaf::Number<crate::subtype::number::Latitude>>()
+        {
+            prop.insert("type".to_string(), JsonValue::String("number".to_string()));
+            Self::add_number_range::<crate::subtype::number::Latitude>(prop);
+            return;
+        }
+        if let Some(_num) =
+            any.downcast_ref::<crate::types::leaf::Number<crate::subtype::number::Longitude>>()
+        {
+            prop.insert("type".to_string(), JsonValue::String("number".to_string()));
+            Self::add_number_range::<crate::subtype::number::Longitude>(prop);
+            return;
+        }
+        // Generic number and other subtypes without range
         if any
             .downcast_ref::<crate::types::leaf::Number<crate::subtype::number::GenericNumber>>()
             .is_some()
-            || any
-                .downcast_ref::<crate::types::leaf::Number<crate::subtype::number::Port>>()
-                .is_some()
-            || any
-                .downcast_ref::<crate::types::leaf::Number<crate::subtype::number::Count>>()
-                .is_some()
-            || any
-                .downcast_ref::<crate::types::leaf::Number<crate::subtype::number::Percentage>>()
-                .is_some()
-            || any
-                .downcast_ref::<crate::types::leaf::Number<crate::subtype::number::Angle>>()
-                .is_some()
             || any
                 .downcast_ref::<crate::types::leaf::Number<crate::subtype::number::Distance>>()
                 .is_some()
@@ -366,18 +437,79 @@ impl JsonSchemaExporter {
             return;
         }
 
-        // Text - check explicit Text types
+        // Text - check explicit Text types with format mapping
+        if let Some(text) =
+            any.downcast_ref::<crate::types::leaf::Text<crate::subtype::text::Email>>()
+        {
+            prop.insert("type".to_string(), JsonValue::String("string".to_string()));
+            prop.insert("format".to_string(), JsonValue::String("email".to_string()));
+            Self::add_text_pattern(text.subtype(), prop);
+            return;
+        }
+        if let Some(text) =
+            any.downcast_ref::<crate::types::leaf::Text<crate::subtype::text::Url>>()
+        {
+            prop.insert("type".to_string(), JsonValue::String("string".to_string()));
+            prop.insert("format".to_string(), JsonValue::String("uri".to_string()));
+            Self::add_text_pattern(text.subtype(), prop);
+            return;
+        }
+        if let Some(text) =
+            any.downcast_ref::<crate::types::leaf::Text<crate::subtype::text::Uuid>>()
+        {
+            prop.insert("type".to_string(), JsonValue::String("string".to_string()));
+            prop.insert("format".to_string(), JsonValue::String("uuid".to_string()));
+            Self::add_text_pattern(text.subtype(), prop);
+            return;
+        }
+        if let Some(_text) =
+            any.downcast_ref::<crate::types::leaf::Text<crate::subtype::text::Date>>()
+        {
+            prop.insert("type".to_string(), JsonValue::String("string".to_string()));
+            prop.insert("format".to_string(), JsonValue::String("date".to_string()));
+            return;
+        }
+        if let Some(_text) =
+            any.downcast_ref::<crate::types::leaf::Text<crate::subtype::text::DateTime>>()
+        {
+            prop.insert("type".to_string(), JsonValue::String("string".to_string()));
+            prop.insert(
+                "format".to_string(),
+                JsonValue::String("date-time".to_string()),
+            );
+            return;
+        }
+        if let Some(_text) =
+            any.downcast_ref::<crate::types::leaf::Text<crate::subtype::text::Time>>()
+        {
+            prop.insert("type".to_string(), JsonValue::String("string".to_string()));
+            prop.insert("format".to_string(), JsonValue::String("time".to_string()));
+            return;
+        }
+        if let Some(text) =
+            any.downcast_ref::<crate::types::leaf::Text<crate::subtype::text::IpAddressV4>>()
+        {
+            prop.insert("type".to_string(), JsonValue::String("string".to_string()));
+            prop.insert("format".to_string(), JsonValue::String("ipv4".to_string()));
+            Self::add_text_pattern(text.subtype(), prop);
+            return;
+        }
+        if let Some(_text) =
+            any.downcast_ref::<crate::types::leaf::Text<crate::subtype::text::IpAddressV6>>()
+        {
+            prop.insert("type".to_string(), JsonValue::String("string".to_string()));
+            prop.insert("format".to_string(), JsonValue::String("ipv6".to_string()));
+            return;
+        }
+        // Plain text and other text subtypes (Password, ApiKey, etc.) - just string
         if any
             .downcast_ref::<crate::types::leaf::Text<crate::subtype::text::Plain>>()
             .is_some()
             || any
-                .downcast_ref::<crate::types::leaf::Text<crate::subtype::text::Email>>()
-                .is_some()
-            || any
-                .downcast_ref::<crate::types::leaf::Text<crate::subtype::text::Url>>()
-                .is_some()
-            || any
                 .downcast_ref::<crate::types::leaf::Text<crate::subtype::text::Password>>()
+                .is_some()
+            || any
+                .downcast_ref::<crate::types::leaf::Text<crate::subtype::text::MultiLine>>()
                 .is_some()
         {
             prop.insert("type".to_string(), JsonValue::String("string".to_string()));
