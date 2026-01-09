@@ -398,7 +398,7 @@ mod tests {
     #[tokio::test]
     async fn test_subscription_recv() {
         let bus = EventBus::new(32);
-        let sub = bus.subscribe();
+        let mut sub = bus.subscribe();
 
         bus.emit(Event::touched("field1"));
         bus.emit(Event::dirtied("field2"));

@@ -18,7 +18,10 @@ use paramdef::types::leaf::Text;
 #[cfg(feature = "events")]
 use std::sync::Arc;
 #[cfg(feature = "events")]
-use tokio;
+use tokio::{
+    self,
+    time::{Duration, sleep},
+};
 
 #[cfg(feature = "events")]
 #[tokio::main]
@@ -63,7 +66,7 @@ async fn main() {
     });
 
     // Give listener time to start
-    tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
+    sleep(Duration::from_millis(10)).await;
 
     // Perform operations that emit events
     println!("Setting values...\n");

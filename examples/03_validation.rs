@@ -2,19 +2,13 @@
 //!
 //! Demonstrates:
 //! - Creating validation rules
-//! - Validating values
+//! - Validating values with standalone rules
 //! - Handling validation errors
 
 #[cfg(feature = "validation")]
-use paramdef::context::Context;
-#[cfg(feature = "validation")]
 use paramdef::core::Value;
 #[cfg(feature = "validation")]
-use paramdef::schema::Schema;
-#[cfg(feature = "validation")]
-use paramdef::validation::{Rule, Rules};
-#[cfg(feature = "validation")]
-use std::sync::Arc;
+use paramdef::validation::Rule;
 
 #[cfg(feature = "validation")]
 fn main() {
@@ -22,25 +16,47 @@ fn main() {
 
     // Example 1: Required rule
     let rule = Rule::required();
-    let ctx = Context::new(Arc::new(Schema::builder().build()));
 
     println!("Required validation:");
-    println!("  Valid: {:?}", rule.validate(&Value::text("hello"), &ctx));
-    println!("  Invalid: {:?}\n", rule.validate(&Value::Null, &ctx));
+    println!(
+        "  Valid: {:?}",
+        rule.validate_standalone(&Value::text("hello"))
+    );
+    println!("  Invalid: {:?}\n", rule.validate_standalone(&Value::Null));
 
     // Example 2: Length validation
     let rule = Rule::min_length(5);
     println!("Min length (5):");
-    println!("  Valid: {:?}", rule.validate(&Value::text("hello"), &ctx));
-    println!("  Invalid: {:?}\n", rule.validate(&Value::text("hi"), &ctx));
+    println!(
+        "  Valid: {:?}",
+        rule.validate_standalone(&Value::text("hello"))
+    );
+    println!(
+        "  Invalid: {:?}\n",
+        rule.validate_standalone(&Value::text("hi"))
+    );
+
+    let rule = Rule::max_length(10);
+    println!("Max length (10):");
+    println!(
+        "  Valid: {:?}",
+        rule.validate_standalone(&Value::text("hello"))
+    );
+    println!(
+        "  Invalid: {:?}\n",
+        rule.validate_standalone(&Value::text("hello world!!"))
+    );
 
     // Example 3: Pattern matching
     let rule = Rule::pattern(r"^[a-z]+$");
     println!("Pattern (lowercase only):");
-    println!("  Valid: {:?}", rule.validate(&Value::text("hello"), &ctx));
+    println!(
+        "  Valid: {:?}",
+        rule.validate_standalone(&Value::text("hello"))
+    );
     println!(
         "  Invalid: {:?}\n",
-        rule.validate(&Value::text("Hello123"), &ctx)
+        rule.validate_standalone(&Value::text("Hello123"))
     );
 
     // Example 4: Email validation
@@ -48,32 +64,44 @@ fn main() {
     println!("Email validation:");
     println!(
         "  Valid: {:?}",
-        rule.validate(&Value::text("user@example.com"), &ctx)
+        rule.validate_standalone(&Value::text("user@example.com"))
     );
     println!(
         "  Invalid: {:?}\n",
-        rule.validate(&Value::text("not-an-email"), &ctx)
+        rule.validate_standalone(&Value::text("not-an-email"))
     );
 
-    // Example 5: Multiple rules (Rules pipeline)
-    let rules = Rules::from_rules([
-        Rule::required(),
-        Rule::min_length(3),
-        Rule::max_length(20),
-        Rule::pattern(r"^[a-zA-Z0-9_]+$"),
-    ]);
+    // Example 5: URL validation
+    let rule = Rule::url();
+    println!("URL validation:");
+    println!(
+        "  Valid: {:?}",
+        rule.validate_standalone(&Value::text("https://example.com"))
+    );
+    println!(
+        "  Invalid: {:?}\n",
+        rule.validate_standalone(&Value::text("not a url"))
+    );
 
-    println!("Username validation (required, 3-20 chars, alphanumeric):");
+    // Example 6: Number range
+    let rule = Rule::min(0.0);
+    println!("Min value (0.0):");
+    println!("  Valid: {:?}", rule.validate_standalone(&Value::Int(5)));
     println!(
-        "  'alice': {:?}",
-        rules.validate(&Value::text("alice"), &ctx)
+        "  Invalid: {:?}\n",
+        rule.validate_standalone(&Value::Int(-5))
     );
-    println!("  'al': {:?}", rules.validate(&Value::text("al"), &ctx));
+
+    let rule = Rule::max(100.0);
+    println!("Max value (100.0):");
+    println!("  Valid: {:?}", rule.validate_standalone(&Value::Int(50)));
     println!(
-        "  'alice@123': {:?}",
-        rules.validate(&Value::text("alice@123"), &ctx)
+        "  Invalid: {:?}\n",
+        rule.validate_standalone(&Value::Int(150))
     );
-    println!("  null: {:?}", rules.validate(&Value::Null, &ctx));
+
+    println!("Note: For complex validation pipelines with multiple rules,");
+    println!("use Rules::from_rules() and validate with a ValidationContext.");
 }
 
 #[cfg(not(feature = "validation"))]
