@@ -18,10 +18,7 @@ use paramdef::types::leaf::Text;
 #[cfg(feature = "events")]
 use std::sync::Arc;
 #[cfg(feature = "events")]
-use tokio::{
-    self,
-    time::{Duration, sleep},
-};
+use tokio::time::{Duration, sleep};
 
 #[cfg(feature = "events")]
 #[tokio::main]

@@ -73,8 +73,10 @@ fn main() {
     println!("  Valid: {:?}", rule.check(&Value::Int(50)));
     println!("  Invalid: {:?}\n", rule.check(&Value::Int(150)));
 
-    println!("Note: For complex validation pipelines with multiple rules,");
-    println!("use Rules::from_rules() and validate with a ValidationContext.");
+    println!("\nNote: This example uses check() for simple standalone validation.");
+    println!("For complex validation with multiple rules and cross-field validation,");
+    println!("use Rules::from_rules() with validate() and a ValidationContext.");
+    println!("See the full validation integration tests for advanced examples.");
 }
 
 #[cfg(not(feature = "validation"))]

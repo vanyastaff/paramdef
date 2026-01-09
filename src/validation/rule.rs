@@ -85,8 +85,11 @@ impl Rule {
     /// Validates a value without context.
     ///
     /// This is a simplified validation method for cases where cross-field
-    /// validation is not needed. Function-based validators are skipped since
-    /// they require context.
+    /// validation is not needed. Function-based validators (`Rule::Fn`) are
+    /// skipped and return `Ok(())` since they require context.
+    ///
+    /// Use [`validate`](Self::validate) with a `ValidationContext` for complete
+    /// validation including function-based rules.
     ///
     /// # Errors
     ///
