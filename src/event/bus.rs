@@ -278,10 +278,7 @@ impl Subscription {
     fn try_recv_peek_closed(&self) -> bool {
         // Clone receiver to peek without consuming
         let mut peek = self.rx.resubscribe();
-        matches!(
-            peek.try_recv(),
-            Err(broadcast::error::TryRecvError::Closed)
-        )
+        matches!(peek.try_recv(), Err(broadcast::error::TryRecvError::Closed))
     }
 
     /// Returns the number of events waiting to be received.
@@ -401,7 +398,7 @@ mod tests {
     #[tokio::test]
     async fn test_subscription_recv() {
         let bus = EventBus::new(32);
-        let mut sub = bus.subscribe();
+        let sub = bus.subscribe();
 
         bus.emit(Event::touched("field1"));
         bus.emit(Event::dirtied("field2"));
@@ -503,11 +500,7 @@ mod tests {
 
         // Emit more events than capacity
         for i in 0..10 {
-            bus.emit(Event::value_changed(
-                format!("key{i}"),
-                None,
-                Value::Int(i),
-            ));
+            bus.emit(Event::value_changed(format!("key{i}"), None, Value::Int(i)));
         }
 
         // First recv should report lag

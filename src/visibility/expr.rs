@@ -103,7 +103,10 @@ pub enum Expr {
     Gte(Key, f64),
 
     /// Value is one of the specified values.
-    OneOf(Key, Arc<[Value]>),
+    OneOf(
+        Key,
+        #[cfg_attr(feature = "serde", serde(with = "arc_slice_serde"))] Arc<[Value]>,
+    ),
 
     /// String or array contains the specified value.
     Contains(Key, Value),
@@ -112,10 +115,10 @@ pub enum Expr {
     IsValid(Key),
 
     /// All sub-expressions must be true.
-    And(Arc<[Expr]>),
+    And(#[cfg_attr(feature = "serde", serde(with = "arc_slice_serde"))] Arc<[Expr]>),
 
     /// At least one sub-expression must be true.
-    Or(Arc<[Expr]>),
+    Or(#[cfg_attr(feature = "serde", serde(with = "arc_slice_serde"))] Arc<[Expr]>),
 
     /// Inverts the sub-expression result.
     Not(Box<Expr>),
@@ -573,5 +576,29 @@ mod tests {
 
         let deps = expr.dependencies();
         assert_eq!(deps.len(), 3);
+    }
+}
+
+/// Serde helper for Arc<[T]> serialization/deserialization.
+#[cfg(feature = "serde")]
+mod arc_slice_serde {
+    use serde::{Deserialize, Deserializer, Serialize, Serializer};
+    use std::sync::Arc;
+
+    pub fn serialize<S, T>(value: &Arc<[T]>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+        T: Serialize,
+    {
+        value.as_ref().serialize(serializer)
+    }
+
+    pub fn deserialize<'de, D, T>(deserializer: D) -> Result<Arc<[T]>, D::Error>
+    where
+        D: Deserializer<'de>,
+        T: Deserialize<'de>,
+    {
+        let vec = Vec::<T>::deserialize(deserializer)?;
+        Ok(Arc::from(vec.into_boxed_slice()))
     }
 }
