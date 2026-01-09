@@ -47,9 +47,9 @@ fn main() {
     println!("  Is valid: {}", ctx.is_valid());
 
     // 3. Set values
-    ctx.set("username", Value::text("alice"));
-    ctx.set("email", Value::text("alice@example.com"));
-    ctx.set("age", Value::Int(25));
+    ctx.set("username", Value::text("alice")).unwrap();
+    ctx.set("email", Value::text("alice@example.com")).unwrap();
+    ctx.set("age", Value::Int(25)).unwrap();
 
     println!("\nAfter setting values:");
     println!("  Is dirty: {}", ctx.is_dirty());
@@ -70,7 +70,7 @@ fn main() {
     println!("  Is dirty: {}", ctx.is_dirty());
 
     // 6. Modify one field
-    ctx.set("age", Value::Int(26));
+    ctx.set("age", Value::Int(26)).unwrap();
     println!("\nAfter modifying age:");
     println!("  Is dirty: {}", ctx.is_dirty());
     let dirty = ctx.collect_dirty_values();

@@ -28,8 +28,8 @@ fn main() {
     println!("  Is valid: {}\n", ctx.is_valid());
 
     // Set some values
-    ctx.set("field1", Value::text("value1"));
-    ctx.set("field2", Value::text("value2"));
+    ctx.set("field1", Value::text("value1")).unwrap();
+    ctx.set("field2", Value::text("value2")).unwrap();
 
     println!("After setting values:");
     println!("  Is dirty: {}", ctx.is_dirty());
@@ -43,7 +43,7 @@ fn main() {
     println!("  Is dirty: {}\n", ctx.is_dirty());
 
     // Modify one field
-    ctx.set("field1", Value::text("modified"));
+    ctx.set("field1", Value::text("modified")).unwrap();
     println!("After modifying field1:");
     println!("  Is dirty: {}", ctx.is_dirty());
 
@@ -51,7 +51,7 @@ fn main() {
     println!("  Dirty fields: {:?}\n", dirty.keys().collect::<Vec<_>>());
 
     // Clear a field
-    ctx.clear("field2");
+    ctx.clear("field2").unwrap();
     println!("After clearing field2:");
     println!("  field2 value: {:?}", ctx.get("field2"));
 

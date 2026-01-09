@@ -32,13 +32,13 @@ fn main() {
     let mut ctx = Context::new(Arc::new(schema));
 
     // Example 1: Simple equality check
-    ctx.set("mode", Value::text("advanced"));
+    ctx.set("mode", Value::text("advanced")).unwrap();
     let expr = Expr::eq("mode", Value::text("advanced"));
     println!("Eq expression (mode == 'advanced'):");
     println!("  Result: {}\n", expr.eval(&ctx));
 
     // Example 2: Boolean check
-    ctx.set("show_advanced", Value::Bool(true));
+    ctx.set("show_advanced", Value::Bool(true)).unwrap();
     let expr = Expr::is_true("show_advanced");
     println!("IsTrue expression (show_advanced == true):");
     println!("  Result: {}\n", expr.eval(&ctx));
@@ -59,7 +59,7 @@ fn main() {
     println!("Or expression (role=='admin' OR role=='moderator'):");
     println!("  Result (role=guest): {}", expr.eval(&ctx));
 
-    ctx.set("user_role", Value::text("admin"));
+    ctx.set("user_role", Value::text("admin")).unwrap();
     println!("  Result (role=admin): {}\n", expr.eval(&ctx));
 
     // Example 5: NOT logic

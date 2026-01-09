@@ -54,8 +54,8 @@ fn main() {
     println!("  timeout: {:?}\n", ctx.get("timeout"));
 
     // Set some values (overriding defaults)
-    ctx.set("username", Value::text("alice"));
-    ctx.set("theme", Value::text("dark"));
+    ctx.set("username", Value::text("alice")).unwrap();
+    ctx.set("theme", Value::text("dark")).unwrap();
 
     println!("After setting values:");
     println!("  username: {:?}", ctx.get("username"));
@@ -64,7 +64,7 @@ fn main() {
     println!("  timeout: {:?}\n", ctx.get("timeout"));
 
     // Clear a value
-    ctx.clear("username");
+    ctx.clear("username").unwrap();
     println!("After clearing username:");
     println!("  username: {:?}\n", ctx.get("username"));
 

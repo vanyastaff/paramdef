@@ -81,15 +81,15 @@ impl Command for SetValueCommand {
     }
 
     fn execute(&mut self, ctx: &mut Context) -> CommandResult {
-        ctx.set(self.key.as_str(), self.new_value.clone());
+        ctx.set(self.key.as_str(), self.new_value.clone())?;
         Ok(())
     }
 
     fn undo(&mut self, ctx: &mut Context) -> CommandResult {
         if let Some(old) = &self.old_value {
-            ctx.set(self.key.as_str(), old.clone());
+            ctx.set(self.key.as_str(), old.clone())?;
         } else {
-            ctx.clear(self.key.as_str());
+            ctx.clear(self.key.as_str())?;
         }
         Ok(())
     }
@@ -180,13 +180,13 @@ impl Command for ClearValueCommand {
     }
 
     fn execute(&mut self, ctx: &mut Context) -> CommandResult {
-        ctx.clear(self.key.as_str());
+        ctx.clear(self.key.as_str())?;
         Ok(())
     }
 
     fn undo(&mut self, ctx: &mut Context) -> CommandResult {
         if let Some(old) = &self.old_value {
-            ctx.set(self.key.as_str(), old.clone());
+            ctx.set(self.key.as_str(), old.clone())?;
         }
         Ok(())
     }
@@ -252,7 +252,7 @@ impl Command for TouchCommand {
     }
 
     fn execute(&mut self, ctx: &mut Context) -> CommandResult {
-        ctx.touch(self.key.as_str());
+        ctx.touch(self.key.as_str())?;
         Ok(())
     }
 
@@ -436,7 +436,7 @@ mod tests {
                 .build(),
         );
         let mut ctx = Context::new(schema);
-        ctx.set("name", Value::text("Alice"));
+        ctx.set("name", Value::text("Alice")).unwrap();
 
         let mut cmd = ClearValueCommand::new("name", Some(Value::text("Alice")));
         cmd.execute(&mut ctx).unwrap();

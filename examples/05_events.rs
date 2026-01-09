@@ -79,14 +79,14 @@ async fn main() {
 
     // Perform operations that emit events
     println!("Setting values...\n");
-    ctx.set("username", Value::text("alice"));
-    ctx.set("email", Value::text("alice@example.com"));
+    ctx.set("username", Value::text("alice")).unwrap();
+    ctx.set("email", Value::text("alice@example.com")).unwrap();
 
     println!("\nModifying values...\n");
-    ctx.set("username", Value::text("bob"));
+    ctx.set("username", Value::text("bob")).unwrap();
 
     println!("\nClearing value...\n");
-    ctx.clear("email");
+    ctx.clear("email").unwrap();
 
     // Wait for listener to finish
     if let Err(e) = listener.await {

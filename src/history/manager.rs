@@ -281,15 +281,15 @@ mod tests {
         }
 
         fn execute(&mut self, ctx: &mut Context) -> CommandResult {
-            ctx.set(self.key.as_str(), self.new_value.clone());
+            ctx.set(self.key.as_str(), self.new_value.clone())?;
             Ok(())
         }
 
         fn undo(&mut self, ctx: &mut Context) -> CommandResult {
             if let Some(old) = &self.old_value {
-                ctx.set(self.key.as_str(), old.clone());
+                ctx.set(self.key.as_str(), old.clone())?;
             } else {
-                ctx.clear(self.key.as_str());
+                ctx.clear(self.key.as_str())?;
             }
             Ok(())
         }

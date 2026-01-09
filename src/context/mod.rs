@@ -161,64 +161,70 @@ impl Context {
 
     /// Sets a value by key.
     ///
-    /// Returns `true` if the parameter exists and was updated.
+    /// # Errors
+    ///
+    /// Returns `Err(Error::NotFound)` if the parameter doesn't exist in the schema.
     ///
     /// When `events` feature is enabled, emits `ValueChanging` before
     /// and `ValueChanged` after the update.
     #[allow(clippy::needless_pass_by_value)]
-    pub fn set(&mut self, key: &str, value: Value) -> bool {
-        if let Some(node) = self.nodes.get_mut(key) {
-            #[cfg(feature = "events")]
-            let old_value = node.value().cloned();
+    pub fn set(&mut self, key: &str, value: Value) -> crate::core::Result<()> {
+        let node = self
+            .nodes
+            .get_mut(key)
+            .ok_or_else(|| crate::core::Error::not_found(key))?;
 
-            #[cfg(feature = "events")]
-            if let Some(ref bus) = self.event_bus {
-                bus.emit(Event::value_changing(key, old_value.clone(), value.clone()));
-            }
+        #[cfg(feature = "events")]
+        let old_value = node.value().cloned();
 
-            let was_dirty = node.state().is_dirty();
-            node.set_value(value.clone());
-
-            #[cfg(feature = "events")]
-            if let Some(ref bus) = self.event_bus {
-                bus.emit(Event::value_changed(key, old_value, value));
-
-                // Emit Dirtied if this is the first dirty state
-                if !was_dirty && node.state().is_dirty() {
-                    bus.emit(Event::dirtied(key));
-                }
-            }
-
-            #[cfg(not(feature = "events"))]
-            let _ = was_dirty; // Suppress unused warning
-
-            true
-        } else {
-            false
+        #[cfg(feature = "events")]
+        if let Some(ref bus) = self.event_bus {
+            bus.emit(Event::value_changing(key, old_value.clone(), value.clone()));
         }
+
+        let was_dirty = node.state().is_dirty();
+        node.set_value(value.clone());
+
+        #[cfg(feature = "events")]
+        if let Some(ref bus) = self.event_bus {
+            bus.emit(Event::value_changed(key, old_value, value));
+
+            // Emit Dirtied if this is the first dirty state
+            if !was_dirty && node.state().is_dirty() {
+                bus.emit(Event::dirtied(key));
+            }
+        }
+
+        #[cfg(not(feature = "events"))]
+        let _ = was_dirty; // Suppress unused warning
+
+        Ok(())
     }
 
     /// Clears a value by key.
     ///
-    /// Returns `true` if the parameter exists and had a value.
+    /// # Errors
+    ///
+    /// Returns `Err(Error::NotFound)` if the parameter doesn't exist in the schema.
     ///
     /// When `events` feature is enabled, emits `ValueCleared`.
-    pub fn clear(&mut self, key: &str) -> bool {
-        if let Some(node) = self.nodes.get_mut(key) {
-            #[cfg(feature = "events")]
-            let old_value = node.value().cloned();
+    pub fn clear(&mut self, key: &str) -> crate::core::Result<()> {
+        let node = self
+            .nodes
+            .get_mut(key)
+            .ok_or_else(|| crate::core::Error::not_found(key))?;
 
-            node.clear_value();
+        #[cfg(feature = "events")]
+        let old_value = node.value().cloned();
 
-            #[cfg(feature = "events")]
-            if let (Some(bus), Some(old)) = (&self.event_bus, old_value) {
-                bus.emit(Event::value_cleared(key, old));
-            }
+        node.clear_value();
 
-            true
-        } else {
-            false
+        #[cfg(feature = "events")]
+        if let (Some(bus), Some(old)) = (&self.event_bus, old_value) {
+            bus.emit(Event::value_cleared(key, old));
         }
+
+        Ok(())
     }
 
     /// Returns a runtime node by key.
@@ -352,8 +358,13 @@ impl Context {
     /// ctx.end_batch(batch_id);
     /// ```
     #[cfg(feature = "events")]
-    pub fn begin_batch(&self, description: Option<impl Into<crate::core::SmartStr>>) -> Option<u64> {
-        self.event_bus.as_ref().map(|bus| bus.begin_batch(description))
+    pub fn begin_batch(
+        &self,
+        description: Option<impl Into<crate::core::SmartStr>>,
+    ) -> Option<u64> {
+        self.event_bus
+            .as_ref()
+            .map(|bus| bus.begin_batch(description))
     }
 
     /// Ends a batch operation.
@@ -392,24 +403,28 @@ impl Context {
     /// Marks a parameter as touched.
     ///
     /// When `events` feature is enabled, emits `Touched`.
-    pub fn touch(&mut self, key: &str) -> bool {
-        if let Some(node) = self.nodes.get_mut(key) {
-            #[cfg(feature = "events")]
-            let was_touched = node.state().is_touched();
+    /// # Errors
+    ///
+    /// Returns `Err(Error::NotFound)` if the parameter doesn't exist in the schema.
+    pub fn touch(&mut self, key: &str) -> crate::core::Result<()> {
+        let node = self
+            .nodes
+            .get_mut(key)
+            .ok_or_else(|| crate::core::Error::not_found(key))?;
 
-            node.state_mut().mark_touched();
+        #[cfg(feature = "events")]
+        let was_touched = node.state().is_touched();
 
-            #[cfg(feature = "events")]
-            if !was_touched {
-                if let Some(ref bus) = self.event_bus {
-                    bus.emit(Event::touched(key));
-                }
+        node.state_mut().mark_touched();
+
+        #[cfg(feature = "events")]
+        if !was_touched {
+            if let Some(ref bus) = self.event_bus {
+                bus.emit(Event::touched(key));
             }
-
-            true
-        } else {
-            false
         }
+
+        Ok(())
     }
 }
 
@@ -444,7 +459,7 @@ mod tests {
 
         let result = ctx.set("name", Value::text("Alice"));
 
-        assert!(result);
+        assert!(result.is_ok());
         assert_eq!(ctx.get("name").and_then(|v| v.as_text()), Some("Alice"));
     }
 
@@ -455,16 +470,20 @@ mod tests {
 
         let result = ctx.set("unknown", Value::text("test"));
 
-        assert!(!result);
+        assert!(result.is_err());
+        assert!(matches!(
+            result.unwrap_err(),
+            crate::core::Error::NotFound { .. }
+        ));
     }
 
     #[test]
     fn test_context_clear_value() {
         let schema = create_test_schema();
         let mut ctx = Context::new(schema);
-        ctx.set("name", Value::text("Alice"));
+        ctx.set("name", Value::text("Alice")).unwrap();
 
-        ctx.clear("name");
+        ctx.clear("name").unwrap();
 
         assert!(ctx.get("name").is_none());
     }
@@ -473,8 +492,8 @@ mod tests {
     fn test_context_collect_values() {
         let schema = create_test_schema();
         let mut ctx = Context::new(schema);
-        ctx.set("name", Value::text("Alice"));
-        ctx.set("age", Value::Int(30));
+        ctx.set("name", Value::text("Alice")).unwrap();
+        ctx.set("age", Value::Int(30)).unwrap();
 
         let values = ctx.collect_values();
 
@@ -487,8 +506,8 @@ mod tests {
     fn test_context_collect_dirty_values() {
         let schema = create_test_schema();
         let mut ctx = Context::new(schema);
-        ctx.set("name", Value::text("Alice"));
-        ctx.set("age", Value::Int(30));
+        ctx.set("name", Value::text("Alice")).unwrap();
+        ctx.set("age", Value::Int(30)).unwrap();
         ctx.node_mut("name").unwrap().state_mut().mark_clean();
 
         let dirty = ctx.collect_dirty_values();
@@ -504,7 +523,7 @@ mod tests {
 
         assert!(!ctx.is_dirty());
 
-        ctx.set("name", Value::text("Alice"));
+        ctx.set("name", Value::text("Alice")).unwrap();
 
         assert!(ctx.is_dirty());
     }
@@ -513,8 +532,8 @@ mod tests {
     fn test_context_mark_all_clean() {
         let schema = create_test_schema();
         let mut ctx = Context::new(schema);
-        ctx.set("name", Value::text("Alice"));
-        ctx.set("age", Value::Int(30));
+        ctx.set("name", Value::text("Alice")).unwrap();
+        ctx.set("age", Value::Int(30)).unwrap();
 
         ctx.mark_all_clean();
 
@@ -525,7 +544,7 @@ mod tests {
     fn test_context_reset() {
         let schema = create_test_schema();
         let mut ctx = Context::new(schema);
-        ctx.set("name", Value::text("Alice"));
+        ctx.set("name", Value::text("Alice")).unwrap();
         ctx.node_mut("name").unwrap().state_mut().mark_touched();
 
         ctx.reset();
@@ -562,7 +581,7 @@ mod tests {
 
         assert!(!ctx.node("name").unwrap().state().is_touched());
 
-        ctx.touch("name");
+        ctx.touch("name").unwrap();
 
         assert!(ctx.node("name").unwrap().state().is_touched());
     }
@@ -572,7 +591,12 @@ mod tests {
         let schema = create_test_schema();
         let mut ctx = Context::new(schema);
 
-        assert!(!ctx.touch("unknown"));
+        let result = ctx.touch("unknown");
+        assert!(result.is_err());
+        assert!(matches!(
+            result.unwrap_err(),
+            crate::core::Error::NotFound { .. }
+        ));
     }
 }
 
@@ -599,7 +623,7 @@ mod event_tests {
 
         let mut ctx = Context::with_event_bus(schema, bus);
 
-        ctx.set("name", Value::text("Alice"));
+        ctx.set("name", Value::text("Alice")).unwrap();
 
         // Should receive ValueChanging
         let event = sub.recv().await.unwrap();
@@ -621,12 +645,12 @@ mod event_tests {
         let mut sub = bus.subscribe();
 
         let mut ctx = Context::with_event_bus(schema, bus);
-        ctx.set("name", Value::text("Alice"));
+        ctx.set("name", Value::text("Alice")).unwrap();
 
         // Drain set events
         while sub.try_recv().unwrap().is_some() {}
 
-        ctx.clear("name");
+        ctx.clear("name").unwrap();
 
         let event = sub.recv().await.unwrap();
         assert!(matches!(event, Event::ValueCleared { .. }));
@@ -653,7 +677,7 @@ mod event_tests {
         let mut sub = bus.subscribe();
 
         let mut ctx = Context::with_event_bus(schema, bus);
-        ctx.set("name", Value::text("Alice"));
+        ctx.set("name", Value::text("Alice")).unwrap();
 
         // Drain set events
         while sub.try_recv().unwrap().is_some() {}
@@ -672,13 +696,13 @@ mod event_tests {
 
         let mut ctx = Context::with_event_bus(schema, bus);
 
-        ctx.touch("name");
+        ctx.touch("name").unwrap();
 
         let event = sub.recv().await.unwrap();
         assert!(matches!(event, Event::Touched { .. }));
 
         // Second touch should not emit (already touched)
-        ctx.touch("name");
+        ctx.touch("name").unwrap();
         assert!(sub.try_recv().unwrap().is_none());
     }
 
@@ -691,8 +715,8 @@ mod event_tests {
         let mut ctx = Context::with_event_bus(schema, bus);
 
         ctx.batch(Some("Update profile"), |ctx| {
-            ctx.set("name", Value::text("Alice"));
-            ctx.set("email", Value::text("alice@example.com"));
+            ctx.set("name", Value::text("Alice")).unwrap();
+            ctx.set("email", Value::text("alice@example.com")).unwrap();
         });
 
         // Should receive: BatchBegin, ValueChanging, ValueChanged, Dirtied,
