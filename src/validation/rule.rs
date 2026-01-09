@@ -36,10 +36,10 @@
 use std::sync::Arc;
 
 use super::context::ValidationContext;
-use super::expr::Expr;
 use super::result::ValidationResult;
 use super::traits::{FnValidator, Validator};
 use crate::core::Value;
+use crate::expr::Expr;
 
 /// A validation rule that can be either declarative or programmatic.
 ///
@@ -98,7 +98,10 @@ impl Rule {
     /// - The rule is function-based and requires context
     pub fn check(&self, value: &Value) -> ValidationResult {
         match self {
-            Self::Expr(expr) => expr.validate(value),
+            Self::Expr(expr) => {
+                // Use standalone validation without context
+                expr.validate(value)
+            }
             Self::Fn(validator) => {
                 // Function validators require context - cannot validate in standalone mode
                 Err(super::result::Error::custom(
@@ -141,8 +144,8 @@ impl Rule {
 
     /// Creates a pattern (regex) rule.
     #[must_use]
-    pub fn pattern(pattern: impl Into<crate::core::SmartStr>) -> Self {
-        Self::Expr(Expr::Pattern(pattern.into()))
+    pub fn pattern(pattern: impl Into<String>) -> Self {
+        Self::Expr(Expr::matches(pattern))
     }
 
     /// Creates an email validation rule.
@@ -190,7 +193,7 @@ impl Rule {
     /// Creates a range rule (min <= value <= max).
     #[must_use]
     pub fn range(min: f64, max: f64) -> Self {
-        Self::Expr(Expr::And(vec![Expr::Min(min), Expr::Max(max)]))
+        Self::Expr(Expr::and(vec![Expr::min(min), Expr::max(max)]))
     }
 
     /// Creates a positive number rule.
@@ -264,13 +267,13 @@ impl Rule {
     /// Creates an equal-to rule for cross-field validation.
     #[must_use]
     pub fn equal_to(other_key: impl Into<crate::core::SmartStr>) -> Self {
-        Self::Expr(Expr::EqualTo(other_key.into()))
+        Self::Expr(Expr::equal_to(other_key))
     }
 
     /// Creates a not-equal-to rule for cross-field validation.
     #[must_use]
     pub fn not_equal_to(other_key: impl Into<crate::core::SmartStr>) -> Self {
-        Self::Expr(Expr::NotEqualTo(other_key.into()))
+        Self::Expr(Expr::not_equal_to(other_key))
     }
 
     /// Creates an AND rule combining multiple rules.
@@ -283,7 +286,7 @@ impl Rule {
                 Rule::Fn(_) => None, // Can't combine Fn rules in Expr::And
             })
             .collect();
-        Self::Expr(Expr::And(exprs))
+        Self::Expr(Expr::and(exprs))
     }
 
     /// Creates an OR rule for alternative validation.
@@ -296,7 +299,7 @@ impl Rule {
                 Rule::Fn(_) => None,
             })
             .collect();
-        Self::Expr(Expr::Or(exprs))
+        Self::Expr(Expr::or(exprs))
     }
 
     /// Creates a NOT rule for negation.

@@ -11,6 +11,30 @@ use crate::validation::{Error, ValidationContext, ValidationResult};
 impl Expr {
     /// Validate a value with detailed error reporting.
     ///
+    /// This method provides validation with detailed error messages.
+    /// For cross-field validation, use `validate_with_context`.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// use paramdef::expr::Expr;
+    /// use paramdef::core::Value;
+    ///
+    /// let expr = Expr::MinLength(5);
+    /// let result = expr.validate(&Value::text("hi"));
+    /// assert!(result.is_err());
+    /// ```
+    pub fn validate(&self, value: &Value) -> ValidationResult {
+        // Use simple eval and convert to ValidationResult
+        if self.eval(value) {
+            Ok(())
+        } else {
+            Err(self.error_for_failed_validation(value))
+        }
+    }
+
+    /// Validate a value with cross-field context.
+    ///
     /// This method provides full validation with:
     /// - Detailed error messages
     /// - Cross-field validation support via context
@@ -21,21 +45,21 @@ impl Expr {
     /// ```ignore
     /// use paramdef::expr::Expr;
     /// use paramdef::core::Value;
-    /// use paramdef::validation::NoValues;
+    /// use paramdef::validation::ValidationContext;
     ///
     /// let expr = Expr::MinLength(5);
-    /// let ctx = NoValues;
-    /// let result = expr.validate(&Value::text("hi"), &ctx);
+    /// // ctx would be a real ValidationContext in practice
+    /// let result = expr.validate_with_context(&Value::text("hi"), &ctx);
     /// assert!(result.is_err());
     /// ```
-    pub fn validate(&self, value: &Value, _ctx: &ValidationContext<'_>) -> ValidationResult {
-        // For now, use simple eval and convert to ValidationResult
-        // TODO: Add detailed error messages for each variant
-        if self.eval(value) {
-            Ok(())
-        } else {
-            Err(self.error_for_failed_validation(value))
-        }
+    pub fn validate_with_context(
+        &self,
+        value: &Value,
+        _ctx: &ValidationContext<'_>,
+    ) -> ValidationResult {
+        // For now, just delegate to validate()
+        // TODO: Add cross-field validation support
+        self.validate(value)
     }
 
     /// Generate an appropriate error for a failed validation.

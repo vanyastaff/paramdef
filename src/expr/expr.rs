@@ -556,4 +556,33 @@ impl Expr {
     pub fn if_then(condition: Expr, then: Expr) -> Self {
         Self::if_then_else(condition, then, None)
     }
+
+    // === Cross-field Validation (for compatibility) ===
+    // TODO: These will be replaced by ExprTarget::Field mechanism
+
+    /// Create an equal-to expression for cross-field validation.
+    ///
+    /// Note: This is a temporary compatibility helper. Use `ExprTarget::Field` instead.
+    #[must_use]
+    #[cfg(feature = "validation")]
+    pub fn equal_to(field: impl Into<crate::core::SmartStr>) -> Self {
+        // For now, create a custom variant that will be handled specially
+        Self::Const(crate::core::Value::text(format!(
+            "__equal_to__{}",
+            field.into()
+        )))
+    }
+
+    /// Create a not-equal-to expression for cross-field validation.
+    ///
+    /// Note: This is a temporary compatibility helper. Use `ExprTarget::Field` instead.
+    #[must_use]
+    #[cfg(feature = "validation")]
+    pub fn not_equal_to(field: impl Into<crate::core::SmartStr>) -> Self {
+        // For now, create a custom variant that will be handled specially
+        Self::Const(crate::core::Value::text(format!(
+            "__not_equal_to__{}",
+            field.into()
+        )))
+    }
 }

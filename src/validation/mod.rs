@@ -54,14 +54,15 @@
 //! - **garde/nutype** - Rust validation with derive macros
 
 mod context;
-mod expr;
 mod result;
 mod rule;
 mod traits;
 mod validators;
 
+// Re-export unified Expr from crate::expr
+pub use crate::expr::Expr;
+
 pub use context::{NoValues, ValidationContext, ValueAccess};
-pub use expr::Expr;
 pub use result::{Error, ValidationOutcome, ValidationResult};
 pub use rule::{Rule, Rules};
 pub use traits::{FnValidator, Validator};
