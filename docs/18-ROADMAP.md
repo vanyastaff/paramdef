@@ -28,7 +28,7 @@ This roadmap provides a structured approach to implementing paramdef, organized 
 | Phase 4.2: Validation | ✅ Complete | Hybrid Expr + Validator trait, built-in validators |
 | Phase 4.3: Transformers | ✅ Complete | Hybrid Transform + Transformer trait, built-in transformers |
 | Phase 4.4: History | ✅ Complete | Command pattern, undo/redo, command merging |
-| Phase 5: Display | 🔲 Pending | Visibility expressions (Expr) |
+| Phase 5: Visibility | ✅ Complete | Visibility expressions (Expr), dependency tracking |
 | Phase 6: Polish | 🔲 Pending | Performance, docs, examples |
 | Phase 7: UI Integration | 🔲 Optional | egui example |
 
@@ -471,34 +471,82 @@ pub struct MacroCommand { commands: Vec<Box<dyn Command>>, description }
 
 ---
 
-## Phase 5: Display System 🔲
+## Phase 5: Visibility System ✅
 
 ### Goal: Conditional visibility
 
-**Status: PENDING**
+**Status: COMPLETE**
 
-### 5.1 Visibility Expression
+**Files:**
+```
+src/visibility/
+├── mod.rs       # Module exports and documentation
+└── expr.rs      # Expr enum with evaluation logic
+```
 
+**Expr Enum:**
 ```rust
 pub enum Expr {
-    Eq(Key, Value),
-    Ne(Key, Value),
-    IsSet(Key),
-    IsEmpty(Key),
-    IsTrue(Key),
-    Lt(Key, f64),
-    Gt(Key, f64),
-    OneOf(Key, Arc<[Value]>),
-    IsValid(Key),
-    And(Arc<[Expr]>),
-    Or(Arc<[Expr]>),
-    Not(Box<Expr>),
+    // Value comparisons
+    Eq(Key, Value), Ne(Key, Value),
+    Lt(Key, f64), Gt(Key, f64), Lte(Key, f64), Gte(Key, f64),
+    
+    // State checks
+    IsSet(Key), IsEmpty(Key), IsTrue(Key), IsFalse(Key), IsValid(Key),
+    
+    // Collection operations
+    OneOf(Key, Arc<[Value]>), Contains(Key, Value),
+    
+    // Logical operators
+    And(Arc<[Expr]>), Or(Arc<[Expr]>), Not(Box<Expr>),
 }
 
 impl Expr {
     pub fn eval(&self, ctx: &Context) -> bool;
     pub fn dependencies(&self) -> Vec<Key>;
+    
+    // Builder methods: eq(), ne(), is_true(), and(), or(), negate(), etc.
 }
+```
+
+**Key Features:**
+- ✅ 15 expression types covering all common visibility needs
+- ✅ Type-safe evaluation with graceful fallback (returns false on mismatch)
+- ✅ Automatic dependency tracking via `dependencies()`
+- ✅ Composable with `And`, `Or`, `Not` operators
+- ✅ Builder methods for ergonomic construction
+- ✅ Serializable with serde feature
+- ✅ 13 comprehensive tests
+
+**Industry Patterns Implemented:**
+| Pattern | Source |
+|---------|--------|
+| Conditional schemas | JSON Schema |
+| Field dependencies | React Hook Form |
+| Dynamic form controls | Angular Forms |
+| Type-safe evaluation | TypeScript strict mode |
+
+**Example:**
+```rust
+use paramdef::visibility::Expr;
+
+// Simple: show if premium
+let expr = Expr::is_true("premium");
+
+// Complex: (premium AND age >= 18) OR admin
+let expr = Expr::or(vec![
+    Expr::and(vec![
+        Expr::is_true("premium"),
+        Expr::gte("age", 18.0),
+    ]),
+    Expr::is_true("admin"),
+]);
+
+// Evaluate
+assert_eq!(expr.eval(&ctx), true);
+
+// Get dependencies
+let deps = expr.dependencies(); // ["premium", "age", "admin"]
 ```
 
 ---

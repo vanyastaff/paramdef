@@ -25,7 +25,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `paramdef` is a type-safe parameter definition system for Rust, inspired by Blender RNA, Unreal Engine UPROPERTY, and Qt Property System. The goal is to create the "serde of parameter schemas" - a production-ready library for workflow engines, visual programming tools, no-code platforms, and game engines.
 
-**Current Status:** Active development - Phase 1-4.4 complete (Event System, Validation, Transformers, History), Phase 5+ in progress.
+**Current Status:** Active development - Phase 1-5 complete (Event System, Validation, Transformers, History, Visibility), Phase 6+ in progress.
 
 ## Build and Test Commands
 
@@ -327,6 +327,38 @@ history.redo(&mut ctx).unwrap();
 - Transaction grouping (Text Editors)
 - Memory-efficient delta storage (Game Engines)
 
+### Visibility System (Implemented)
+
+Conditional display with declarative expressions (see `docs/23-VISIBILITY-SYSTEM.md`):
+
+```rust
+use paramdef::visibility::Expr;
+
+// Simple condition
+let expr = Expr::is_true("show_advanced");
+assert_eq!(expr.eval(&ctx), true);
+
+// Compound logic: (premium AND age >= 18) OR admin
+let expr = Expr::or(vec![
+    Expr::and(vec![
+        Expr::is_true("premium"),
+        Expr::gte("age", 18.0),
+    ]),
+    Expr::is_true("admin"),
+]);
+
+// Get dependencies for reactive updates
+let deps = expr.dependencies(); // ["premium", "age", "admin"]
+```
+
+**Expression types:** `Eq`, `Ne`, `Lt`, `Gt`, `Lte`, `Gte`, `IsSet`, `IsEmpty`, `IsTrue`, `IsFalse`, `IsValid`, `OneOf`, `Contains`, `And`, `Or`, `Not`.
+
+**Industry patterns implemented:**
+- Conditional schemas (JSON Schema)
+- Field dependencies (React Hook Form)
+- Dynamic form controls (Angular Forms)
+- Type-safe evaluation with graceful fallbacks
+
 ## Key Documentation Files
 
 Essential reading in `docs/`:
@@ -338,6 +370,7 @@ Essential reading in `docs/`:
 - `20-VALIDATION-SYSTEM.md` - Hybrid validation system documentation
 - `21-TRANSFORM-SYSTEM.md` - Transformation system documentation
 - `22-HISTORY-SYSTEM.md` - Undo/redo system documentation
+- `23-VISIBILITY-SYSTEM.md` - Conditional display documentation
 
 **Reading Guide for Full Understanding:**
 1. README.md (this overview)

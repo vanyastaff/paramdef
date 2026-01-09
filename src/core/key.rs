@@ -46,7 +46,7 @@ use smartstring::{LazyCompact, SmartString};
 /// // Display shows the key value
 /// assert_eq!(format!("{}", key), "config_value");
 /// ```
-#[derive(Debug, Clone, Eq)]
+#[derive(Debug, Clone, Eq, PartialOrd, Ord)]
 pub struct Key(SmartString<LazyCompact>);
 
 impl Key {

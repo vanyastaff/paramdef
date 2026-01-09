@@ -202,8 +202,8 @@ pub mod validation;
 #[cfg(feature = "validation")]
 pub mod transform;
 
-// #[cfg(feature = "visibility")]
-// pub mod visibility;
+#[cfg(feature = "visibility")]
+pub mod visibility;
 
 #[cfg(feature = "events")]
 pub mod event;
