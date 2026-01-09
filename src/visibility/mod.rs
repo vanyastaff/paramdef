@@ -54,4 +54,6 @@
 
 mod expr;
 
+// TODO: Migrate to use crate::expr::Rule with ExprTarget::Field
+// For now, keep old visibility::Expr for backward compatibility
 pub use expr::Expr;
