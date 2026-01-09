@@ -210,6 +210,9 @@ pub mod event;
 
 pub mod history;
 
+#[cfg(feature = "serde")]
+pub mod export;
+
 // #[cfg(feature = "i18n")]
 // pub mod i18n;
 
