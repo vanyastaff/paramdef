@@ -82,14 +82,16 @@ impl Rule {
         }
     }
 
-    /// Validates a value without context (for standalone validation).
+    /// Validates a value without context.
     ///
-    /// Cross-field expressions will pass (they require context).
+    /// This is a simplified validation method for cases where cross-field
+    /// validation is not needed. Function-based validators are skipped since
+    /// they require context.
     ///
     /// # Errors
     ///
     /// Returns `Err(ValidationOutcome)` if the value fails validation.
-    pub fn validate_standalone(&self, value: &Value) -> ValidationResult {
+    pub fn check(&self, value: &Value) -> ValidationResult {
         match self {
             Self::Expr(expr) => expr.validate(value),
             Self::Fn(_) => {
