@@ -12,8 +12,8 @@ use crate::types::traits::Node;
 ///
 /// # Implementors
 ///
-/// - **Container (6)**: Object, List, Mode, Routing, Expirable, Ref
-/// - **Leaf (5)**: Text, Number, Boolean, Vector, Select
+/// - **Container (7)**: Object, List, Mode, Matrix, Routing, Expirable, Reference
+/// - **Leaf (6)**: Text, Number, Boolean, Vector, Select, File
 ///
 /// # Future Extensions
 ///

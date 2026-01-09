@@ -1,17 +1,16 @@
 //! Node trait system defining the parameter hierarchy.
 //!
 //! This module contains all traits that define the behavior and capabilities
-//! of the 14 node types in the parameter system.
+//! of the 23 node types in the parameter system.
 //!
 //! # Trait Hierarchy
 //!
 //! ```text
 //! Node (base trait - all 23 types implement this)
-//! ├── GroupNode: Node       (1 type:  Group)
-//! ├── Layout: Node          (1 type:  Panel)
-//! ├── Decoration: Node      (5 types: Notice, Separator, Link, Code, Image)
-//! ├── Container: Node       (6 types: Object, List, Mode, Routing, Expirable, Ref)
-//! └── Leaf: Node            (5 types: Text, Number, Boolean, Vector, Select)
+//! ├── Group: Node           (2 types: Group, Panel)
+//! ├── Decoration: Node      (8 types: Notice, Separator, Link, Code, Image, Html, Video, Progress)
+//! ├── Container: Node       (7 types: Object, List, Mode, Matrix, Routing, Expirable, Reference)
+//! └── Leaf: Node            (6 types: Text, Number, Boolean, Vector, Select, File)
 //! ```
 //!
 //! # Runtime Trait
@@ -20,8 +19,8 @@
 //!
 //! # Feature-Gated Traits
 //!
-//! - [`Visibility`] - Requires `visibility` feature (all 14 types)
-//! - [`Validatable`] - Requires `validation` feature (Container + Leaf = 11 types)
+//! - [`Visibility`] - Requires `visibility` feature (all 23 types)
+//! - [`Validatable`] - Requires `validation` feature (Container + Leaf = 13 types)
 //!
 //! # Core Design Principles
 //!
@@ -37,11 +36,10 @@
 //!
 //! | Category   | Own Value | Children | `ValueAccess` | Count |
 //! |------------|-----------|----------|---------------|-------|
-//! | Group      | ❌        | ✅       | ✅ (runtime)| 1     |
-//! | Layout     | ❌        | ✅       | ✅ (runtime)| 1     |
-//! | Decoration | ❌        | ❌       | ❌          | 5     |
-//! | Container  | ✅        | ✅       | ✅ (runtime)| 6     |
-//! | Leaf       | ✅        | ❌       | ❌          | 5     |
+//! | Group      | ❌        | ✅       | ✅ (runtime)  | 2     |
+//! | Decoration | ❌        | ❌       | ❌            | 8     |
+//! | Container  | ✅        | ✅       | ✅ (runtime)  | 7     |
+//! | Leaf       | ✅        | ❌       | ❌            | 6     |
 //!
 //! # Example
 //!

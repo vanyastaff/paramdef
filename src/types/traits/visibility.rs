@@ -52,7 +52,7 @@ use crate::visibility::Expr;
 /// }
 ///
 /// // Set show_advanced to true
-/// let _ = ctx.set("show_advanced", Value::text("true"));
+/// ctx.set("show_advanced", Value::text("true")).expect("Failed to set value");
 ///
 /// // Check visibility again (should be visible now)
 /// {
