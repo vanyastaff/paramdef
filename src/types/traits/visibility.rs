@@ -43,22 +43,22 @@ use crate::visibility::Expr;
 ///     )
 ///     .build());
 ///
-/// let mut ctx = Context::new(schema);
+/// let mut ctx = Context::new(schema.clone());
 ///
-/// // Get the node and check visibility
-/// let node = ctx.schema().get("advanced_option").unwrap();
-/// # #[cfg(feature = "visibility")]
-/// # {
-/// use paramdef::types::traits::Visibility;
-/// assert_eq!(node.is_visible(&ctx), false);
-/// # }
+/// // Check initial visibility (show_advanced is "false")
+/// {
+///     let node = ctx.schema().get("advanced_option").unwrap();
+///     assert_eq!(node.is_visible(&ctx), false);
+/// }
 ///
 /// // Set show_advanced to true
-/// ctx.set("show_advanced", Value::text("true"));
-/// # #[cfg(feature = "visibility")]
-/// # {
-/// assert_eq!(node.is_visible(&ctx), true);
-/// # }
+/// let _ = ctx.set("show_advanced", Value::text("true"));
+///
+/// // Check visibility again (should be visible now)
+/// {
+///     let node = ctx.schema().get("advanced_option").unwrap();
+///     assert_eq!(node.is_visible(&ctx), true);
+/// }
 /// ```
 #[cfg(feature = "visibility")]
 pub trait Visibility {
