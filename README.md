@@ -324,6 +324,33 @@ let debug_option = Boolean::builder("verbose")
 // contains, starts_with, ends_with, empty, not_empty, etc.
 ```
 
+### 📝 Expression Parser
+
+Parse validation rules from strings (no code compilation needed):
+
+```rust
+use paramdef::expr::{Expr, Rule};
+
+// Parse from string
+let expr = Expr::parse("email() AND min_length(5)")?;
+let rule = Rule::parse("age >= 18 AND premium == true")?;
+
+// Use in config files (TOML/JSON/YAML)
+let config = r#"
+[validation]
+email = "email() AND max_length(100)"
+age = "min(0) AND max(150)"
+password = "min_length(8) AND max_length(128)"
+"#;
+
+// Syntax support:
+// - Comparisons: ==, !=, <, <=, >, >=
+// - Functions: email(), min_length(5), starts_with("foo")
+// - Logical: AND, OR, NOT
+// - Parentheses: (age >= 18 OR guardian) AND active
+// - Values: strings "...", numbers 42, booleans true/false
+```
+
 ### 🚀 Performance
 
 Excellent performance characteristics:
@@ -656,7 +683,7 @@ let product_form = Object::builder("product")
 
 ## Current Status
 
-**Version 0.2.1** - Production-Ready with Advanced Features
+**Version 0.3.0** - Production-Ready with Expression Parser
 
 ✅ **Complete:**
 - **Core schema system** - 23 semantic types (Group, Container, Leaf, Decoration)
@@ -670,10 +697,10 @@ let product_form = Object::builder("product")
 - **Event system** - Reactive updates with tokio broadcast channels
 - **Visibility system** - Conditional fields with fluent when() API
 - **Unified expressions** - Single expression system for validation + visibility
+- **Expression parser** - Parse rules from strings (config files, UI, database)
 - **Zero-warning build** - Production-ready code quality
 
-🚧 **Coming Soon (v0.3):**
-- **Expression parser** - String-based rule parsing for config files
+🚧 **Coming Soon (v0.4):**
 - **Form renderers** - Leptos, Yew, Dioxus bindings
 - **OpenAPI generation** - Auto-generate specs from schemas
 - **CLI prompts** - Interactive wizards via `dialoguer` integration
@@ -689,6 +716,7 @@ let product_form = Object::builder("product")
 - Full API documentation on docs.rs
 - Real-world examples and cookbook
 - See `docs/22-UNIFIED-EXPRESSIONS.md` for expression system details
+- See `docs/23-EXPRESSION-PARSER.md` for parser design and implementation
 - See `docs/20-VALIDATION-SYSTEM.md` for validation details
 - See `docs/21-TRANSFORM-SYSTEM.md` for transform system details
 - See `docs/19-EVENT-SYSTEM.md` for event system details
