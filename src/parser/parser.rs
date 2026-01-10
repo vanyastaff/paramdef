@@ -5,17 +5,46 @@ use crate::expr::{Expr, Rule};
 use crate::parser::token::Token;
 use std::sync::Arc;
 
+use super::registry::FunctionRegistry;
+
 /// Parser for expression strings.
 pub struct Parser {
     tokens: Vec<Token>,
     pos: usize,
+    registry: Arc<FunctionRegistry>,
 }
 
 impl Parser {
-    /// Create a new parser from tokens.
+    /// Create a new parser from tokens with built-in functions.
+    ///
+    /// This is the recommended constructor for most use cases.
     #[must_use]
     pub fn new(tokens: Vec<Token>) -> Self {
-        Self { tokens, pos: 0 }
+        Self::with_registry(tokens, Arc::new(FunctionRegistry::with_builtins()))
+    }
+
+    /// Create a new parser with a custom function registry.
+    ///
+    /// Use this to register custom function parsers or override built-ins.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// use paramdef::parser::{Parser, FunctionRegistry};
+    /// use std::sync::Arc;
+    ///
+    /// let mut registry = FunctionRegistry::with_builtins();
+    /// registry.register(MyCustomParser);
+    ///
+    /// let parser = Parser::with_registry(tokens, Arc::new(registry));
+    /// ```
+    #[must_use]
+    pub fn with_registry(tokens: Vec<Token>, registry: Arc<FunctionRegistry>) -> Self {
+        Self {
+            tokens,
+            pos: 0,
+            registry,
+        }
     }
 
     /// Parse a Rule from tokens.
@@ -115,8 +144,8 @@ impl Parser {
 
         self.expect(&Token::RParen)?;
 
-        // Map function names to Expr variants
-        Self::map_function_to_expr(&func_name, &args)
+        // Use registry to parse function
+        self.registry.parse(&func_name, &args)
     }
 
     fn parse_args(&mut self) -> Result<Vec<Value>, String> {
@@ -212,167 +241,6 @@ impl Parser {
         self.expect(&Token::RBracket)?;
 
         Ok(Value::Array(Arc::from(values)))
-    }
-
-    #[allow(clippy::too_many_lines)]
-    fn map_function_to_expr(func_name: &str, args: &[Value]) -> Result<Expr, String> {
-        let func_upper = func_name.to_uppercase();
-
-        match func_upper.as_str() {
-            // Validation functions (no args)
-            "EMAIL" => {
-                if !args.is_empty() {
-                    return Err(format!("email() takes no arguments, got {}", args.len()));
-                }
-                Ok(Expr::email())
-            }
-            "URL" => {
-                if !args.is_empty() {
-                    return Err(format!("url() takes no arguments, got {}", args.len()));
-                }
-                Ok(Expr::url())
-            }
-            "UUID" => {
-                if !args.is_empty() {
-                    return Err(format!("uuid() takes no arguments, got {}", args.len()));
-                }
-                Ok(Expr::uuid())
-            }
-            "REQUIRED" => {
-                if !args.is_empty() {
-                    return Err(format!("required() takes no arguments, got {}", args.len()));
-                }
-                Ok(Expr::required())
-            }
-            "EMPTY" | "IS_EMPTY" => {
-                if !args.is_empty() {
-                    return Err(format!("empty() takes no arguments, got {}", args.len()));
-                }
-                Ok(Expr::is_empty())
-            }
-            "NOT_EMPTY" | "IS_NOT_EMPTY" => {
-                if !args.is_empty() {
-                    return Err(format!(
-                        "not_empty() takes no arguments, got {}",
-                        args.len()
-                    ));
-                }
-                Ok(Expr::is_not_empty())
-            }
-            "UNIQUE_ITEMS" => {
-                if !args.is_empty() {
-                    return Err(format!(
-                        "unique_items() takes no arguments, got {}",
-                        args.len()
-                    ));
-                }
-                Ok(Expr::unique_items())
-            }
-
-            // String functions (1 arg)
-            "STARTS_WITH" | "STARTSWITH" => {
-                if args.len() != 1 {
-                    return Err(format!(
-                        "starts_with() takes 1 argument, got {}",
-                        args.len()
-                    ));
-                }
-                if let Some(s) = args[0].as_text() {
-                    Ok(Expr::starts_with(s))
-                } else {
-                    Err("starts_with() requires string argument".to_string())
-                }
-            }
-            "ENDS_WITH" | "ENDSWITH" => {
-                if args.len() != 1 {
-                    return Err(format!("ends_with() takes 1 argument, got {}", args.len()));
-                }
-                if let Some(s) = args[0].as_text() {
-                    Ok(Expr::ends_with(s))
-                } else {
-                    Err("ends_with() requires string argument".to_string())
-                }
-            }
-
-            // Length functions (1 arg)
-            "MIN_LENGTH" => {
-                if args.len() != 1 {
-                    return Err(format!("min_length() takes 1 argument, got {}", args.len()));
-                }
-                if let Some(n) = args[0].as_float() {
-                    #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
-                    Ok(Expr::min_length(n as usize))
-                } else {
-                    Err("min_length() requires number argument".to_string())
-                }
-            }
-            "MAX_LENGTH" => {
-                if args.len() != 1 {
-                    return Err(format!("max_length() takes 1 argument, got {}", args.len()));
-                }
-                if let Some(n) = args[0].as_float() {
-                    #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
-                    Ok(Expr::max_length(n as usize))
-                } else {
-                    Err("max_length() requires number argument".to_string())
-                }
-            }
-            "LENGTH" => {
-                if args.len() != 1 {
-                    return Err(format!("length() takes 1 argument, got {}", args.len()));
-                }
-                if let Some(n) = args[0].as_float() {
-                    #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
-                    Ok(Expr::length(n as usize))
-                } else {
-                    Err("length() requires number argument".to_string())
-                }
-            }
-
-            // Numeric functions (1 arg)
-            "MIN" => {
-                if args.len() != 1 {
-                    return Err(format!("min() takes 1 argument, got {}", args.len()));
-                }
-                if let Some(n) = args[0].as_float() {
-                    Ok(Expr::min(n))
-                } else {
-                    Err("min() requires number argument".to_string())
-                }
-            }
-            "MAX" => {
-                if args.len() != 1 {
-                    return Err(format!("max() takes 1 argument, got {}", args.len()));
-                }
-                if let Some(n) = args[0].as_float() {
-                    Ok(Expr::max(n))
-                } else {
-                    Err("max() requires number argument".to_string())
-                }
-            }
-
-            // Numeric functions (no args)
-            "POSITIVE" => {
-                if !args.is_empty() {
-                    return Err(format!("positive() takes no arguments, got {}", args.len()));
-                }
-                Ok(Expr::positive())
-            }
-            "NEGATIVE" => {
-                if !args.is_empty() {
-                    return Err(format!("negative() takes no arguments, got {}", args.len()));
-                }
-                Ok(Expr::negative())
-            }
-            "INTEGER" => {
-                if !args.is_empty() {
-                    return Err(format!("integer() takes no arguments, got {}", args.len()));
-                }
-                Ok(Expr::integer())
-            }
-
-            _ => Err(format!("Unknown function: {func_name}")),
-        }
     }
 
     fn map_comparison_to_expr(op: &Token, value: Value) -> Result<Expr, String> {

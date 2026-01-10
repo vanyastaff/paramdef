@@ -21,13 +21,18 @@
 //! let expr = parse("(age >= 18 OR guardian) AND active").unwrap();
 //! ```
 
+mod builtins;
+mod function_parser;
 mod lexer;
 #[allow(clippy::module_inception)]
 mod parser;
+mod registry;
 mod token;
 
+pub use function_parser::{Arity, FunctionParser};
 pub use lexer::Lexer;
 pub use parser::Parser;
+pub use registry::FunctionRegistry;
 pub use token::Token;
 
 use crate::expr::{Expr, Rule};

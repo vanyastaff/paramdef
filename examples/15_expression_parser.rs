@@ -82,8 +82,39 @@ fn main() {
     println!("   Parsed: {:?}", password_rule);
     println!();
 
+    // Custom function parser
+    println!("10. Custom Function Parser:");
+    use paramdef::core::Value;
+    use paramdef::parser::{Arity, FunctionParser, FunctionRegistry, Lexer, Parser};
+    use std::sync::Arc;
+
+    // Define custom function
+    struct MyCustomValidator;
+    impl FunctionParser for MyCustomValidator {
+        fn name(&self) -> &'static str {
+            "my_custom"
+        }
+        fn arity(&self) -> Arity {
+            Arity::Fixed(0)
+        }
+        fn parse(&self, _args: &[Value]) -> Result<Expr, String> {
+            Ok(Expr::required()) // Example: maps to required
+        }
+    }
+
+    // Register custom function
+    let mut registry = FunctionRegistry::with_builtins();
+    registry.register(MyCustomValidator);
+
+    // Parse with custom function
+    let mut lexer = Lexer::new("my_custom() AND email()");
+    let tokens = lexer.tokenize().unwrap();
+    let mut parser = Parser::with_registry(tokens, Arc::new(registry));
+    let expr = parser.parse_expr().unwrap();
+    println!("   'my_custom() AND email()' → {:?}\n", expr);
+
     // Error handling
-    println!("10. Error Handling:");
+    println!("11. Error Handling:");
     let result = parse("age = 18"); // Invalid: should be ==
     match result {
         Ok(_) => println!("   Unexpectedly succeeded"),
