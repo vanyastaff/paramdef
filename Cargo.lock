@@ -484,7 +484,6 @@ dependencies = [
  "criterion",
  "fluent",
  "indexmap",
- "once_cell",
  "regex",
  "rustc-hash",
  "serde",

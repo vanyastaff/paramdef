@@ -373,14 +373,11 @@ impl Rule {
             Self::Fn(validator)
         } else {
             // Validator not found - create error validator
-            let error_name = format!("not_registered_{}", name);
+            let error_name = format!("not_registered_{name}");
             Self::custom(Box::leak(error_name.into_boxed_str()), move |_, _| {
                 Err(super::result::Error::custom(
                     "validator_not_registered",
-                    format!(
-                        "Validator '{}' is not registered in ValidatorRegistry",
-                        name
-                    ),
+                    format!("Validator '{name}' is not registered in ValidatorRegistry"),
                 )
                 .into())
             })

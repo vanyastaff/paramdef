@@ -43,9 +43,7 @@
 //! let rule = Rule::registered("unique_username");
 //! ```
 
-use std::sync::{Arc, RwLock};
-
-use once_cell::sync::Lazy;
+use std::sync::{Arc, LazyLock, RwLock};
 
 use crate::core::{FxHashMap, SmartStr};
 
@@ -119,8 +117,8 @@ impl ValidatorRegistry {
     /// ```
     #[must_use]
     pub fn global() -> &'static RwLock<Self> {
-        static REGISTRY: Lazy<RwLock<ValidatorRegistry>> =
-            Lazy::new(|| RwLock::new(ValidatorRegistry::new()));
+        static REGISTRY: LazyLock<RwLock<ValidatorRegistry>> =
+            LazyLock::new(|| RwLock::new(ValidatorRegistry::new()));
         &REGISTRY
     }
 

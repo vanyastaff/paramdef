@@ -260,6 +260,88 @@ impl Expr {
                     true // No else branch means pass if condition is false
                 }
             }
+
+            // === Cross-Field References ===
+            Self::FieldRef(_) | Self::FieldEq { .. } => {
+                // Field references require ValidationContext, which eval() doesn't have.
+                // This is a limitation of the basic eval() method.
+                // For cross-field validation, use eval_with_context() or the validation system.
+                false
+            }
+        }
+    }
+
+    /// Evaluate this expression against a value with access to other field values.
+    ///
+    /// Returns `true` if the expression passes, `false` otherwise.
+    ///
+    /// This method is similar to `eval()` but supports cross-field validation
+    /// through the `ValidationContext`.
+    ///
+    /// # Note
+    ///
+    /// For detailed error messages, use the validation system's `validate` method.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// use paramdef::expr::Expr;
+    /// use paramdef::core::Value;
+    /// use paramdef::validation::ValidationContext;
+    ///
+    /// let expr = Expr::field_eq("password", "password_confirm");
+    /// let value = Value::text("secret123");
+    ///
+    /// // ctx provides access to password_confirm field
+    /// assert!(expr.eval_with_context(&value, &ctx));
+    /// ```
+    #[must_use]
+    #[allow(clippy::too_many_lines)]
+    #[cfg(feature = "validation")]
+    pub fn eval_with_context(
+        &self,
+        value: &Value,
+        ctx: &crate::validation::ValidationContext<'_>,
+    ) -> bool {
+        match self {
+            // === Cross-Field References ===
+            Self::FieldRef(field_key) => {
+                // Get the referenced field's value
+                ctx.get(field_key.as_str()).is_some()
+            }
+
+            Self::FieldEq { field, other } => {
+                // Get both field values and compare
+                let field_value = ctx.get(field.as_str());
+                let other_value = ctx.get(other.as_str());
+
+                match (field_value, other_value) {
+                    (Some(a), Some(b)) => a == b,
+                    _ => false, // If either field doesn't exist, comparison fails
+                }
+            }
+
+            // === Logical Operators (need recursive context support) ===
+            Self::And(exprs) => exprs.iter().all(|e| e.eval_with_context(value, ctx)),
+            Self::Or(exprs) => exprs.iter().any(|e| e.eval_with_context(value, ctx)),
+            Self::Not(expr) => !expr.eval_with_context(value, ctx),
+
+            Self::If {
+                condition,
+                then,
+                otherwise,
+            } => {
+                if condition.eval_with_context(value, ctx) {
+                    then.eval_with_context(value, ctx)
+                } else if let Some(else_expr) = otherwise {
+                    else_expr.eval_with_context(value, ctx)
+                } else {
+                    true
+                }
+            }
+
+            // === All other variants delegate to basic eval() ===
+            _ => self.eval(value),
         }
     }
 }
@@ -412,5 +494,110 @@ mod tests {
 
         let duplicate = Value::array(vec![Value::Int(1), Value::Int(2), Value::Int(1)]);
         assert!(!Expr::unique_items().eval(&duplicate));
+    }
+
+    #[cfg(feature = "validation")]
+    #[test]
+    fn test_cross_field_validation() {
+        use crate::schema::Schema;
+        use crate::types::leaf::Text;
+        use crate::validation::ValidationContext;
+        use std::collections::HashMap;
+        use std::sync::Arc;
+
+        // Create a simple schema
+        let schema = Arc::new(
+            Schema::builder()
+                .parameter(Text::builder("password").build())
+                .parameter(Text::builder("password_confirm").build())
+                .parameter(Text::builder("email").build())
+                .build(),
+        );
+
+        // Create test values
+        let mut values: HashMap<crate::core::Key, Value> = HashMap::new();
+        values.insert("password".into(), Value::text("secret123"));
+        values.insert("password_confirm".into(), Value::text("secret123"));
+        values.insert("email".into(), Value::text("user@example.com"));
+
+        let key = "password".into();
+        let ctx = ValidationContext::new(&key, &schema, &values);
+
+        // Test FieldRef - checks if field exists
+        let field_ref = Expr::field_ref("password_confirm");
+        assert!(field_ref.eval_with_context(&Value::text("secret123"), &ctx));
+
+        let missing_field = Expr::field_ref("nonexistent");
+        assert!(!missing_field.eval_with_context(&Value::text("secret123"), &ctx));
+
+        // Test FieldEq - compares two fields
+        let field_eq = Expr::field_eq("password", "password_confirm");
+        assert!(field_eq.eval_with_context(&Value::text("secret123"), &ctx));
+
+        // Test with mismatched fields
+        let mut values_mismatch = values.clone();
+        values_mismatch.insert("password_confirm".into(), Value::text("different"));
+        let ctx_mismatch = ValidationContext::new(&key, &schema, &values_mismatch);
+
+        assert!(!field_eq.eval_with_context(&Value::text("secret123"), &ctx_mismatch));
+
+        // Test with missing field
+        let mut values_missing = values.clone();
+        values_missing.remove("password_confirm");
+        let ctx_missing = ValidationContext::new(&key, &schema, &values_missing);
+
+        assert!(!field_eq.eval_with_context(&Value::text("secret123"), &ctx_missing));
+    }
+
+    #[cfg(feature = "validation")]
+    #[test]
+    fn test_cross_field_with_logical_operators() {
+        use crate::schema::Schema;
+        use crate::types::leaf::Text;
+        use crate::validation::ValidationContext;
+        use std::collections::HashMap;
+        use std::sync::Arc;
+
+        let schema = Arc::new(
+            Schema::builder()
+                .parameter(Text::builder("password").build())
+                .parameter(Text::builder("password_confirm").build())
+                .build(),
+        );
+
+        let mut values: HashMap<crate::core::Key, Value> = HashMap::new();
+        values.insert("password".into(), Value::text("secret123"));
+        values.insert("password_confirm".into(), Value::text("secret123"));
+
+        let key = "password".into();
+        let ctx = ValidationContext::new(&key, &schema, &values);
+
+        // Test And with field reference
+        let expr = Expr::and(vec![
+            Expr::min_length(8),
+            Expr::field_eq("password", "password_confirm"),
+        ]);
+        assert!(expr.eval_with_context(&Value::text("secret123"), &ctx));
+
+        // Test Or with field reference
+        let expr = Expr::or(vec![
+            Expr::min_length(100),               // Fails
+            Expr::field_ref("password_confirm"), // Passes
+        ]);
+        assert!(expr.eval_with_context(&Value::text("secret123"), &ctx));
+
+        // Test Not with field reference
+        let expr = Expr::not(Expr::field_ref("nonexistent"));
+        assert!(expr.eval_with_context(&Value::text("secret123"), &ctx));
+    }
+
+    #[test]
+    fn test_field_ref_without_context_returns_false() {
+        // Field references should return false when using basic eval()
+        let field_ref = Expr::field_ref("some_field");
+        assert!(!field_ref.eval(&Value::text("test")));
+
+        let field_eq = Expr::field_eq("field1", "field2");
+        assert!(!field_eq.eval(&Value::text("test")));
     }
 }

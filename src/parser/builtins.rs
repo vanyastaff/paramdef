@@ -125,6 +125,7 @@ macro_rules! define_length_parser {
                 $func_name
             }
 
+            #[allow(clippy::cast_precision_loss)]
             fn parse(&self, args: &[Value]) -> Result<Expr, String> {
                 let n = match &args[0] {
                     Value::Int(i) => *i as f64,
@@ -159,6 +160,7 @@ macro_rules! define_numeric_parser {
                 $func_name
             }
 
+            #[allow(clippy::cast_precision_loss)]
             fn parse(&self, args: &[Value]) -> Result<Expr, String> {
                 let n = match &args[0] {
                     Value::Int(i) => *i as f64,

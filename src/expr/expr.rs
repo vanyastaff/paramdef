@@ -232,6 +232,38 @@ pub enum Expr {
     /// Value equals the constant value.
     Const(Value),
 
+    // === Cross-Field References ===
+    /// Reference to another field's value.
+    ///
+    /// This variant allows expressions to reference other fields in the same context.
+    /// Used for cross-field validation like "password == `confirm_password`".
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// // Validate that this field equals another field
+    /// let expr = Expr::field_ref("password");
+    /// ```
+    FieldRef(SmartStr),
+
+    /// Compare this field's value to another field's value.
+    ///
+    /// This is a convenience variant for the common pattern of comparing two fields.
+    /// Equivalent to using `FieldRef` with a comparison operator.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// // password == confirm_password
+    /// let expr = Expr::field_eq("password", "confirm_password");
+    /// ```
+    FieldEq {
+        /// The field to compare with (usually another field in the context)
+        field: SmartStr,
+        /// The value to compare against (or another field name)
+        other: SmartStr,
+    },
+
     // === Logical Operators ===
     /// All sub-expressions must pass.
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_arc_slice_expr"))]
@@ -551,6 +583,44 @@ impl Expr {
     #[must_use]
     pub fn const_value(value: Value) -> Self {
         Self::Const(value)
+    }
+
+    // === Cross-Field References ===
+
+    /// Create a field reference expression.
+    ///
+    /// This references another field's value in the same context.
+    /// Useful for cross-field validation.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use paramdef::expr::Expr;
+    /// let expr = Expr::field_ref("confirm_password");
+    /// ```
+    #[must_use]
+    pub fn field_ref(field: impl Into<SmartStr>) -> Self {
+        Self::FieldRef(field.into())
+    }
+
+    /// Create a field equality expression.
+    ///
+    /// Compares two fields for equality. This is a convenience method
+    /// for the common pattern of checking if two fields have the same value.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use paramdef::expr::Expr;
+    /// // Check if password equals confirm_password
+    /// let expr = Expr::field_eq("password", "confirm_password");
+    /// ```
+    #[must_use]
+    pub fn field_eq(field: impl Into<SmartStr>, other: impl Into<SmartStr>) -> Self {
+        Self::FieldEq {
+            field: field.into(),
+            other: other.into(),
+        }
     }
 
     // === Logical Operators ===
