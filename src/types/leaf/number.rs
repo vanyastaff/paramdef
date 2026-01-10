@@ -34,7 +34,7 @@ pub struct Number<S: NumberSubtype> {
     unit: Option<NumberUnit>,
     default: Option<f64>,
     #[cfg(feature = "visibility")]
-    visibility: Option<crate::visibility::Expr>,
+    visibility: Option<crate::expr::Rule>,
 }
 
 impl<S: NumberSubtype> Number<S> {
@@ -150,7 +150,7 @@ pub struct NumberBuilder<S: NumberSubtype> {
     unit: Option<NumberUnit>,
     default: Option<f64>,
     #[cfg(feature = "visibility")]
-    visibility: Option<crate::visibility::Expr>,
+    visibility: Option<crate::expr::Rule>,
 }
 
 impl<S: NumberSubtype> NumberBuilder<S> {
@@ -231,8 +231,8 @@ impl<S: NumberSubtype> NumberBuilder<S> {
     /// The parameter will only be visible when the expression evaluates to true.
     #[cfg(feature = "visibility")]
     #[must_use]
-    pub fn visible_when(mut self, expr: crate::visibility::Expr) -> Self {
-        self.visibility = Some(expr);
+    pub fn visible_when(mut self, rule: crate::expr::Rule) -> Self {
+        self.visibility = Some(rule);
         self
     }
 
@@ -266,11 +266,11 @@ impl<S: NumberSubtype> NumberBuilder<S> {
 // Visibility trait implementation
 #[cfg(feature = "visibility")]
 impl<S: NumberSubtype> crate::types::traits::Visibility for Number<S> {
-    fn visibility_expr(&self) -> Option<&crate::visibility::Expr> {
+    fn visibility_rule(&self) -> Option<&crate::expr::Rule> {
         self.visibility.as_ref()
     }
 
-    fn set_visibility_expr(&mut self, expr: Option<crate::visibility::Expr>) {
+    fn set_visibility_rule(&mut self, expr: Option<crate::expr::Rule>) {
         self.visibility = expr;
     }
 }

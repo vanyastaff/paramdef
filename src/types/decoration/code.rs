@@ -48,7 +48,7 @@ pub struct Code {
     highlight_lines: Vec<usize>,
     collapsible: bool,
     #[cfg(feature = "visibility")]
-    visibility: Option<crate::visibility::Expr>,
+    visibility: Option<crate::expr::Rule>,
 }
 
 impl Code {
@@ -152,7 +152,7 @@ pub struct CodeBuilder {
     highlight_lines: Vec<usize>,
     collapsible: bool,
     #[cfg(feature = "visibility")]
-    visibility: Option<crate::visibility::Expr>,
+    visibility: Option<crate::expr::Rule>,
 }
 
 impl CodeBuilder {
@@ -217,8 +217,8 @@ impl CodeBuilder {
     /// Sets the visibility expression.
     #[cfg(feature = "visibility")]
     #[must_use]
-    pub fn visible_when(mut self, expr: crate::visibility::Expr) -> Self {
-        self.visibility = Some(expr);
+    pub fn visible_when(mut self, rule: crate::expr::Rule) -> Self {
+        self.visibility = Some(rule);
         self
     }
 
@@ -241,11 +241,11 @@ impl CodeBuilder {
 
 #[cfg(feature = "visibility")]
 impl crate::types::traits::Visibility for Code {
-    fn visibility_expr(&self) -> Option<&crate::visibility::Expr> {
+    fn visibility_rule(&self) -> Option<&crate::expr::Rule> {
         self.visibility.as_ref()
     }
 
-    fn set_visibility_expr(&mut self, expr: Option<crate::visibility::Expr>) {
+    fn set_visibility_rule(&mut self, expr: Option<crate::expr::Rule>) {
         self.visibility = expr;
     }
 }

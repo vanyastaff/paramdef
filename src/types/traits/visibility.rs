@@ -5,7 +5,7 @@ use crate::core::Key;
 #[cfg(feature = "visibility")]
 use crate::context::Context;
 #[cfg(feature = "visibility")]
-use crate::visibility::Expr;
+use crate::expr::Rule;
 
 /// Trait for visibility control.
 ///
@@ -15,21 +15,21 @@ use crate::visibility::Expr;
 ///
 /// # Design
 ///
-/// - **Schema stores the expression**: `Option<Expr>` stored in each node
-/// - **Evaluation requires Context**: `is_visible(&Context)` evaluates the expression
+/// - **Schema stores the rule**: `Option<Rule>` stored in each node
+/// - **Evaluation requires Context**: `is_visible(&Context)` evaluates the rule
 /// - **Dependencies tracked**: `dependencies()` returns keys this visibility depends on
 ///
 /// # Example
 ///
 /// ```
-/// use paramdef::visibility::Expr;
+/// use paramdef::visibility::when;
 /// use paramdef::types::leaf::Text;
 /// use paramdef::context::Context;
 /// use paramdef::schema::Schema;
 /// use paramdef::core::Value;
 /// use std::sync::Arc;
 ///
-/// // Build schema with visibility condition
+/// // Build schema with visibility condition using fluent API
 /// let schema = Arc::new(Schema::builder()
 ///     .parameter(
 ///         Text::builder("show_advanced")
@@ -38,7 +38,7 @@ use crate::visibility::Expr;
 ///     )
 ///     .parameter(
 ///         Text::builder("advanced_option")
-///             .visible_when(Expr::eq("show_advanced", Value::text("true")))
+///             .visible_when(when("show_advanced").eq(Value::text("true")))
 ///             .build()
 ///     )
 ///     .build());
@@ -62,24 +62,24 @@ use crate::visibility::Expr;
 /// ```
 #[cfg(feature = "visibility")]
 pub trait Visibility {
-    /// Returns the visibility expression, if any.
-    fn visibility_expr(&self) -> Option<&Expr>;
+    /// Returns the visibility rule, if any.
+    fn visibility_rule(&self) -> Option<&Rule>;
 
-    /// Sets the visibility expression.
+    /// Sets the visibility rule.
     ///
     /// This is typically used by builders, not at runtime.
-    fn set_visibility_expr(&mut self, expr: Option<Expr>);
+    fn set_visibility_rule(&mut self, rule: Option<Rule>);
 
     /// Evaluates whether the node is currently visible in the given context.
     ///
     /// Returns `true` if:
-    /// - No visibility expression is set (always visible)
-    /// - The visibility expression evaluates to `true`
+    /// - No visibility rule is set (always visible)
+    /// - The visibility rule evaluates to `true`
     ///
-    /// Returns `false` if the visibility expression evaluates to `false`.
+    /// Returns `false` if the visibility rule evaluates to `false`.
     fn is_visible(&self, ctx: &Context) -> bool {
-        match self.visibility_expr() {
-            Some(expr) => expr.eval(ctx),
+        match self.visibility_rule() {
+            Some(rule) => rule.eval(ctx),
             None => true, // No condition = always visible
         }
     }
@@ -89,8 +89,8 @@ pub trait Visibility {
     /// This is used for reactive updates - when a dependency changes,
     /// the visibility can be re-evaluated.
     fn dependencies(&self) -> Vec<Key> {
-        match self.visibility_expr() {
-            Some(expr) => expr.dependencies(),
+        match self.visibility_rule() {
+            Some(rule) => rule.dependencies(),
             None => Vec::new(),
         }
     }

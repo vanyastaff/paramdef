@@ -46,7 +46,7 @@ pub struct Link {
     kind: LinkType,
     open_in_new_tab: bool,
     #[cfg(feature = "visibility")]
-    visibility: Option<crate::visibility::Expr>,
+    visibility: Option<crate::expr::Rule>,
 }
 
 impl Link {
@@ -160,7 +160,7 @@ pub struct LinkBuilder {
     kind: LinkType,
     open_in_new_tab: bool,
     #[cfg(feature = "visibility")]
-    visibility: Option<crate::visibility::Expr>,
+    visibility: Option<crate::expr::Rule>,
 }
 
 impl LinkBuilder {
@@ -217,8 +217,8 @@ impl LinkBuilder {
     /// Sets the visibility expression.
     #[cfg(feature = "visibility")]
     #[must_use]
-    pub fn visible_when(mut self, expr: crate::visibility::Expr) -> Self {
-        self.visibility = Some(expr);
+    pub fn visible_when(mut self, rule: crate::expr::Rule) -> Self {
+        self.visibility = Some(rule);
         self
     }
 
@@ -247,11 +247,11 @@ impl LinkBuilder {
 
 #[cfg(feature = "visibility")]
 impl crate::types::traits::Visibility for Link {
-    fn visibility_expr(&self) -> Option<&crate::visibility::Expr> {
+    fn visibility_rule(&self) -> Option<&crate::expr::Rule> {
         self.visibility.as_ref()
     }
 
-    fn set_visibility_expr(&mut self, expr: Option<crate::visibility::Expr>) {
+    fn set_visibility_rule(&mut self, expr: Option<crate::expr::Rule>) {
         self.visibility = expr;
     }
 }

@@ -76,7 +76,7 @@ pub struct Html {
     css_class: Option<SmartStr>,
     inline: bool,
     #[cfg(feature = "visibility")]
-    visibility: Option<crate::visibility::Expr>,
+    visibility: Option<crate::expr::Rule>,
 }
 
 impl Html {
@@ -172,7 +172,7 @@ pub struct HtmlBuilder {
     css_class: Option<SmartStr>,
     inline: bool,
     #[cfg(feature = "visibility")]
-    visibility: Option<crate::visibility::Expr>,
+    visibility: Option<crate::expr::Rule>,
 }
 
 impl HtmlBuilder {
@@ -245,8 +245,8 @@ impl HtmlBuilder {
     /// Sets the visibility expression.
     #[cfg(feature = "visibility")]
     #[must_use]
-    pub fn visible_when(mut self, expr: crate::visibility::Expr) -> Self {
-        self.visibility = Some(expr);
+    pub fn visible_when(mut self, rule: crate::expr::Rule) -> Self {
+        self.visibility = Some(rule);
         self
     }
 
@@ -276,11 +276,11 @@ impl HtmlBuilder {
 
 #[cfg(feature = "visibility")]
 impl crate::types::traits::Visibility for Html {
-    fn visibility_expr(&self) -> Option<&crate::visibility::Expr> {
+    fn visibility_rule(&self) -> Option<&crate::expr::Rule> {
         self.visibility.as_ref()
     }
 
-    fn set_visibility_expr(&mut self, expr: Option<crate::visibility::Expr>) {
+    fn set_visibility_rule(&mut self, expr: Option<crate::expr::Rule>) {
         self.visibility = expr;
     }
 }

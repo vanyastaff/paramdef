@@ -92,7 +92,7 @@ use std::sync::Arc;
 /// ```
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "serde", serde(tag = "type", rename_all = "camelCase"))]
+#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 #[cfg_attr(feature = "serde", allow(clippy::unsafe_derive_deserialize))]
 #[non_exhaustive]
 pub enum Expr {
@@ -225,6 +225,8 @@ pub enum Expr {
 
     // === Set Operations ===
     /// Value is one of the allowed values.
+    #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_arc_slice"))]
+    #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_arc_slice"))]
     OneOf(Arc<[Value]>),
 
     /// Value equals the constant value.
@@ -232,9 +234,19 @@ pub enum Expr {
 
     // === Logical Operators ===
     /// All sub-expressions must pass.
+    #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_arc_slice_expr"))]
+    #[cfg_attr(
+        feature = "serde",
+        serde(deserialize_with = "deserialize_arc_slice_expr")
+    )]
     And(Arc<[Expr]>),
 
     /// At least one sub-expression must pass.
+    #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_arc_slice_expr"))]
+    #[cfg_attr(
+        feature = "serde",
+        serde(deserialize_with = "deserialize_arc_slice_expr")
+    )]
     Or(Arc<[Expr]>),
 
     /// Inverts the sub-expression result.
@@ -537,6 +549,7 @@ impl Expr {
 
     /// Create a NOT expression (inverts result).
     #[must_use]
+    #[allow(clippy::should_implement_trait)]
     pub fn not(expr: Expr) -> Self {
         Self::Not(Box::new(expr))
     }
@@ -585,4 +598,43 @@ impl Expr {
             field.into()
         )))
     }
+}
+
+// Serde helper functions for Arc<[T]>
+#[cfg(feature = "serde")]
+fn serialize_arc_slice<S>(arc: &Arc<[Value]>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    use serde::Serialize;
+    arc.as_ref().serialize(serializer)
+}
+
+#[cfg(feature = "serde")]
+fn deserialize_arc_slice<'de, D>(deserializer: D) -> Result<Arc<[Value]>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::Deserialize;
+    let vec: Vec<Value> = Vec::deserialize(deserializer)?;
+    Ok(vec.into())
+}
+
+#[cfg(feature = "serde")]
+fn serialize_arc_slice_expr<S>(arc: &Arc<[Expr]>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    use serde::Serialize;
+    arc.as_ref().serialize(serializer)
+}
+
+#[cfg(feature = "serde")]
+fn deserialize_arc_slice_expr<'de, D>(deserializer: D) -> Result<Arc<[Expr]>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::Deserialize;
+    let vec: Vec<Expr> = Vec::deserialize(deserializer)?;
+    Ok(vec.into())
 }

@@ -25,7 +25,7 @@ pub struct Boolean {
     flags: Flags,
     default: Option<bool>,
     #[cfg(feature = "visibility")]
-    visibility: Option<crate::visibility::Expr>,
+    visibility: Option<crate::expr::Rule>,
 }
 
 impl Boolean {
@@ -85,7 +85,7 @@ pub struct BooleanBuilder {
     flags: Flags,
     default: Option<bool>,
     #[cfg(feature = "visibility")]
-    visibility: Option<crate::visibility::Expr>,
+    visibility: Option<crate::expr::Rule>,
 }
 
 impl BooleanBuilder {
@@ -157,8 +157,8 @@ impl BooleanBuilder {
     /// The parameter will only be visible when the expression evaluates to true.
     #[cfg(feature = "visibility")]
     #[must_use]
-    pub fn visible_when(mut self, expr: crate::visibility::Expr) -> Self {
-        self.visibility = Some(expr);
+    pub fn visible_when(mut self, rule: crate::expr::Rule) -> Self {
+        self.visibility = Some(rule);
         self
     }
 
@@ -190,11 +190,11 @@ impl BooleanBuilder {
 // Visibility trait implementation
 #[cfg(feature = "visibility")]
 impl crate::types::traits::Visibility for Boolean {
-    fn visibility_expr(&self) -> Option<&crate::visibility::Expr> {
+    fn visibility_rule(&self) -> Option<&crate::expr::Rule> {
         self.visibility.as_ref()
     }
 
-    fn set_visibility_expr(&mut self, expr: Option<crate::visibility::Expr>) {
+    fn set_visibility_rule(&mut self, expr: Option<crate::expr::Rule>) {
         self.visibility = expr;
     }
 }

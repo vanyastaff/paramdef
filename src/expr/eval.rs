@@ -24,6 +24,7 @@ impl Expr {
     /// assert!(!expr.eval(&Value::text("hi")));
     /// ```
     #[must_use]
+    #[allow(clippy::too_many_lines, clippy::excessive_nesting)]
     pub fn eval(&self, value: &Value) -> bool {
         match self {
             // === Value Comparisons ===
@@ -74,30 +75,63 @@ impl Expr {
             }
 
             // === String Validation ===
+            #[cfg(feature = "validation")]
             Self::Email => {
-                // HTML5 email regex (simplified)
+                use std::cell::RefCell;
+
+                thread_local! {
+                    static EMAIL_CACHE: RefCell<Option<regex::Regex>> = const { RefCell::new(None) };
+                }
+
                 const EMAIL_REGEX: &str = r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$";
 
                 value.as_text().is_some_and(|s| {
-                    regex::Regex::new(EMAIL_REGEX)
-                        .ok()
-                        .is_some_and(|re| re.is_match(s))
+                    EMAIL_CACHE.with(|cache| {
+                        let mut cache = cache.borrow_mut();
+                        if cache.is_none() {
+                            *cache = regex::Regex::new(EMAIL_REGEX).ok();
+                        }
+                        cache.as_ref().is_some_and(|re| re.is_match(s))
+                    })
                 })
             }
+
+            #[cfg(not(feature = "validation"))]
+            Self::Email => value.as_text().is_some_and(|s| s.contains('@')),
 
             Self::Url => value.as_text().is_some_and(|s| {
                 s.starts_with("http://") || s.starts_with("https://") || s.starts_with("ftp://")
             }),
 
+            #[cfg(feature = "validation")]
             Self::Uuid => {
+                use std::cell::RefCell;
+
+                thread_local! {
+                    static UUID_CACHE: RefCell<Option<regex::Regex>> = const { RefCell::new(None) };
+                }
+
                 const UUID_REGEX: &str = r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$";
 
                 value.as_text().is_some_and(|s| {
-                    regex::Regex::new(UUID_REGEX)
-                        .ok()
-                        .is_some_and(|re| re.is_match(s))
+                    UUID_CACHE.with(|cache| {
+                        let mut cache = cache.borrow_mut();
+                        if cache.is_none() {
+                            *cache = regex::Regex::new(UUID_REGEX).ok();
+                        }
+                        cache.as_ref().is_some_and(|re| re.is_match(s))
+                    })
                 })
             }
+
+            #[cfg(not(feature = "validation"))]
+            Self::Uuid => value.as_text().is_some_and(|s| {
+                s.len() == 36
+                    && s.chars().enumerate().all(|(i, c)| match i {
+                        8 | 13 | 18 | 23 => c == '-',
+                        _ => c.is_ascii_hexdigit(),
+                    })
+            }),
 
             // === Length Checks ===
             Self::MinLength(min) => match value {

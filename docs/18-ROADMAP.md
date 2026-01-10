@@ -27,10 +27,11 @@ This roadmap provides a structured approach to implementing paramdef, organized 
 | Phase 4.1: Event System | ✅ Complete | Event, EventBus, Subscription, Context integration |
 | Phase 4.2: Validation | ✅ Complete | Hybrid Expr + Validator trait, built-in validators |
 | Phase 4.3: Transformers | ✅ Complete | Hybrid Transform + Transformer trait, built-in transformers |
-| Phase 4.4: History | ✅ Complete | Command pattern, undo/redo, command merging |
-| Phase 5: Visibility | ✅ Complete | Visibility expressions (Expr), dependency tracking |
-| Phase 6: Polish | ✅ Complete | Benchmarks, docs, 10+ examples |
-| Phase 7: UI Integration | 🔲 Optional | egui example |
+| Phase 4.4: Unified Expressions | ✅ Complete | ExprTarget + Rule, unified expr system, when() API |
+| Phase 5: Visibility | ✅ Complete | Fluent when() API, Rule-based visibility |
+| Phase 6: Polish | 🔄 In Progress | Documentation updates, examples polish |
+| Phase 7: Expression Parser | 🔲 Future (v0.3.0) | Lexer + parser for string-based rules (2-3 days) |
+| Phase 8: UI Integration | 🔲 Future | egui example |
 
 ---
 
@@ -608,14 +609,25 @@ let deps = expr.dependencies(); // ["premium", "age", "admin"]
 
 ## Next Steps
 
-1. **Phase 4.4: History System**
-   - Implement Command pattern
-   - Add HistoryManager with undo/redo
+1. **Phase 6: Polish (In Progress)**
+   - ✅ Unified expression system complete
+   - ✅ Fluent when() API for visibility
+   - 🔄 Documentation updates in progress
+   - 🔲 Additional examples
 
-2. **Phase 5: Display System**
-   - Implement visibility Expr
-   - Add reactive visibility observer
+2. **Phase 7: Expression Parser (Future, v0.3.0)**
+   - String-based expression parsing
+   - Lexer + recursive descent parser
+   - Support for config files (TOML, JSON, YAML)
+   - **Estimated effort:** 2-3 days
+   - See: `docs/23-EXPRESSION-PARSER.md`
 
-3. **Phase 6: Polish**
+3. **Phase 8: UI Integration (Future)**
+   - egui example implementation
+   - Form builder patterns
+   - Reactive UI bindings
+
+4. **Future Enhancements**
+   - Cross-field validation improvements
+   - History/undo system (Command pattern)
    - Performance benchmarks
-   - Complete documentation coverage

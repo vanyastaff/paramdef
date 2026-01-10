@@ -62,6 +62,7 @@
 //! - **React Hook Form**: Field-based and cross-field validation
 
 mod eval;
+#[allow(clippy::module_inception)]
 mod expr;
 mod rule;
 mod target;

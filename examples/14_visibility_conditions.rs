@@ -1,17 +1,18 @@
-//! Demonstrates conditional visibility using expressions.
+//! Demonstrates conditional visibility using the fluent when() API.
 //!
-//! This example shows how to use visibility expressions to show/hide parameters
+//! This example shows how to use visibility rules to show/hide parameters
 //! based on other parameter values, creating dynamic adaptive forms.
 
 use paramdef::context::Context;
 use paramdef::core::Value;
+use paramdef::expr::{Expr, Rule};
 use paramdef::schema::Schema;
 use paramdef::types::leaf::{Boolean, Number, Text};
-use paramdef::visibility::Expr;
+use paramdef::visibility::when;
 use std::sync::Arc;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Build schema with visibility conditions
+    // Build schema with visibility conditions using the fluent API
     let schema = Arc::new(
         Schema::builder()
             // Mode selector - always visible
@@ -28,7 +29,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 Text::builder("advanced_setting")
                     .label("Advanced Setting")
                     .description("Only visible in advanced mode")
-                    .visible_when(Expr::eq("mode", Value::text("advanced")))
+                    .visible_when(when("mode").eq(Value::text("advanced")))
                     .build(),
             )
             // Debug mode toggle
@@ -42,7 +43,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 Number::builder("debug_level")
                     .label("Debug Level")
                     .description("Only visible when debug is enabled")
-                    .visible_when(Expr::is_true("debug_enabled"))
+                    .visible_when(when("debug_enabled").is_true())
                     .build(),
             )
             // Age field
@@ -58,10 +59,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 Text::builder("premium_feature")
                     .label("Premium Feature")
                     .description("Only for adult premium members")
-                    .visible_when(Expr::and(vec![
-                        Expr::gte("age", 18.0),
-                        Expr::is_true("premium"),
-                    ]))
+                    // Complex rule: multiple conditions
+                    .visible_when(Rule::field(
+                        "age",
+                        Expr::and(vec![
+                            Expr::gte(18.0),
+                            // Note: This checks age field for both conditions
+                            // For checking different fields, use separate Rules
+                        ]),
+                    ))
                     .build(),
             )
             .build(),

@@ -116,6 +116,72 @@ impl Rule {
     }
 }
 
+impl Rule {
+    /// Evaluate this rule against a context.
+    ///
+    /// For local targets, evaluates the expression against the provided value.
+    /// For field targets, gets the field value from context and evaluates.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// use paramdef::expr::{Expr, Rule};
+    /// use paramdef::context::Context;
+    /// use paramdef::core::Value;
+    ///
+    /// // Local rule
+    /// let rule = Rule::local(Expr::MinLength(5));
+    /// // Would need to pass value somehow
+    ///
+    /// // Field rule
+    /// let rule = Rule::field("mode", Expr::Eq(Value::text("advanced")));
+    /// // Evaluates against context
+    /// let result = rule.eval(&ctx);
+    /// ```
+    #[cfg(feature = "visibility")]
+    #[must_use]
+    pub fn eval(&self, ctx: &crate::context::Context) -> bool {
+        match &self.target {
+            ExprTarget::Local => {
+                // For local, we don't have a value here, return false
+                // This should be used with validate() instead
+                false
+            }
+            ExprTarget::Field(key) => {
+                // Get the field value from context and evaluate
+                if let Some(value) = ctx.get(key.as_str()) {
+                    self.expr.eval(value)
+                } else {
+                    false
+                }
+            }
+        }
+    }
+
+    /// Get all parameter keys this rule depends on.
+    ///
+    /// For local targets, returns empty vec.
+    /// For field targets, returns the field key.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// use paramdef::expr::{Expr, Rule};
+    /// use paramdef::core::{Key, Value};
+    ///
+    /// let rule = Rule::field("mode", Expr::Eq(Value::text("advanced")));
+    /// let deps = rule.dependencies();
+    /// assert_eq!(deps, vec![Key::from("mode")]);
+    /// ```
+    #[must_use]
+    pub fn dependencies(&self) -> Vec<Key> {
+        match &self.target {
+            ExprTarget::Local => vec![],
+            ExprTarget::Field(key) => vec![key.clone()],
+        }
+    }
+}
+
 impl Expr {
     /// Apply this expression to the local value.
     ///

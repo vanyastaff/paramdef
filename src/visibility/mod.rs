@@ -26,7 +26,7 @@
 //! ## Example
 //!
 //! ```
-//! use paramdef::visibility::Expr;
+//! use paramdef::visibility::when;
 //! use paramdef::context::Context;
 //! use paramdef::core::{Key, Value};
 //! # use paramdef::schema::Schema;
@@ -39,21 +39,21 @@
 //! #     .build());
 //! # let mut ctx = Context::new(schema);
 //! // Create visibility condition: show only when checkbox is true
-//! let expr = Expr::is_true("show_advanced");
+//! let rule = when("show_advanced").is_true();
 //!
 //! // Evaluate visibility
-//! assert_eq!(expr.eval(&ctx), false); // Checkbox not set
+//! assert_eq!(rule.eval(&ctx), false); // Checkbox not set
 //!
 //! ctx.set("show_advanced", Value::Bool(true));
-//! assert_eq!(expr.eval(&ctx), true); // Now visible
+//! assert_eq!(rule.eval(&ctx), true); // Now visible
 //!
 //! // Get dependencies for reactive updates
-//! let deps = expr.dependencies();
+//! let deps = rule.dependencies();
 //! assert_eq!(deps, vec![Key::from("show_advanced")]);
 //! ```
 
-mod expr;
+mod when;
 
-// TODO: Migrate to use crate::expr::Rule with ExprTarget::Field
-// For now, keep old visibility::Expr for backward compatibility
-pub use expr::Expr;
+// Unified API
+pub use crate::expr::Rule;
+pub use when::{When, when};
