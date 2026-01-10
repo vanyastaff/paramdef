@@ -185,6 +185,145 @@ let distance = Number::builder("length")
 // 60 subtypes × 17 unit categories = powerful combinations!
 ```
 
+### ✨ Unified Expression System
+
+Single expression system for both validation and visibility with 40+ built-in rules:
+
+```rust
+use paramdef::expr::{Expr, Rule};
+use paramdef::visibility::when;
+
+// Validation: check current value
+let email_rule = Rule::local(Expr::email());
+let length_rule = Rule::local(Expr::min_length(5));
+
+// Visibility: check other field's value
+let visible_when = when("mode").eq(Value::text("advanced"));
+
+// Combine with logical operators
+let complex = Expr::and([
+    Expr::email(),
+    Expr::min_length(5),
+    Expr::max_length(100),
+]);
+
+// 40+ built-in expressions:
+// - Comparisons: eq, ne, lt, gt, lte, gte, between
+// - Strings: starts_with, ends_with, contains, matches, email, url, uuid
+// - Length: min_length, max_length, length, length_between
+// - Numbers: min, max, positive, negative, integer, multiple_of
+// - Collections: empty, not_empty, unique_items
+// - Logic: and, or, not, xor
+```
+
+### 🎯 Validation System
+
+Hybrid approach: declarative expressions + custom validators:
+
+```rust
+use paramdef::validation::{Rule, Validator, ValidationContext};
+
+// Declarative (80% of cases)
+let rules = vec![
+    Rule::local(Expr::required()),
+    Rule::local(Expr::email()),
+    Rule::local(Expr::min_length(5)),
+];
+
+// Custom validators (complex cases)
+struct UniqueEmail;
+
+impl Validator for UniqueEmail {
+    fn validate(&self, value: &Value, ctx: &ValidationContext) -> ValidationResult {
+        let email = value.as_text().ok_or_else(|| Error::type_mismatch())?;
+        
+        // Check database...
+        if database_has_email(email) {
+            return Err(Error::custom("unique", "Email already exists"));
+        }
+        Ok(())
+    }
+}
+```
+
+### 🔄 Transform System
+
+Normalize values before validation:
+
+```rust
+use paramdef::transform::{Transform, Transforms};
+
+// Built-in transforms
+let transforms = Transforms::new()
+    .trim()              // Remove whitespace
+    .lowercase()         // Normalize case
+    .truncate(100);      // Limit length
+
+// Apply transformations
+let input = Value::text("  HELLO@EXAMPLE.COM  ");
+let result = transforms.apply(&input);
+// → Value::text("hello@example.com")
+
+// 9 built-in transforms: Trim, Lowercase, Uppercase, Capitalize,
+// Clamp, Round, Truncate, Replace, Default
+```
+
+### 📡 Event System
+
+Reactive updates with tokio broadcast channels:
+
+```rust
+use paramdef::event::{Event, EventBus};
+
+// Create event bus
+let bus = EventBus::new(64);
+let mut sub = bus.subscribe();
+
+// Context emits events automatically
+let mut ctx = Context::with_event_bus(schema, bus);
+ctx.set("name", Value::text("Alice"));
+
+// Listen for events
+tokio::spawn(async move {
+    while let Ok(event) = sub.recv().await {
+        match event {
+            Event::ValueChanged { key, new_value, .. } => {
+                println!("{} changed to {:?}", key, new_value);
+            }
+            Event::Validated { key, is_valid, errors } => {
+                println!("{} validation: {}", key, is_valid);
+            }
+            _ => {}
+        }
+    }
+});
+
+// Events: ValueChanging, ValueChanged, Validated, Touched,
+// Dirtied, Cleaned, Reset, BatchBegin, BatchEnd
+```
+
+### 👁️ Visibility System
+
+Conditional field display with fluent API:
+
+```rust
+use paramdef::visibility::when;
+
+// Show field only when condition met
+let advanced_option = Text::builder("api_key")
+    .label("API Key")
+    .visible_when(when("mode").eq(Value::text("advanced")))
+    .build();
+
+let debug_option = Boolean::builder("verbose")
+    .label("Verbose Logging")
+    .visible_when(when("debug").is_true())
+    .build();
+
+// Fluent methods: eq, ne, lt, gt, is_true, is_false,
+// contains, starts_with, ends_with, empty, not_empty, etc.
+```
+
 ### 🚀 Performance
 
 Excellent performance characteristics:
@@ -269,6 +408,123 @@ let password = Text::builder("password")
 
 assert!(password.flags().contains(Flags::REQUIRED));
 assert!(password.flags().contains(Flags::SENSITIVE));
+```
+
+### Validation and Transforms
+
+```rust
+use paramdef::expr::{Expr, Rule};
+use paramdef::transform::Transforms;
+use paramdef::validation::Rules;
+
+// Email field with validation and normalization
+let email = Text::builder("email")
+    .label("Email Address")
+    .transforms(
+        Transforms::new()
+            .trim()
+            .lowercase()
+    )
+    .rules(
+        Rules::from_rules([
+            Rule::local(Expr::required()),
+            Rule::local(Expr::email()),
+            Rule::local(Expr::max_length(100)),
+        ])
+    )
+    .build();
+
+// Transform → Validate workflow
+let input = Value::text("  ALICE@EXAMPLE.COM  ");
+let transformed = email.transforms().apply(&input);
+// → Value::text("alice@example.com")
+
+let result = email.rules().validate(&transformed, &ctx);
+// → Ok(())
+```
+
+### Conditional Visibility
+
+```rust
+use paramdef::visibility::when;
+
+// Advanced options only visible when mode = "advanced"
+let schema = Object::builder("settings")
+    .field("mode",
+        Select::single("mode")
+            .options(vec![
+                SelectOption::simple("basic"),
+                SelectOption::simple("advanced"),
+            ])
+            .default_single("basic")
+            .build())
+    .field("api_key",
+        Text::builder("api_key")
+            .label("API Key")
+            .visible_when(when("mode").eq(Value::text("advanced")))
+            .build())
+    .field("timeout",
+        Number::builder("timeout")
+            .label("Request Timeout (ms)")
+            .visible_when(when("mode").eq(Value::text("advanced")))
+            .default(5000.0)
+            .build())
+    .build()
+    .unwrap();
+
+// UI can check visibility
+let ctx = Context::new(Arc::new(schema));
+ctx.set("mode", Value::text("basic"));
+
+let api_key_visible = ctx.is_visible("api_key");  // false
+ctx.set("mode", Value::text("advanced"));
+let api_key_visible = ctx.is_visible("api_key");  // true
+```
+
+### Event-Driven Architecture
+
+```rust
+use paramdef::event::{Event, EventBus};
+
+// Set up event bus
+let bus = EventBus::new(64);
+let mut sub = bus.subscribe();
+
+let mut ctx = Context::with_event_bus(schema, bus.clone());
+
+// Spawn event listener
+tokio::spawn(async move {
+    while let Ok(event) = sub.recv().await {
+        match event {
+            Event::ValueChanged { key, new_value, .. } => {
+                // Trigger side effects
+                update_ui(&key, &new_value);
+            }
+            Event::Validated { key, is_valid, errors } => {
+                // Show validation errors in UI
+                if !is_valid {
+                    show_errors(&key, &errors);
+                }
+            }
+            Event::BatchBegin { description, .. } => {
+                // Start transaction
+                begin_undo_batch(description);
+            }
+            Event::BatchEnd { .. } => {
+                // Commit transaction
+                end_undo_batch();
+            }
+            _ => {}
+        }
+    }
+});
+
+// Changes emit events automatically
+ctx.set("username", Value::text("alice"));
+ctx.batch("Update user info", |ctx| {
+    ctx.set("email", Value::text("alice@example.com"));
+    ctx.set("age", Value::Int(30));
+});
 ```
 
 ### Real-World: Workflow Engine Node
@@ -400,7 +656,7 @@ let product_form = Object::builder("product")
 
 ## Current Status
 
-**Version 0.2.0** - Production-Ready Core
+**Version 0.2.1** - Production-Ready with Advanced Features
 
 ✅ **Complete:**
 - **Core schema system** - 23 semantic types (Group, Container, Leaf, Decoration)
@@ -408,25 +664,34 @@ let product_form = Object::builder("product")
 - **Blender-style units** - 60 subtypes × 17 unit categories
 - **Three-layer architecture** - Schema (immutable) / Runtime (mutable) / Value
 - **Rich metadata** - Labels, descriptions, groups, icons, tooltips
+- **Serialization** - Full serde support with JSON Schema export
+- **Validation system** - Hybrid Expr + custom validators (40+ built-in rules)
+- **Transform system** - Value normalization and transformation pipeline
+- **Event system** - Reactive updates with tokio broadcast channels
+- **Visibility system** - Conditional fields with fluent when() API
+- **Unified expressions** - Single expression system for validation + visibility
 - **Zero-warning build** - Production-ready code quality
 
 🚧 **Coming Soon (v0.3):**
+- **Expression parser** - String-based rule parsing for config files
 - **Form renderers** - Leptos, Yew, Dioxus bindings
 - **OpenAPI generation** - Auto-generate specs from schemas
 - **CLI prompts** - Interactive wizards via `dialoguer` integration
-- **Validation** - Custom validators, async validation
-- **Serialization** - Full serde support with JSON Schema export
 
 🔮 **Roadmap (v0.4+):**
-- **Event system** - Undo/redo, change tracking
-- **Visibility expressions** - Conditional fields (show/hide based on values)
+- **History system** - Undo/redo with command pattern
 - **i18n** - Fluent integration for multilingual forms
 - **UI theming** - CSS-in-Rust styling hints
+- **Async validation** - Network-based validators
 
 📚 **Documentation:**
-- 18 comprehensive design documents in `docs/`
+- 23 comprehensive design documents in `docs/`
 - Full API documentation on docs.rs
 - Real-world examples and cookbook
+- See `docs/22-UNIFIED-EXPRESSIONS.md` for expression system details
+- See `docs/20-VALIDATION-SYSTEM.md` for validation details
+- See `docs/21-TRANSFORM-SYSTEM.md` for transform system details
+- See `docs/19-EVENT-SYSTEM.md` for event system details
 
 ## Installation
 
@@ -617,10 +882,22 @@ Building a paramdef integration for your framework? Let us know - we'd love to f
 
 ## Documentation
 
+### Core Documentation
 - [API Documentation](https://docs.rs/paramdef)
 - [Architecture Guide](docs/01-ARCHITECTURE.md)
 - [Type System Reference](docs/02-TYPE-SYSTEM.md)
 - [Design Decisions](docs/17-DESIGN-DECISIONS.md)
+- [Roadmap](docs/18-ROADMAP.md)
+
+### Feature Documentation
+- [Event System](docs/19-EVENT-SYSTEM.md) - Reactive updates with tokio
+- [Validation System](docs/20-VALIDATION-SYSTEM.md) - Hybrid validation approach
+- [Transform System](docs/21-TRANSFORM-SYSTEM.md) - Value normalization
+- [Unified Expressions](docs/22-UNIFIED-EXPRESSIONS.md) - Expression system design
+- [Expression Parser](docs/23-EXPRESSION-PARSER.md) - Future string-based parsing
+
+### Full Documentation List
+See `docs/` directory for all 23 design documents covering every aspect of the system.
 
 ## MSRV
 
