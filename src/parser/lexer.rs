@@ -257,6 +257,7 @@ impl<'a> Lexer<'a> {
             "AND" => Token::And,
             "OR" => Token::Or,
             "NOT" => Token::Not,
+            "IN" => Token::In,
             "TRUE" => Token::Boolean(true),
             "FALSE" => Token::Boolean(false),
             _ => Token::Ident(SmartStr::from(ident)),

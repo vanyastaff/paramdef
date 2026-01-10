@@ -146,6 +146,19 @@ impl Parser {
 
         let op = self.current().clone();
 
+        // Handle IN operator specially (requires array)
+        if op == Token::In {
+            self.advance();
+            let value = self.parse_value()?;
+
+            // IN operator requires array value
+            return if let Value::Array(arr) = value {
+                Ok(Expr::in_array(arr.to_vec()))
+            } else {
+                Err(format!("IN operator requires array, got {value:?}"))
+            };
+        }
+
         if !op.is_binary_op() {
             return Err(format!("Expected binary operator, got {op:?}"));
         }
@@ -547,5 +560,54 @@ mod tests {
     fn test_error_invalid_operator() {
         let result = parse("age 18");
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_parse_in_operator_strings() {
+        let expr = parse(r#"country IN ["US", "CA", "UK"]"#).unwrap();
+
+        if let Expr::OneOf(values) = expr {
+            assert_eq!(values.len(), 3);
+            assert_eq!(values[0].as_text(), Some("US"));
+            assert_eq!(values[1].as_text(), Some("CA"));
+            assert_eq!(values[2].as_text(), Some("UK"));
+        } else {
+            panic!("Expected OneOf (IN) expression, got {expr:?}");
+        }
+    }
+
+    #[test]
+    fn test_parse_in_operator_numbers() {
+        let expr = parse("status IN [1, 2, 3, 4]").unwrap();
+
+        if let Expr::OneOf(values) = expr {
+            assert_eq!(values.len(), 4);
+            assert_eq!(values[0].as_float(), Some(1.0));
+            assert_eq!(values[1].as_float(), Some(2.0));
+            assert_eq!(values[2].as_float(), Some(3.0));
+            assert_eq!(values[3].as_float(), Some(4.0));
+        } else {
+            panic!("Expected OneOf (IN) expression, got {expr:?}");
+        }
+    }
+
+    #[test]
+    fn test_parse_in_operator_combined() {
+        let expr = parse(r#"country IN ["US", "CA"] AND active == true"#).unwrap();
+
+        if let Expr::And(exprs) = expr {
+            assert_eq!(exprs.len(), 2);
+            assert!(matches!(exprs[0], Expr::OneOf(_)));
+            assert!(matches!(exprs[1], Expr::Eq(_)));
+        } else {
+            panic!("Expected And expression, got {expr:?}");
+        }
+    }
+
+    #[test]
+    fn test_error_in_without_array() {
+        let result = parse(r#"country IN "US""#);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("IN operator requires array"));
     }
 }

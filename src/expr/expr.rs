@@ -527,6 +527,26 @@ impl Expr {
         Self::OneOf(values.into())
     }
 
+    /// Create an IN expression (alias for `one_of`).
+    ///
+    /// Checks if the current value is in the given array.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use paramdef::expr::Expr;
+    /// # use paramdef::core::Value;
+    /// let expr = Expr::in_array(vec![
+    ///     Value::text("US"),
+    ///     Value::text("CA"),
+    ///     Value::text("UK"),
+    /// ]);
+    /// ```
+    #[must_use]
+    pub fn in_array(values: Vec<Value>) -> Self {
+        Self::OneOf(values.into())
+    }
+
     /// Create a const expression.
     #[must_use]
     pub fn const_value(value: Value) -> Self {

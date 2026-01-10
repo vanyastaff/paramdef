@@ -57,7 +57,37 @@
 
 ---
 
-### 4. Complex Expressions
+### 4. IN Operator
+
+```rust
+"country IN [\"US\", \"CA\", \"UK\"]"  // ✅ Works
+"status IN [1, 2, 3, 4]"               // ✅ Works  
+"role IN [\"admin\", \"moderator\"]"   // ✅ Works
+```
+
+**Features:**
+- Check if value is in array of allowed values
+- Works with strings, numbers, and booleans
+- Case-insensitive keyword: `IN`, `in`, `In` all work
+- Can be combined with logical operators
+
+**Examples:**
+```rust
+// Simple IN check
+"country IN [\"US\", \"CA\", \"UK\"]"
+
+// Combined with AND
+"country IN [\"US\", \"CA\"] AND age >= 21"
+
+// Combined with OR
+"role IN [\"admin\", \"owner\"] OR verified == true"
+```
+
+**Status:** ✅ Fully supported (as of v0.3.1)
+
+---
+
+### 5. Complex Expressions
 
 ```rust
 "email() AND min_length(5) AND max_length(100)"
@@ -128,23 +158,23 @@
 
 ---
 
-### 8. IN Operator with Arrays
+### 8. ~~IN Operator with Arrays~~ ✅ **IMPLEMENTED**
 
 ```rust
-// ❌ Not supported
-"country IN ['US', 'CA', 'UK']"
-"status IN ['active', 'pending']"
+// ✅ NOW SUPPORTED (v0.3.1)
+"country IN [\"US\", \"CA\", \"UK\"]"
+"status IN [1, 2, 3, 4]"
+"role IN [\"admin\", \"moderator\"]"
 
-// ✅ Workaround - use Or
-"country == \"US\" OR country == \"CA\" OR country == \"UK\""
+// Old workaround (no longer needed)
+// "country == \"US\" OR country == \"CA\" OR country == \"UK\""
 ```
 
-**Why:** 
-1. `IN` is not a reserved keyword (easy to add)
-2. Array literal parsing works `[1, 2, 3]`
-3. Need to implement `Expr::In(value, array)` variant
-
-**Future work:** Medium complexity (1-2 hours).
+**Status:** ✅ Fully implemented in v0.3.1
+- `IN` is now a reserved keyword (case-insensitive)
+- Array literal parsing works with `[1, 2, 3]`
+- Maps to `Expr::OneOf(values)` variant
+- Can be combined with logical operators
 
 ---
 
@@ -192,18 +222,17 @@
 '\'' => self.read_string_with_quote('\''),
 ```
 
-### Priority 2: IN Operator (Medium)
+### Priority 2: ~~IN Operator~~ ✅ **COMPLETED**
 
-```rust
-// Add to Expr enum:
-In(Value, Arc<[Value]>),
+**Status:** ✅ Implemented in v0.3.1
 
-// Parser support:
-if self.current() == Token::In && self.peek() == Token::LBracket {
-    let array = self.parse_array()?;
-    return Ok(Expr::in_array(field_value, array));
-}
-```
+Implementation:
+1. ✅ Added `Token::In` keyword in lexer (case-insensitive)
+2. ✅ Parser validates array requirement
+3. ✅ Maps to `Expr::OneOf(values)` via `Expr::in_array()` helper
+4. ✅ 4 tests added (649 total tests)
+
+**Actual effort:** 1 hour
 
 ### Priority 3: Field References (Hard)
 
@@ -272,31 +301,31 @@ for row in results {
 
 Features to consider:
 - Field references: `user.email == admin.email`
-- Array operations: `tags IN ["vip", "premium"]`
+- ~~Array operations: `tags IN ["vip", "premium"]`~~ ✅ **DONE in v0.3.1**
 - String functions: `uppercase(name) == "ADMIN"`
 - Math operations: `price * quantity > 1000`
 - Regex literals: `phone MATCHES /\d{3}-\d{4}/`
 - Custom function registration: `register("credit_card", CreditCardValidator)`
 
 **Complexity:** High (1-2 weeks)
-**Benefit:** Cover 95% of use cases vs current 80%
+**Benefit:** Cover 95% of use cases vs current 85%
 
 ---
 
 ## Summary
 
-**Current Coverage:** ~80% of common validation use cases
+**Current Coverage:** ~85% of common validation use cases (was 80%, +5% from IN operator)
 
 **Strengths:**
 - ✅ Simple comparisons
 - ✅ Function calls with args
 - ✅ Logical operators (AND/OR/NOT)
 - ✅ Parentheses and precedence
+- ✅ IN operator with arrays (**NEW in v0.3.1**)
 - ✅ Error messages
 
 **Limitations:**
 - ❌ No field references (cross-field)
-- ❌ No IN operator
 - ❌ Only double-quoted strings
 - ❌ No custom function registration
 

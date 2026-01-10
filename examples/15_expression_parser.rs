@@ -67,15 +67,23 @@ fn main() {
     println!("   Target: {:?}, Local: {}", rule.target, rule.is_local());
     println!();
 
+    // IN operator
+    println!("8. IN Operator:");
+    let expr = parse(r#"country IN ["US", "CA", "UK"]"#).unwrap();
+    println!(r#"   'country IN ["US", "CA", "UK"]' → {:?}"#, expr);
+
+    let expr = parse("status IN [1, 2, 3]").unwrap();
+    println!("   'status IN [1, 2, 3]' → {:?}\n", expr);
+
     // Real-world example
-    println!("8. Real-World Example - Password Validation:");
+    println!("9. Real-World Example - Password Validation:");
     let password_rule = Rule::parse("min_length(8) AND max_length(128)").unwrap();
     println!("   Rule: 'min_length(8) AND max_length(128)'");
     println!("   Parsed: {:?}", password_rule);
     println!();
 
     // Error handling
-    println!("9. Error Handling:");
+    println!("10. Error Handling:");
     let result = parse("age = 18"); // Invalid: should be ==
     match result {
         Ok(_) => println!("   Unexpectedly succeeded"),
