@@ -25,7 +25,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `paramdef` is a type-safe parameter definition system for Rust, inspired by Blender RNA, Unreal Engine UPROPERTY, and Qt Property System. The goal is to create the "serde of parameter schemas" - a production-ready library for workflow engines, visual programming tools, no-code platforms, and game engines.
 
-**Current Status:** Active development - Phase 1-6 complete (Core, Types, Event System, Validation, Transformers, History, Visibility, Polish), Phase 7 optional.
+**Current Status:** Active development - Phase 1-6 complete (Core, Types, Schema, Event System, Validation, Transformers, Unified Expressions, Visibility, Polish), Phase 7+ future work.
 
 ## Build and Test Commands
 
@@ -220,31 +220,67 @@ let result = transforms.apply(&value);
 - Method chaining (Express Validator)
 - Normalize before validate (OWASP)
 
+### Unified Expression System (Implemented)
+
+Single expression system for both validation and visibility (see `docs/22-UNIFIED-EXPRESSIONS.md`):
+
+```rust
+use paramdef::expr::{Expr, Rule, ExprTarget};
+use paramdef::visibility::when;
+
+// ExprTarget specifies WHERE to check
+// - Local: current field's value (for validation)
+// - Field: other field's value (for visibility/cross-field)
+
+// Validation: check current value
+let email_rule = Rule::local(Expr::email());
+let length_rule = Rule::local(Expr::min_length(5));
+
+// Visibility: check other field's value
+let visible_when = when("mode").eq(Value::text("advanced"));
+
+// 40+ built-in expressions:
+// - Comparisons: eq, ne, lt, gt, lte, gte, between
+// - Strings: starts_with, ends_with, contains, matches, email, url, uuid
+// - Length: min_length, max_length, length, length_between
+// - Numbers: min, max, positive, negative, integer, multiple_of
+// - Collections: empty, not_empty, unique_items
+// - Logic: and, or, not, xor
+```
+
+**Benefits:**
+- -961 lines of code (removed duplication)
+- Single source of truth for expressions
+- Type-safe with ExprTarget enum
+- Fluent when() API for visibility
+
 ### Validation System (Implemented)
 
 Hybrid validation combining declarative expressions with programmatic validators (see `docs/20-VALIDATION-SYSTEM.md`):
 
 ```rust
+use paramdef::expr::{Expr, Rule};
+use paramdef::validation::{Rules, Validator, ValidationContext};
+
 // Declarative validation (~80% of cases)
 let rules = Rules::from_rules([
-    Rule::required(),
-    Rule::min_length(3),
-    Rule::max_length(50),
-    Rule::email(),
+    Rule::local(Expr::required()),
+    Rule::local(Expr::min_length(3)),
+    Rule::local(Expr::max_length(50)),
+    Rule::local(Expr::email()),
 ]);
 
 // Programmatic validation (complex cases)
-let custom = Rule::custom("password_match", |value, ctx| {
-    let confirm = ctx.get("confirm_password");
-    if value != confirm {
-        return Err(Error::custom("mismatch", "Passwords must match").into());
-    }
-    Ok(())
-});
+struct UniqueEmail;
 
-// Cross-field validation via ValidationContext
-pub trait Validator: Send + Sync + Debug {
-    fn validate(&self, value: &Value, ctx: &ValidationContext<'_>) -> ValidationResult;
+impl Validator for UniqueEmail {
+    fn validate(&self, value: &Value, ctx: &ValidationContext<'_>) -> ValidationResult {
+        let email = value.as_text().ok_or_else(|| Error::type_mismatch())?;
+        if database_has_email(email) {
+            return Err(Error::custom("unique", "Email already exists"));
+        }
+        Ok(())
+    }
 }
 ```
 
@@ -366,18 +402,20 @@ Essential reading in `docs/`:
 - `02-TYPE-SYSTEM.md` - Complete reference for all node types
 - `17-DESIGN-DECISIONS.md` - Rationale for major architectural choices
 - `18-ROADMAP.md` - Implementation plan and milestones
-- `19-EVENT-SYSTEM.md` - Event system documentation
-- `20-VALIDATION-SYSTEM.md` - Hybrid validation system documentation
-- `21-TRANSFORM-SYSTEM.md` - Transformation system documentation
-- `22-HISTORY-SYSTEM.md` - Undo/redo system documentation
-- `23-VISIBILITY-SYSTEM.md` - Conditional display documentation
+- `19-EVENT-SYSTEM.md` - Event system with tokio broadcast
+- `20-VALIDATION-SYSTEM.md` - Hybrid validation system
+- `21-TRANSFORM-SYSTEM.md` - Value transformation pipeline
+- `22-UNIFIED-EXPRESSIONS.md` - Unified expression system design
+- `23-EXPRESSION-PARSER.md` - Future string-based parser design
 
 **Reading Guide for Full Understanding:**
-1. README.md (this overview)
-2. docs/01-ARCHITECTURE.md (30 min)
-3. docs/02-TYPE-SYSTEM.md (30 min)
-4. docs/17-DESIGN-DECISIONS.md (20 min)
-5. docs/19-EVENT-SYSTEM.md (15 min) - for reactive features
+1. README.md (project overview)
+2. docs/01-ARCHITECTURE.md (30 min) - three-layer architecture
+3. docs/02-TYPE-SYSTEM.md (30 min) - 23 node types
+4. docs/17-DESIGN-DECISIONS.md (20 min) - why we made key choices
+5. docs/22-UNIFIED-EXPRESSIONS.md (15 min) - expression system
+6. docs/20-VALIDATION-SYSTEM.md (15 min) - validation
+7. docs/19-EVENT-SYSTEM.md (15 min) - reactive updates
 
 ## Common Patterns
 
