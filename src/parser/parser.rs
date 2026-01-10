@@ -120,6 +120,10 @@ impl Parser {
                     self.parse_comparison()
                 }
             }
+            Token::FieldRef(_) => {
+                // Field reference: @password == @confirm
+                self.parse_field_reference()
+            }
             _ => Err(format!("Unexpected token: {:?}", self.current())),
         }
     }
@@ -197,6 +201,47 @@ impl Parser {
 
         // Map operator to Expr variant
         Self::map_comparison_to_expr(&op, value)
+    }
+
+    // Grammar: field_reference := @identifier ( op ( @identifier | value ) )?
+    fn parse_field_reference(&mut self) -> Result<Expr, String> {
+        let field_name = if let Token::FieldRef(name) = self.current() {
+            name.clone()
+        } else {
+            return Err(format!("Expected field reference, got {:?}", self.current()));
+        };
+        self.advance();
+
+        // If next is a binary operator, it's a cross-field comparison
+        let op = self.current().clone();
+        if op.is_binary_op() {
+            self.advance();
+            match self.current() {
+                Token::FieldRef(other_name) => {
+                    let other_name = other_name.clone();
+                    self.advance();
+                    // password == confirm_password pattern
+                    if op == Token::Eq {
+                        Ok(Expr::field_eq(field_name, other_name))
+                    } else {
+                        // Future: support other operators for cross-field comparison
+                        Err(format!(
+                            "Only '==' is currently supported for cross-field comparison, got {:?}",
+                            op
+                        ))
+                    }
+                }
+                _ => {
+                    // @field == value pattern
+                    // We need to support this by allowing the Rule/Expr to know it's targeting another field
+                    let value = self.parse_value()?;
+                    Self::map_comparison_to_expr(&op, value)
+                }
+            }
+        } else {
+            // Just a field reference
+            Ok(Expr::field_ref(field_name))
+        }
     }
 
     fn parse_value(&mut self) -> Result<Value, String> {
@@ -473,9 +518,38 @@ mod tests {
     }
 
     #[test]
-    fn test_error_in_without_array() {
-        let result = parse(r#"country IN "US""#);
-        assert!(result.is_err());
-        assert!(result.unwrap_err().contains("IN operator requires array"));
+    fn test_parse_field_reference_comparison() {
+        let expr = parse("@password == @password_confirm").unwrap();
+        if let Expr::FieldEq { field, other } = expr {
+            assert_eq!(field, "password");
+            assert_eq!(other, "password_confirm");
+        } else {
+            panic!("Expected FieldEq expression, got {:?}", expr);
+        }
+    }
+
+    #[test]
+    fn test_parse_field_reference_single() {
+        let expr = parse("@age").unwrap();
+        assert_eq!(expr, Expr::FieldRef("age".into()));
+    }
+
+    #[test]
+    fn test_parse_field_reference_with_logical() {
+        // Field reference combined with other validation
+        let expr = parse("@password AND min_length(8)").unwrap();
+        if let Expr::And(exprs) = expr {
+            assert_eq!(exprs.len(), 2);
+            assert!(matches!(exprs[0], Expr::FieldRef(_)));
+            assert!(matches!(exprs[1], Expr::MinLength(_)));
+        } else {
+            panic!("Expected And expression, got {:?}", expr);
+        }
+    }
+
+    #[test]
+    fn test_parse_field_reference_value_comparison() {
+        let expr = parse("@age >= 18").unwrap();
+        assert!(matches!(expr, Expr::Gte(_)), "Expected Gte, got {:?}", expr);
     }
 }

@@ -16,6 +16,8 @@ pub enum Token {
     // Identifiers
     /// Identifier: `field_name`, `email`, etc.
     Ident(SmartStr),
+    /// Field reference: `@field_name`
+    FieldRef(SmartStr),
 
     // Operators
     /// ==

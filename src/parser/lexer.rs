@@ -98,6 +98,10 @@ impl<'a> Lexer<'a> {
                         Ok(Token::Gt)
                     }
                 }
+                '@' => {
+                    self.advance();
+                    Ok(self.read_field_reference())
+                }
                 _ if ch.is_ascii_digit() || ch == '-' => self.read_number(),
                 _ if ch.is_alphabetic() || ch == '_' => Ok(self.read_identifier()),
                 _ => Err(format!(
@@ -262,6 +266,21 @@ impl<'a> Lexer<'a> {
             "FALSE" => Token::Boolean(false),
             _ => Token::Ident(SmartStr::from(ident)),
         }
+    }
+
+    fn read_field_reference(&mut self) -> Token {
+        let mut field_name = String::new();
+
+        while let Some(&ch) = self.peek() {
+            if ch.is_alphanumeric() || ch == '_' {
+                field_name.push(ch);
+                self.advance();
+            } else {
+                break;
+            }
+        }
+
+        Token::FieldRef(SmartStr::from(field_name))
     }
 }
 
@@ -432,5 +451,40 @@ mod tests {
 
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("Unexpected character '='"));
+    }
+
+    #[test]
+    fn test_tokenize_field_reference() {
+        let mut lexer = Lexer::new("@password");
+        let tokens = lexer.tokenize().unwrap();
+
+        assert_eq!(tokens, vec![Token::FieldRef("password".into()), Token::Eof]);
+    }
+
+    #[test]
+    fn test_tokenize_field_reference_comparison() {
+        let mut lexer = Lexer::new("@password == @password_confirm");
+        let tokens = lexer.tokenize().unwrap();
+
+        assert_eq!(
+            tokens,
+            vec![
+                Token::FieldRef("password".into()),
+                Token::Eq,
+                Token::FieldRef("password_confirm".into()),
+                Token::Eof
+            ]
+        );
+    }
+
+    #[test]
+    fn test_tokenize_field_reference_with_underscore() {
+        let mut lexer = Lexer::new("@user_email");
+        let tokens = lexer.tokenize().unwrap();
+
+        assert_eq!(
+            tokens,
+            vec![Token::FieldRef("user_email".into()), Token::Eof]
+        );
     }
 }
