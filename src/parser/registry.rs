@@ -223,6 +223,7 @@ impl std::fmt::Debug for FunctionRegistry {
 
 #[cfg(test)]
 mod tests {
+    use super::super::function_parser::Arity;
     use super::*;
 
     struct TestParser {

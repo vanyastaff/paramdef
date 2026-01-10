@@ -326,6 +326,67 @@ impl Rule {
         Self::Fn(Arc::new(v))
     }
 
+    /// Creates a rule from a globally registered validator by name.
+    ///
+    /// This looks up the validator in the global [`ValidatorRegistry`].
+    /// If the validator is not found, the rule will fail validation with
+    /// an error indicating the validator is not registered.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use paramdef::validation::{Rule, ValidatorRegistry, Validator, ValidationContext, ValidationResult};
+    /// use paramdef::core::Value;
+    ///
+    /// // Define custom validator
+    /// #[derive(Debug)]
+    /// struct UniqueEmail;
+    ///
+    /// impl Validator for UniqueEmail {
+    ///     fn name(&self) -> &str { "unique_email" }
+    ///     fn validate(&self, _value: &Value, _ctx: &ValidationContext<'_>) -> ValidationResult {
+    ///         Ok(()) // Check database
+    ///     }
+    /// }
+    ///
+    /// // Register globally
+    /// ValidatorRegistry::global().write().unwrap()
+    ///     .register(UniqueEmail);
+    ///
+    /// // Use by name
+    /// let rule = Rule::registered("unique_email");
+    /// ```
+    ///
+    /// [`ValidatorRegistry`]: crate::validation::ValidatorRegistry
+    #[must_use]
+    pub fn registered(name: impl Into<crate::core::SmartStr>) -> Self {
+        use super::registry::ValidatorRegistry;
+
+        let name = name.into();
+
+        // Try to get from registry
+        if let Some(validator) = ValidatorRegistry::global()
+            .read()
+            .ok()
+            .and_then(|registry| registry.get(name.as_str()))
+        {
+            Self::Fn(validator)
+        } else {
+            // Validator not found - create error validator
+            let error_name = format!("not_registered_{}", name);
+            Self::custom(Box::leak(error_name.into_boxed_str()), move |_, _| {
+                Err(super::result::Error::custom(
+                    "validator_not_registered",
+                    format!(
+                        "Validator '{}' is not registered in ValidatorRegistry",
+                        name
+                    ),
+                )
+                .into())
+            })
+        }
+    }
+
     /// Returns `true` if this is an expression rule.
     #[must_use]
     pub const fn is_expr(&self) -> bool {

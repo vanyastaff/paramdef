@@ -126,12 +126,13 @@ macro_rules! define_length_parser {
             }
 
             fn parse(&self, args: &[Value]) -> Result<Expr, String> {
-                if let Some(n) = args[0].as_float() {
-                    #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
-                    Ok($expr_fn(n as usize))
-                } else {
-                    Err(format!("{}() requires number argument", $func_name))
-                }
+                let n = match &args[0] {
+                    Value::Int(i) => *i as f64,
+                    Value::Float(f) => *f,
+                    _ => return Err(format!("{}() requires number argument", $func_name)),
+                };
+                #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
+                Ok($expr_fn(n as usize))
             }
 
             fn arity(&self) -> Arity {
@@ -159,11 +160,12 @@ macro_rules! define_numeric_parser {
             }
 
             fn parse(&self, args: &[Value]) -> Result<Expr, String> {
-                if let Some(n) = args[0].as_float() {
-                    Ok($expr_fn(n))
-                } else {
-                    Err(format!("{}() requires number argument", $func_name))
-                }
+                let n = match &args[0] {
+                    Value::Int(i) => *i as f64,
+                    Value::Float(f) => *f,
+                    _ => return Err(format!("{}() requires number argument", $func_name)),
+                };
+                Ok($expr_fn(n))
             }
 
             fn arity(&self) -> Arity {
@@ -270,7 +272,7 @@ mod tests {
         let result = parser.parse(&[Value::text("admin")]);
         assert!(result.is_ok());
         if let Expr::StartsWith(ref s) = result.unwrap() {
-            assert_eq!(s.as_ref(), "admin");
+            assert_eq!(s.as_ref() as &str, "admin");
         } else {
             panic!("Expected StartsWith variant");
         }

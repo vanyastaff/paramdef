@@ -54,6 +54,7 @@
 //! - **garde/nutype** - Rust validation with derive macros
 
 mod context;
+mod registry;
 mod result;
 mod rule;
 mod traits;
@@ -63,6 +64,7 @@ mod validators;
 pub use crate::expr::Expr;
 
 pub use context::{NoValues, ValidationContext, ValueAccess};
+pub use registry::ValidatorRegistry;
 pub use result::{Error, ValidationOutcome, ValidationResult};
 pub use rule::{Rule, Rules};
 pub use traits::{FnValidator, Validator};
