@@ -216,6 +216,10 @@ pub mod history;
 #[cfg(feature = "serde")]
 pub mod export;
 
+// Expression parser (lexer + recursive descent)
+#[cfg(feature = "validation")]
+pub mod parser;
+
 // #[cfg(feature = "i18n")]
 // pub mod i18n;
 

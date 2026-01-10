@@ -598,6 +598,27 @@ impl Expr {
             field.into()
         )))
     }
+
+    /// Parse an expression from a string.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use paramdef::expr::Expr;
+    ///
+    /// # #[cfg(feature = "validation")]
+    /// # {
+    /// let expr = Expr::parse("email() AND min_length(5)").unwrap();
+    /// let expr = Expr::parse("age >= 18").unwrap();
+    /// # }
+    /// ```
+    ///
+    /// # Errors
+    /// Returns error if the string contains invalid syntax.
+    #[cfg(feature = "validation")]
+    pub fn parse(input: &str) -> Result<Self, String> {
+        crate::parser::parse(input)
+    }
 }
 
 // Serde helper functions for Arc<[T]>

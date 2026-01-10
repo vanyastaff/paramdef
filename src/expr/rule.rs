@@ -114,6 +114,26 @@ impl Rule {
     pub fn field_key(&self) -> Option<&Key> {
         self.target.field_key()
     }
+
+    /// Parse a rule from a string expression.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use paramdef::expr::Rule;
+    ///
+    /// # #[cfg(feature = "validation")]
+    /// # {
+    /// let rule = Rule::parse("email() AND min_length(5)").unwrap();
+    /// # }
+    /// ```
+    ///
+    /// # Errors
+    /// Returns error if the string contains invalid syntax.
+    #[cfg(feature = "validation")]
+    pub fn parse(input: &str) -> Result<Self, String> {
+        crate::parser::parse_rule(input)
+    }
 }
 
 impl Rule {
