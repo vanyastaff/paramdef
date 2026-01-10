@@ -2,8 +2,8 @@
 
 **Step-by-step guide to implementation**
 
-Version: 1.2  
-Status: Phase 6 Complete ✅
+Version: 1.3  
+Status: Phase 7 Complete ✅
 
 ---
 
@@ -29,9 +29,9 @@ This roadmap provides a structured approach to implementing paramdef, organized 
 | Phase 4.3: Transformers | ✅ Complete | Hybrid Transform + Transformer trait, built-in transformers |
 | Phase 4.4: Unified Expressions | ✅ Complete | ExprTarget + Rule, unified expr system, when() API |
 | Phase 5: Visibility | ✅ Complete | Fluent when() API, Rule-based visibility |
-| Phase 6: Polish | 🔄 In Progress | Documentation updates, examples polish |
-| Phase 7: Expression Parser | 🔲 Future (v0.3.0) | Lexer + parser for string-based rules (2-3 days) |
-| Phase 8: UI Integration | 🔲 Future | egui example |
+| Phase 6: Polish | ✅ Complete | Documentation updates, examples polish |
+| Phase 7: Expression Parser | ✅ Complete | Lexer + parser for string-based rules |
+| Phase 8: UI Integration | 🔲 Future (v0.4.0) | egui example |
 
 ---
 
@@ -573,11 +573,53 @@ let deps = expr.dependencies(); // ["premium", "age", "admin"]
 
 ---
 
-## Phase 7: UI Integration 🔲
+## Phase 7: Expression Parser ✅
+
+### Goal: String-based rule parsing for config files
+
+**Status: COMPLETE**
+
+- [x] Design token types and grammar
+- [x] Implement lexer for tokenization
+- [x] Implement recursive descent parser
+- [x] Add parser tests (29 tests)
+- [x] Add parse() methods to Rule and Expr
+- [x] Create expression parser example
+- [x] Update documentation
+
+**Implementation:**
+- **Lexer** (398 lines) - Tokenizes strings into tokens with 12 tests
+- **Parser** (555 lines) - Recursive descent parser with 17 tests
+- **Token** (134 lines) - Token types with helper methods
+- **Module** (88 lines) - Public API with parse() and parse_rule()
+- **Example** (103 lines) - Comprehensive demo
+
+**Features:**
+- Parse validation rules from strings: `Expr::parse("email() AND min_length(5)")`
+- Support for comparisons: `==`, `!=`, `<`, `<=`, `>`, `>=`
+- Support for functions: `email()`, `min_length(5)`, `starts_with("foo")`
+- Support for logical operators: `AND`, `OR`, `NOT`
+- Support for parentheses: `(age >= 18 OR guardian) AND active`
+- Case-insensitive keywords
+- String escapes: `\n`, `\t`, `\r`, `\"`, `\\`
+- Error handling with helpful messages
+
+**Benefits:**
+- Define rules in config files (TOML/JSON/YAML) without code compilation
+- Load validation from database at runtime
+- Build UI rule builders that generate parseable strings
+- Enable non-programmers to define validation rules
+
+**Estimated effort:** 2-3 days  
+**Actual effort:** 1 day
+
+---
+
+## Phase 8: UI Integration 🔲
 
 ### Goal: egui integration example
 
-**Status: OPTIONAL**
+**Status: OPTIONAL (v0.4.0)**
 
 ---
 
@@ -609,25 +651,23 @@ let deps = expr.dependencies(); // ["premium", "age", "admin"]
 
 ## Next Steps
 
-1. **Phase 6: Polish (In Progress)**
-   - ✅ Unified expression system complete
-   - ✅ Fluent when() API for visibility
-   - 🔄 Documentation updates in progress
-   - 🔲 Additional examples
+1. **Phase 7: Expression Parser** ✅ **COMPLETE**
+   - ✅ Lexer + recursive descent parser implemented
+   - ✅ String-based expression parsing: `Expr::parse("email() AND min_length(5)")`
+   - ✅ Support for config files (TOML, JSON, YAML)
+   - ✅ 29 tests passing (lexer + parser)
+   - ✅ Example: `examples/15_expression_parser.rs`
 
-2. **Phase 7: Expression Parser (Future, v0.3.0)**
-   - String-based expression parsing
-   - Lexer + recursive descent parser
-   - Support for config files (TOML, JSON, YAML)
-   - **Estimated effort:** 2-3 days
-   - See: `docs/23-EXPRESSION-PARSER.md`
-
-3. **Phase 8: UI Integration (Future)**
+2. **Phase 8: UI Integration (Future, v0.4.0)**
    - egui example implementation
    - Form builder patterns
    - Reactive UI bindings
 
-4. **Future Enhancements**
+3. **Future Enhancements (v0.4.0+)**
    - Cross-field validation improvements
    - History/undo system (Command pattern)
    - Performance benchmarks
+   - Property-based tests (proptest)
+   - Form renderers (Leptos, Yew, Dioxus)
+   - OpenAPI generation
+   - CLI prompts (dialoguer integration)
