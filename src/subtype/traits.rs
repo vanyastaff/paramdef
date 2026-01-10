@@ -90,6 +90,12 @@ impl NumericKind {
 /// - Integers: `i8`, `i16`, `i32`, `i64`, `i128`, `isize`
 /// - Unsigned: `u8`, `u16`, `u32`, `u64`, `u128`, `usize`
 /// - Floats: `f32`, `f64`
+///
+/// # Safety
+///
+/// The `from_f64` method performs unchecked conversions in release mode for performance.
+/// In debug mode, it validates that values are within the valid range for the target type.
+/// Users should ensure input values are within valid ranges or use validation rules.
 pub trait Numeric: Copy + PartialOrd + Debug + Send + Sync + 'static {
     /// Returns the runtime kind for this numeric type.
     fn kind() -> NumericKind;
@@ -122,7 +128,23 @@ macro_rules! impl_numeric_int {
 
                 #[inline]
                 #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-                fn from_f64(v: f64) -> Self { v as Self }
+                fn from_f64(v: f64) -> Self {
+                    #[cfg(debug_assertions)]
+                    {
+                        // In debug mode, verify the conversion is within valid range
+                        // Allow precision loss in debug assertions - this is acceptable for validation
+                        #[allow(clippy::cast_precision_loss, clippy::cast_lossless)]
+                        let min = <$t>::MIN as f64;
+                        #[allow(clippy::cast_precision_loss, clippy::cast_lossless)]
+                        let max = <$t>::MAX as f64;
+                        debug_assert!(
+                            v >= min && v <= max,
+                            "Numeric conversion out of range: {} not in [{}, {}]",
+                            v, min, max
+                        );
+                    }
+                    v as Self
+                }
 
                 #[inline]
                 #[allow(clippy::cast_precision_loss, clippy::cast_lossless)]

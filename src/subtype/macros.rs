@@ -146,19 +146,47 @@ macro_rules! define_vector_subtype {
 
 /// Defines a text subtype with semantic meaning.
 ///
-/// # Example
+/// # Syntax
+///
+/// ```ignore
+/// define_text_subtype!(Name, "name" [, options...]);
+/// ```
+///
+/// # Options (can be combined)
+///
+/// - `pattern: "regex"` - Validation pattern
+/// - `placeholder: "text"` - UI placeholder text
+/// - `sensitive: true` - Mark as sensitive data
+/// - `multiline: true` - Enable multiline input
+/// - `code: "lang"` - Mark as code with language (implies multiline)
+///
+/// # Examples
 ///
 /// ```ignore
 /// use paramdef::define_text_subtype;
 ///
-/// define_text_subtype!(Email, "email", pattern: r"^[^@]+@[^@]+\.[^@]+$", placeholder: "user@example.com");
+/// // Basic
+/// define_text_subtype!(Plain, "plain");
+///
+/// // With pattern and placeholder
+/// define_text_subtype!(Email, "email",
+///     pattern: r"^[^@]+@[^@]+\.[^@]+$",
+///     placeholder: "user@example.com"
+/// );
+///
+/// // Sensitive data
 /// define_text_subtype!(Password, "password", sensitive: true);
+///
+/// // Multiline text
 /// define_text_subtype!(Json, "json", multiline: true);
+///
+/// // Code with language
+/// define_text_subtype!(Rust, "rust", code: "rust");
 /// ```
 #[macro_export]
 macro_rules! define_text_subtype {
-    // Basic
-    ($name:ident, $str_name:literal) => {
+    // Entry point - delegates to internal macro
+    ($name:ident, $str_name:literal $(, $($opts:tt)*)?) => {
         /// Text subtype.
         #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
         pub struct $name;
@@ -167,116 +195,65 @@ macro_rules! define_text_subtype {
             fn name() -> &'static str {
                 $str_name
             }
+
+            $($crate::__text_subtype_impl!($($opts)*);)?
+        }
+    };
+}
+
+/// Internal helper macro for implementing TextSubtype methods.
+///
+/// This is an implementation detail and should not be used directly.
+#[macro_export]
+#[doc(hidden)]
+macro_rules! __text_subtype_impl {
+    // Pattern only
+    (pattern: $pattern:literal) => {
+        fn pattern() -> Option<&'static str> {
+            Some($pattern)
         }
     };
 
-    // With pattern
-    ($name:ident, $str_name:literal, pattern: $pattern:literal) => {
-        /// Text subtype with pattern.
-        #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
-        pub struct $name;
-
-        impl $crate::subtype::TextSubtype for $name {
-            fn name() -> &'static str {
-                $str_name
-            }
-
-            fn pattern() -> Option<&'static str> {
-                Some($pattern)
-            }
+    // Pattern + placeholder
+    (pattern: $pattern:literal, placeholder: $placeholder:literal) => {
+        fn pattern() -> Option<&'static str> {
+            Some($pattern)
         }
-    };
 
-    // With pattern and placeholder
-    ($name:ident, $str_name:literal, pattern: $pattern:literal, placeholder: $placeholder:literal) => {
-        /// Text subtype with pattern and placeholder.
-        #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
-        pub struct $name;
-
-        impl $crate::subtype::TextSubtype for $name {
-            fn name() -> &'static str {
-                $str_name
-            }
-
-            fn pattern() -> Option<&'static str> {
-                Some($pattern)
-            }
-
-            fn placeholder() -> Option<&'static str> {
-                Some($placeholder)
-            }
-        }
-    };
-
-    // Sensitive
-    ($name:ident, $str_name:literal, sensitive: true) => {
-        /// Text subtype (sensitive).
-        #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
-        pub struct $name;
-
-        impl $crate::subtype::TextSubtype for $name {
-            fn name() -> &'static str {
-                $str_name
-            }
-
-            fn is_sensitive() -> bool {
-                true
-            }
-        }
-    };
-
-    // Multiline
-    ($name:ident, $str_name:literal, multiline: true) => {
-        /// Text subtype (multiline).
-        #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
-        pub struct $name;
-
-        impl $crate::subtype::TextSubtype for $name {
-            fn name() -> &'static str {
-                $str_name
-            }
-
-            fn is_multiline() -> bool {
-                true
-            }
-        }
-    };
-
-    // Code with language
-    ($name:ident, $str_name:literal, code: $lang:literal) => {
-        /// Text subtype (code).
-        #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
-        pub struct $name;
-
-        impl $crate::subtype::TextSubtype for $name {
-            fn name() -> &'static str {
-                $str_name
-            }
-
-            fn is_multiline() -> bool {
-                true
-            }
-
-            fn code_language() -> Option<&'static str> {
-                Some($lang)
-            }
+        fn placeholder() -> Option<&'static str> {
+            Some($placeholder)
         }
     };
 
     // Placeholder only
-    ($name:ident, $str_name:literal, placeholder: $placeholder:literal) => {
-        /// Text subtype with placeholder.
-        #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
-        pub struct $name;
+    (placeholder: $placeholder:literal) => {
+        fn placeholder() -> Option<&'static str> {
+            Some($placeholder)
+        }
+    };
 
-        impl $crate::subtype::TextSubtype for $name {
-            fn name() -> &'static str {
-                $str_name
-            }
+    // Sensitive
+    (sensitive: true) => {
+        fn is_sensitive() -> bool {
+            true
+        }
+    };
 
-            fn placeholder() -> Option<&'static str> {
-                Some($placeholder)
-            }
+    // Multiline
+    (multiline: true) => {
+        fn is_multiline() -> bool {
+            true
+        }
+    };
+
+    // Code with language (implies multiline)
+    (code: $lang:literal) => {
+        fn is_multiline() -> bool {
+            true
+        }
+
+        fn code_language() -> Option<&'static str> {
+            Some($lang)
         }
     };
 }

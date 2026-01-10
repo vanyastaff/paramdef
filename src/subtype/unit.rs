@@ -19,6 +19,37 @@
 //! let m_value = cm.to_base(150.0); // 1.5 meters
 //! ```
 
+// === Conversion Constants ===
+
+// Length conversions (to meters)
+const MM_TO_M: f64 = 0.001;
+const CM_TO_M: f64 = 0.01;
+const KM_TO_M: f64 = 1000.0;
+const INCH_TO_M: f64 = 0.0254;
+const FOOT_TO_M: f64 = 0.3048;
+const MILE_TO_M: f64 = 1609.344;
+
+// Time conversions (to seconds)
+const MS_TO_S: f64 = 0.001;
+const MIN_TO_S: f64 = 60.0;
+const HOUR_TO_S: f64 = 3600.0;
+const DAY_TO_S: f64 = 86400.0;
+
+// Rotation conversions (to degrees)
+const RAD_TO_DEG: f64 = 180.0 / std::f64::consts::PI;
+const TURN_TO_DEG: f64 = 360.0;
+
+// Data conversions (to bytes)
+const KB_TO_B: f64 = 1024.0;
+const MB_TO_B: f64 = 1024.0 * 1024.0;
+const GB_TO_B: f64 = 1024.0 * 1024.0 * 1024.0;
+const TB_TO_B: f64 = 1024.0 * 1024.0 * 1024.0 * 1024.0;
+
+// Temperature conversions
+const FAHRENHEIT_OFFSET: f64 = 32.0;
+const FAHRENHEIT_SCALE: f64 = 9.0 / 5.0;
+const KELVIN_OFFSET: f64 = 273.15;
+
 /// Measurement units for numeric values.
 ///
 /// Units are organized into categories, each with a base unit:
@@ -164,42 +195,47 @@ impl NumberUnit {
     /// let meters = NumberUnit::Centimeters.to_base(100.0);
     /// assert!((meters - 1.0).abs() < 0.001);
     /// ```
+    ///
+    /// # Note
+    ///
+    /// Temperature conversions do not validate physical constraints (e.g., temperatures
+    /// below absolute zero). Use validation rules for physical correctness.
     #[must_use]
     #[allow(clippy::match_same_arms)]
     pub fn to_base(&self, value: f64) -> f64 {
         match self {
             // Length (base: meters)
-            Self::Millimeters => value / 1000.0,
-            Self::Centimeters => value / 100.0,
+            Self::Millimeters => value * MM_TO_M,
+            Self::Centimeters => value * CM_TO_M,
             Self::Meters => value,
-            Self::Kilometers => value * 1000.0,
-            Self::Inches => value * 0.0254,
-            Self::Feet => value * 0.3048,
-            Self::Miles => value * 1609.344,
+            Self::Kilometers => value * KM_TO_M,
+            Self::Inches => value * INCH_TO_M,
+            Self::Feet => value * FOOT_TO_M,
+            Self::Miles => value * MILE_TO_M,
 
             // Time (base: seconds)
-            Self::Milliseconds => value / 1000.0,
+            Self::Milliseconds => value * MS_TO_S,
             Self::Seconds => value,
-            Self::Minutes => value * 60.0,
-            Self::Hours => value * 3600.0,
-            Self::Days => value * 86400.0,
+            Self::Minutes => value * MIN_TO_S,
+            Self::Hours => value * HOUR_TO_S,
+            Self::Days => value * DAY_TO_S,
 
             // Rotation (base: degrees)
             Self::Degrees => value,
-            Self::Radians => value * 180.0 / std::f64::consts::PI,
-            Self::Turns => value * 360.0,
+            Self::Radians => value * RAD_TO_DEG,
+            Self::Turns => value * TURN_TO_DEG,
 
             // Data (base: bytes)
             Self::Bytes => value,
-            Self::Kilobytes => value * 1024.0,
-            Self::Megabytes => value * 1024.0 * 1024.0,
-            Self::Gigabytes => value * 1024.0 * 1024.0 * 1024.0,
-            Self::Terabytes => value * 1024.0 * 1024.0 * 1024.0 * 1024.0,
+            Self::Kilobytes => value * KB_TO_B,
+            Self::Megabytes => value * MB_TO_B,
+            Self::Gigabytes => value * GB_TO_B,
+            Self::Terabytes => value * TB_TO_B,
 
             // Temperature (base: celsius)
             Self::Celsius => value,
-            Self::Fahrenheit => (value - 32.0) * 5.0 / 9.0,
-            Self::Kelvin => value - 273.15,
+            Self::Fahrenheit => (value - FAHRENHEIT_OFFSET) / FAHRENHEIT_SCALE,
+            Self::Kelvin => value - KELVIN_OFFSET,
 
             // Percentage (base: factor 0-1)
             Self::Percent => value / 100.0,
@@ -226,37 +262,37 @@ impl NumberUnit {
     pub fn from_base(&self, value: f64) -> f64 {
         match self {
             // Length (base: meters)
-            Self::Millimeters => value * 1000.0,
-            Self::Centimeters => value * 100.0,
+            Self::Millimeters => value / MM_TO_M,
+            Self::Centimeters => value / CM_TO_M,
             Self::Meters => value,
-            Self::Kilometers => value / 1000.0,
-            Self::Inches => value / 0.0254,
-            Self::Feet => value / 0.3048,
-            Self::Miles => value / 1609.344,
+            Self::Kilometers => value / KM_TO_M,
+            Self::Inches => value / INCH_TO_M,
+            Self::Feet => value / FOOT_TO_M,
+            Self::Miles => value / MILE_TO_M,
 
             // Time (base: seconds)
-            Self::Milliseconds => value * 1000.0,
+            Self::Milliseconds => value / MS_TO_S,
             Self::Seconds => value,
-            Self::Minutes => value / 60.0,
-            Self::Hours => value / 3600.0,
-            Self::Days => value / 86400.0,
+            Self::Minutes => value / MIN_TO_S,
+            Self::Hours => value / HOUR_TO_S,
+            Self::Days => value / DAY_TO_S,
 
             // Rotation (base: degrees)
             Self::Degrees => value,
-            Self::Radians => value * std::f64::consts::PI / 180.0,
-            Self::Turns => value / 360.0,
+            Self::Radians => value / RAD_TO_DEG,
+            Self::Turns => value / TURN_TO_DEG,
 
             // Data (base: bytes)
             Self::Bytes => value,
-            Self::Kilobytes => value / 1024.0,
-            Self::Megabytes => value / (1024.0 * 1024.0),
-            Self::Gigabytes => value / (1024.0 * 1024.0 * 1024.0),
-            Self::Terabytes => value / (1024.0 * 1024.0 * 1024.0 * 1024.0),
+            Self::Kilobytes => value / KB_TO_B,
+            Self::Megabytes => value / MB_TO_B,
+            Self::Gigabytes => value / GB_TO_B,
+            Self::Terabytes => value / TB_TO_B,
 
             // Temperature (base: celsius)
             Self::Celsius => value,
-            Self::Fahrenheit => value * 9.0 / 5.0 + 32.0,
-            Self::Kelvin => value + 273.15,
+            Self::Fahrenheit => value * FAHRENHEIT_SCALE + FAHRENHEIT_OFFSET,
+            Self::Kelvin => value + KELVIN_OFFSET,
 
             // Percentage (base: factor 0-1)
             Self::Percent => value * 100.0,
@@ -285,6 +321,15 @@ impl NumberUnit {
     }
 
     /// Returns the category of this unit.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use paramdef::subtype::NumberUnit;
+    ///
+    /// assert_eq!(NumberUnit::Meters.category(), "length");
+    /// assert_eq!(NumberUnit::Seconds.category(), "time");
+    /// ```
     #[must_use]
     pub const fn category(&self) -> &'static str {
         match self {
@@ -310,6 +355,69 @@ impl NumberUnit {
 
             Self::None => "none",
         }
+    }
+
+    /// Returns all units in the same category.
+    ///
+    /// Useful for UI dropdowns showing compatible unit options.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use paramdef::subtype::NumberUnit;
+    ///
+    /// let compatible = NumberUnit::Meters.compatible_units();
+    /// assert!(compatible.contains(&NumberUnit::Centimeters));
+    /// assert!(compatible.contains(&NumberUnit::Kilometers));
+    /// assert!(!compatible.contains(&NumberUnit::Seconds));
+    /// ```
+    #[must_use]
+    pub fn compatible_units(&self) -> &'static [Self] {
+        match self.category() {
+            "length" => &[
+                Self::Millimeters,
+                Self::Centimeters,
+                Self::Meters,
+                Self::Kilometers,
+                Self::Inches,
+                Self::Feet,
+                Self::Miles,
+            ],
+            "time" => &[
+                Self::Milliseconds,
+                Self::Seconds,
+                Self::Minutes,
+                Self::Hours,
+                Self::Days,
+            ],
+            "rotation" => &[Self::Degrees, Self::Radians, Self::Turns],
+            "data" => &[
+                Self::Bytes,
+                Self::Kilobytes,
+                Self::Megabytes,
+                Self::Gigabytes,
+                Self::Terabytes,
+            ],
+            "temperature" => &[Self::Celsius, Self::Fahrenheit, Self::Kelvin],
+            "percentage" => &[Self::Percent, Self::Factor],
+            "none" => &[Self::None],
+            _ => &[],
+        }
+    }
+
+    /// Checks if conversion to target unit is valid (same category).
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use paramdef::subtype::NumberUnit;
+    ///
+    /// assert!(NumberUnit::Meters.can_convert_to(NumberUnit::Kilometers));
+    /// assert!(!NumberUnit::Meters.can_convert_to(NumberUnit::Seconds));
+    /// ```
+    #[must_use]
+    pub fn can_convert_to(&self, target: Self) -> bool {
+        self.category() == target.category()
     }
 }
 
@@ -433,5 +541,59 @@ mod tests {
     #[test]
     fn test_default() {
         assert_eq!(NumberUnit::default(), NumberUnit::Meters);
+    }
+
+    // === New Helper Method Tests ===
+
+    #[test]
+    fn test_compatible_units() {
+        let length_units = NumberUnit::Meters.compatible_units();
+        assert_eq!(length_units.len(), 7);
+        assert!(length_units.contains(&NumberUnit::Centimeters));
+        assert!(length_units.contains(&NumberUnit::Kilometers));
+        assert!(!length_units.contains(&NumberUnit::Seconds));
+
+        let time_units = NumberUnit::Seconds.compatible_units();
+        assert_eq!(time_units.len(), 5);
+        assert!(time_units.contains(&NumberUnit::Minutes));
+        assert!(!time_units.contains(&NumberUnit::Meters));
+    }
+
+    #[test]
+    fn test_can_convert_to() {
+        // Same category - should succeed
+        assert!(NumberUnit::Meters.can_convert_to(NumberUnit::Kilometers));
+        assert!(NumberUnit::Centimeters.can_convert_to(NumberUnit::Miles));
+
+        // Different categories - should fail
+        assert!(!NumberUnit::Meters.can_convert_to(NumberUnit::Seconds));
+        assert!(!NumberUnit::Celsius.can_convert_to(NumberUnit::Meters));
+
+        // Same unit - should succeed
+        assert!(NumberUnit::Meters.can_convert_to(NumberUnit::Meters));
+    }
+
+    #[test]
+    fn test_can_convert_to_all_categories() {
+        // Length
+        assert!(NumberUnit::Millimeters.can_convert_to(NumberUnit::Inches));
+
+        // Time
+        assert!(NumberUnit::Milliseconds.can_convert_to(NumberUnit::Hours));
+
+        // Rotation
+        assert!(NumberUnit::Degrees.can_convert_to(NumberUnit::Radians));
+
+        // Data
+        assert!(NumberUnit::Bytes.can_convert_to(NumberUnit::Gigabytes));
+
+        // Temperature
+        assert!(NumberUnit::Celsius.can_convert_to(NumberUnit::Fahrenheit));
+
+        // Percentage
+        assert!(NumberUnit::Percent.can_convert_to(NumberUnit::Factor));
+
+        // None
+        assert!(NumberUnit::None.can_convert_to(NumberUnit::None));
     }
 }

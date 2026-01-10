@@ -29,6 +29,38 @@
 //!     .default(8080.0)
 //!     .build();
 //! ```
+//!
+//! # Safety & Validation
+//!
+//! Subtypes provide semantic hints and compile-time constraints, but **do not**
+//! enforce runtime validation automatically. Use the `validation` feature and
+//! [`Rules`](crate::validation::Rules) to enforce constraints at runtime:
+//!
+//! ```ignore
+//! // Requires "validation" feature
+//! use paramdef::expr::{Expr, Rule};
+//! use paramdef::types::leaf::Number;
+//!
+//! let port = Number::port("http_port")
+//!     .rules(vec![
+//!         Rule::local(Expr::min(1.0)),
+//!         Rule::local(Expr::max(65535.0)),
+//!     ])
+//!     .build();
+//! ```
+//!
+//! # Design Philosophy
+//!
+//! Subtypes follow the **separation of concerns** principle:
+//!
+//! - **Compile-time**: Type constraints via traits ([`Integer`], [`Float`], [`VectorSubtype`])
+//! - **Semantic**: Hints for UI/presentation (e.g., Port suggests range 1-65535)
+//! - **Runtime**: Validation rules enforce actual constraints
+//!
+//! This design enables:
+//! - Flexible parameter definitions without rigid validation
+//! - Soft constraints for UI (sliders) vs hard constraints (validation)
+//! - Composition of 23 node types × 60+ subtypes × flags = thousands of combinations
 
 pub mod file;
 pub mod macros;
