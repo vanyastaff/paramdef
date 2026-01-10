@@ -208,7 +208,10 @@ impl Parser {
         let field_name = if let Token::FieldRef(name) = self.current() {
             name.clone()
         } else {
-            return Err(format!("Expected field reference, got {:?}", self.current()));
+            return Err(format!(
+                "Expected field reference, got {:?}",
+                self.current()
+            ));
         };
         self.advance();
 
@@ -216,27 +219,23 @@ impl Parser {
         let op = self.current().clone();
         if op.is_binary_op() {
             self.advance();
-            match self.current() {
-                Token::FieldRef(other_name) => {
-                    let other_name = other_name.clone();
-                    self.advance();
-                    // password == confirm_password pattern
-                    if op == Token::Eq {
-                        Ok(Expr::field_eq(field_name, other_name))
-                    } else {
-                        // Future: support other operators for cross-field comparison
-                        Err(format!(
-                            "Only '==' is currently supported for cross-field comparison, got {:?}",
-                            op
-                        ))
-                    }
+            if let Token::FieldRef(other_name) = self.current() {
+                let other_name = other_name.clone();
+                self.advance();
+                // password == confirm_password pattern
+                if op == Token::Eq {
+                    Ok(Expr::field_eq(field_name, other_name))
+                } else {
+                    // Future: support other operators for cross-field comparison
+                    Err(format!(
+                        "Only '==' is currently supported for cross-field comparison, got {op:?}"
+                    ))
                 }
-                _ => {
-                    // @field == value pattern
-                    // We need to support this by allowing the Rule/Expr to know it's targeting another field
-                    let value = self.parse_value()?;
-                    Self::map_comparison_to_expr(&op, value)
-                }
+            } else {
+                // @field == value pattern
+                // We need to support this by allowing the Rule/Expr to know it's targeting another field
+                let value = self.parse_value()?;
+                Self::map_comparison_to_expr(&op, value)
             }
         } else {
             // Just a field reference
