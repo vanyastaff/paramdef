@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-01-09
+
+### Added
+
+- **IN Operator** - Check if value is in array of allowed values
+  - Case-insensitive keyword: `IN`, `in`, `In` all work
+  - Works with strings, numbers, and booleans
+  - Example: `country IN ["US", "CA", "UK"]`
+  - Can be combined with logical operators: `country IN ["US", "CA"] AND age >= 21`
+  - Maps to existing `Expr::OneOf` variant via new `Expr::in_array()` helper method
+
+### Changed
+
+- **Parser Coverage** - Increased from ~80% to ~85% of common validation use cases
+- **Example Update** - Added IN operator examples to `15_expression_parser.rs`
+
+### Fixed
+
+- **Documentation** - Updated `docs/24-PARSER-CAPABILITIES.md` to reflect IN operator support
+
+### Tests
+
+- Added 4 new tests for IN operator (649 total, was 645):
+  - `test_parse_in_operator_strings` - IN with string array
+  - `test_parse_in_operator_numbers` - IN with numeric array
+  - `test_parse_in_operator_combined` - IN combined with AND
+  - `test_error_in_without_array` - Error handling for invalid IN usage
+
 ## [0.3.0] - 2026-01-09
 
 ### Added
