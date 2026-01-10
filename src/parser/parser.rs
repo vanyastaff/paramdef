@@ -80,7 +80,7 @@ impl Parser {
             Token::LParen => {
                 self.advance(); // consume (
                 let expr = self.parse_expr()?;
-                self.expect(Token::RParen)?;
+                self.expect(&Token::RParen)?;
                 Ok(expr)
             }
             Token::Ident(_) => {
@@ -104,19 +104,19 @@ impl Parser {
         };
         self.advance();
 
-        self.expect(Token::LParen)?;
+        self.expect(&Token::LParen)?;
 
         // Parse arguments (if any)
-        let args = if self.current() != &Token::RParen {
-            self.parse_args()?
-        } else {
+        let args = if self.current() == &Token::RParen {
             Vec::new()
+        } else {
+            self.parse_args()?
         };
 
-        self.expect(Token::RParen)?;
+        self.expect(&Token::RParen)?;
 
         // Map function names to Expr variants
-        self.map_function_to_expr(&func_name, args)
+        Self::map_function_to_expr(&func_name, &args)
     }
 
     fn parse_args(&mut self) -> Result<Vec<Value>, String> {
@@ -147,14 +147,14 @@ impl Parser {
         let op = self.current().clone();
 
         if !op.is_binary_op() {
-            return Err(format!("Expected binary operator, got {:?}", op));
+            return Err(format!("Expected binary operator, got {op:?}"));
         }
         self.advance();
 
         let value = self.parse_value()?;
 
         // Map operator to Expr variant
-        self.map_comparison_to_expr(&op, value)
+        Self::map_comparison_to_expr(&op, value)
     }
 
     fn parse_value(&mut self) -> Result<Value, String> {
@@ -180,7 +180,7 @@ impl Parser {
     }
 
     fn parse_array(&mut self) -> Result<Value, String> {
-        self.expect(Token::LBracket)?;
+        self.expect(&Token::LBracket)?;
 
         let mut values = Vec::new();
 
@@ -196,13 +196,13 @@ impl Parser {
             }
         }
 
-        self.expect(Token::RBracket)?;
+        self.expect(&Token::RBracket)?;
 
         Ok(Value::Array(Arc::from(values)))
     }
 
     #[allow(clippy::too_many_lines)]
-    fn map_function_to_expr(&self, func_name: &str, args: Vec<Value>) -> Result<Expr, String> {
+    fn map_function_to_expr(func_name: &str, args: &[Value]) -> Result<Expr, String> {
         let func_upper = func_name.to_uppercase();
 
         match func_upper.as_str() {
@@ -358,11 +358,11 @@ impl Parser {
                 Ok(Expr::integer())
             }
 
-            _ => Err(format!("Unknown function: {}", func_name)),
+            _ => Err(format!("Unknown function: {func_name}")),
         }
     }
 
-    fn map_comparison_to_expr(&self, op: &Token, value: Value) -> Result<Expr, String> {
+    fn map_comparison_to_expr(op: &Token, value: Value) -> Result<Expr, String> {
         match op {
             Token::Eq => Ok(Expr::eq(value)),
             Token::Ne => Ok(Expr::ne(value)),
@@ -419,7 +419,7 @@ impl Parser {
             }
             #[cfg(not(feature = "validation"))]
             Token::Matches => Err("MATCHES requires 'validation' feature".to_string()),
-            _ => Err(format!("Unsupported operator: {:?}", op)),
+            _ => Err(format!("Unsupported operator: {op:?}")),
         }
     }
 
@@ -437,12 +437,12 @@ impl Parser {
         }
     }
 
-    fn expect(&mut self, expected: Token) -> Result<(), String> {
-        if self.current() == &expected {
+    fn expect(&mut self, expected: &Token) -> Result<(), String> {
+        if self.current() == expected {
             self.advance();
             Ok(())
         } else {
-            Err(format!("Expected {:?}, got {:?}", expected, self.current()))
+            Err(format!("Expected {expected:?}, got {:?}", self.current()))
         }
     }
 }

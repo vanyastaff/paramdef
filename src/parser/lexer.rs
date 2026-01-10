@@ -99,7 +99,7 @@ impl<'a> Lexer<'a> {
                     }
                 }
                 _ if ch.is_ascii_digit() || ch == '-' => self.read_number(),
-                _ if ch.is_alphabetic() || ch == '_' => self.read_identifier(),
+                _ if ch.is_alphabetic() || ch == '_' => Ok(self.read_identifier()),
                 _ => Err(format!(
                     "Unexpected character '{}' at position {}",
                     ch, self.current_pos
@@ -164,27 +164,24 @@ impl<'a> Lexer<'a> {
                 }
                 Some(&'\\') => {
                     self.advance(); // consume \
-                    match self.peek() {
-                        Some(&ch) => {
-                            self.advance();
-                            // Simple escape sequences
-                            match ch {
-                                'n' => string.push('\n'),
-                                't' => string.push('\t'),
-                                'r' => string.push('\r'),
-                                '"' => string.push('"'),
-                                '\\' => string.push('\\'),
-                                _ => {
-                                    string.push('\\');
-                                    string.push(ch);
-                                }
-                            }
-                        }
-                        None => {
-                            return Err(format!(
-                                "Unterminated string at position {}",
-                                self.current_pos
-                            ));
+                    let Some(&ch) = self.peek() else {
+                        return Err(format!(
+                            "Unterminated string at position {}",
+                            self.current_pos
+                        ));
+                    };
+
+                    self.advance();
+                    // Simple escape sequences
+                    match ch {
+                        'n' => string.push('\n'),
+                        't' => string.push('\t'),
+                        'r' => string.push('\r'),
+                        '"' => string.push('"'),
+                        '\\' => string.push('\\'),
+                        _ => {
+                            string.push('\\');
+                            string.push(ch);
                         }
                     }
                 }
@@ -240,7 +237,7 @@ impl<'a> Lexer<'a> {
         })
     }
 
-    fn read_identifier(&mut self) -> Result<Token, String> {
+    fn read_identifier(&mut self) -> Token {
         let mut ident = String::new();
 
         while let Some(&ch) = self.peek() {
@@ -256,16 +253,14 @@ impl<'a> Lexer<'a> {
         // Only core logical operators and booleans are keywords
         // Function-like keywords (STARTS_WITH, etc.) are kept as identifiers
         let ident_upper = ident.to_uppercase();
-        let token = match ident_upper.as_str() {
+        match ident_upper.as_str() {
             "AND" => Token::And,
             "OR" => Token::Or,
             "NOT" => Token::Not,
             "TRUE" => Token::Boolean(true),
             "FALSE" => Token::Boolean(false),
             _ => Token::Ident(SmartStr::from(ident)),
-        };
-
-        Ok(token)
+        }
     }
 }
 

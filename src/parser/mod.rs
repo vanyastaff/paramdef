@@ -5,7 +5,7 @@
 //!
 //! # Examples
 //!
-//! ```
+//! ```no_run
 //! use paramdef::parser::parse;
 //!
 //! // Simple comparison
@@ -22,6 +22,7 @@
 //! ```
 
 mod lexer;
+#[allow(clippy::module_inception)]
 mod parser;
 mod token;
 

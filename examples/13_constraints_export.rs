@@ -5,7 +5,7 @@
 
 use paramdef::export::JsonSchemaExporter;
 use paramdef::schema::Schema;
-use paramdef::types::leaf::{Number, NumberBuilder, Text};
+use paramdef::types::leaf::{NumberBuilder, Text};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create schema with various constrained types

@@ -14,7 +14,7 @@ pub enum Token {
     Boolean(bool),
 
     // Identifiers
-    /// Identifier: field_name, email, etc.
+    /// Identifier: `field_name`, `email`, etc.
     Ident(SmartStr),
 
     // Operators
@@ -32,23 +32,23 @@ pub enum Token {
     Gte,
 
     // Keywords
-    /// AND
+    /// `AND`
     And,
-    /// OR
+    /// `OR`
     Or,
-    /// NOT
+    /// `NOT`
     Not,
-    /// BETWEEN
+    /// `BETWEEN`
     Between,
-    /// IN
+    /// `IN`
     In,
-    /// CONTAINS
+    /// `CONTAINS`
     Contains,
-    /// STARTS_WITH
+    /// `STARTS_WITH`
     StartsWith,
-    /// ENDS_WITH
+    /// `ENDS_WITH`
     EndsWith,
-    /// MATCHES
+    /// `MATCHES`
     Matches,
 
     // Delimiters

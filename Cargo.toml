@@ -72,3 +72,23 @@ harness = false
 [[bench]]
 name = "containers"
 harness = false
+
+[[example]]
+name = "11_json_schema_export"
+required-features = ["serde"]
+
+[[example]]
+name = "12_openapi_generation"
+required-features = ["serde"]
+
+[[example]]
+name = "13_constraints_export"
+required-features = ["serde"]
+
+[[example]]
+name = "14_visibility_conditions"
+required-features = ["visibility"]
+
+[[example]]
+name = "15_expression_parser"
+required-features = ["validation"]

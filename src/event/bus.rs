@@ -471,7 +471,7 @@ mod tests {
     #[tokio::test]
     async fn test_emit_all() {
         let bus = EventBus::new(32);
-        let mut sub = bus.subscribe();
+        let sub = bus.subscribe();
 
         let events = vec![
             Event::touched("a"),
