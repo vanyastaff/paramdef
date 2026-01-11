@@ -1,6 +1,7 @@
 ---
 name: rust-tracing
 description: Rust tracing and structured logging with the tracing ecosystem. Use when adding logging, instrumenting functions, setting up observability, configuring log output, or debugging with traces.
+user-invocable: true
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob
 ---
 
@@ -26,7 +27,7 @@ fn init_tracing() {
     tracing_subscriber::registry()
         .with(EnvFilter::try_from_default_env().unwrap_or_else(|_| {
             // Default log level
-            "info,nebula=debug,tower_http=debug".into()
+            "info,paramdef=debug,tower_http=debug".into()
         }))
         .with(tracing_subscriber::fmt::layer())
         .init();
@@ -463,9 +464,9 @@ fn with_error_chain() {
 # Set via environment variable
 RUST_LOG=info                           # All modules at INFO
 RUST_LOG=debug,hyper=info               # Default DEBUG, hyper at INFO
-RUST_LOG=nebula=debug,tower_http=debug  # Specific modules
-RUST_LOG=nebula::api=trace              # Specific path
-RUST_LOG="info,nebula[user_id]=debug"   # Filter by span field
+RUST_LOG=paramdef=debug,tower_http=debug  # Specific modules
+RUST_LOG=paramdef::api=trace              # Specific path
+RUST_LOG="info,paramdef[user_id]=debug"   # Filter by span field
 ```
 
 ### Programmatic Filtering
@@ -476,7 +477,7 @@ use tracing_subscriber::{filter, layer::SubscriberExt, util::SubscriberInitExt};
 fn init_filtered() {
     let filter = filter::Targets::new()
         .with_default(tracing::Level::INFO)
-        .with_target("nebula", tracing::Level::DEBUG)
+        .with_target("paramdef", tracing::Level::DEBUG)
         .with_target("hyper", tracing::Level::WARN)
         .with_target("tower_http", tracing::Level::DEBUG);
     
@@ -535,7 +536,7 @@ fn init_otel() -> Result<SdkTracerProvider, Box<dyn std::error::Error>> {
         .with_batch_exporter(exporter)
         .build();
     
-    let tracer = provider.tracer("nebula");
+    let tracer = provider.tracer("paramdef");
     let telemetry = tracing_opentelemetry::layer().with_tracer(tracer);
     
     tracing_subscriber::registry()
@@ -617,7 +618,7 @@ fn test_logging() {
 }
 ```
 
-## Nebula Conventions
+## paramdef Conventions
 
 ### Standard Span Names
 

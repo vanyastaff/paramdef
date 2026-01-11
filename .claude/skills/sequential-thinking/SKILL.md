@@ -1,6 +1,7 @@
 ---
 name: sequential-thinking
 description: Sequential thinking and structured reasoning process. Use for complex problems, debugging, architectural decisions, or any task requiring careful step-by-step analysis before action.
+user-invocable: true
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob
 ---
 
@@ -247,7 +248,7 @@ BAD: It should work now
 GOOD: Let me verify it actually works
 ```
 
-## Applying to Nebula
+## Applying to paramdef
 
 ### For Core Changes
 1. Understand the module's responsibility

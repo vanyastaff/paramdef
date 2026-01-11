@@ -1,6 +1,7 @@
 ---
 name: filesystem
 description: Filesystem operations and codebase navigation. Use when exploring project structure, finding files, searching code, reading/writing files, or understanding codebase organization.
+user-invocable: true
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob
 ---
 
@@ -29,7 +30,7 @@ Common patterns:
 **/Cargo.toml
 
 # Specific crate
-crates/nebula-core/**/*.rs
+crates/paramdef-core/**/*.rs
 
 # Config files
 **/*.toml
@@ -228,7 +229,7 @@ Grep: pattern = "Error::TypeName|TypeNameError"
 
 ## Workspace Navigation
 
-### Nebula-Specific Patterns
+### paramdef-Specific Patterns
 
 ```
 # Find crate's main module
@@ -253,10 +254,10 @@ Glob: crates/<crate-name>/benches/**/*.rs
 ### Cross-Crate Analysis
 ```
 # Find all uses of a core type
-Grep: pattern = "use nebula_core::TypeName"
+Grep: pattern = "use paramdef_core::TypeName"
 
 # Find inter-crate dependencies
-Grep: pattern = 'nebula-\w+\s*=' path = "**/Cargo.toml"
+Grep: pattern = 'paramdef-\w+\s*=' path = "**/Cargo.toml"
 ```
 
 ## Best Practices

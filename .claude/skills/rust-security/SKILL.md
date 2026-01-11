@@ -1,6 +1,7 @@
 ---
 name: rust-security
 description: Rust security best practices and vulnerability prevention. Use when handling user input, authentication, cryptography, secrets management, network security, or conducting security reviews.
+user-invocable: true
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob
 ---
 

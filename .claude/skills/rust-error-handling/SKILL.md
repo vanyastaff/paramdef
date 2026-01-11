@@ -1,6 +1,7 @@
 ---
 name: rust-error-handling
 description: Rust error handling patterns and best practices. Use when designing error types, implementing error propagation, adding error context, converting between error types, or debugging error handling issues.
+user-invocable: true
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob
 ---
 
@@ -423,7 +424,7 @@ mod tests {
 }
 ```
 
-## Nebula Error Conventions
+## paramdef Error Conventions
 
 1. **Each crate defines its own Error type** - no shared error crate
 2. **Use thiserror** for all library crates
@@ -433,8 +434,8 @@ mod tests {
 6. **Include actionable information** in error messages
 
 ```rust
-// Nebula pattern
-// crates/nebula-scheduler/src/error.rs
+// paramdef pattern
+// crates/paramdef-scheduler/src/error.rs
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -449,7 +450,7 @@ pub enum SchedulerError {
     },
     
     #[error("executor error: {0}")]
-    Executor(#[from] nebula_executor::Error),
+    Executor(#[from] paramdef_executor::Error),
 }
 
 pub type Result<T> = std::result::Result<T, SchedulerError>;

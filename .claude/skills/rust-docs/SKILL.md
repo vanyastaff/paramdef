@@ -1,6 +1,7 @@
 ---
 name: rust-docs
 description: Rust documentation generation and improvement. Use when documenting public APIs, creating examples, writing module-level docs, or improving existing documentation.
+user-invocable: true
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob
 ---
 
@@ -23,7 +24,7 @@ At the top of `lib.rs` or `mod.rs`:
 //! ## Examples
 //!
 //! ```rust
-//! use nebula_core::Module;
+//! use paramdef_core::Module;
 //!
 //! let module = Module::new();
 //! module.do_something()?;
@@ -66,7 +67,7 @@ At the top of `lib.rs` or `mod.rs`:
 /// # Examples
 ///
 /// ```rust
-/// use nebula_core::process;
+/// use paramdef_core::process;
 ///
 /// let result = process(42, "test")?;
 /// assert_eq!(result, expected);
@@ -91,7 +92,7 @@ pub fn process(param1: i32, param2: &str) -> Result<Output, Error> {
 /// # Examples
 ///
 /// ```rust
-/// use nebula_core::Context;
+/// use paramdef_core::Context;
 ///
 /// let ctx = Context::builder()
 ///     .workflow_id(id)
@@ -148,7 +149,7 @@ pub enum ExecutionState {
 /// # Implementing
 ///
 /// ```rust
-/// use nebula_core::Storage;
+/// use paramdef_core::Storage;
 ///
 /// struct MyStorage { /* ... */ }
 ///
@@ -247,7 +248,7 @@ RUSTDOCFLAGS="-Z unstable-options --show-coverage" cargo +nightly doc --no-deps
 - Types: `UpperCamelCase` (`WorkflowEngine`, `NodeId`)
 - Functions/methods: `snake_case` (`execute_node`, `get_value`)
 - Constants: `SCREAMING_SNAKE_CASE` (`MAX_RETRIES`, `DEFAULT_TIMEOUT`)
-- Crate names: `kebab-case` (`nebula-core`, `nebula-value`)
+- Crate names: `kebab-case` (`paramdef-core`, `paramdef-value`)
 
 ### Conversions (C-CONV)
 - `as_` prefix: cheap reference-to-reference (`as_str`, `as_bytes`)

@@ -1,12 +1,75 @@
 ---
 name: rust-patterns
 description: Rust design patterns and advanced language patterns. Use when designing APIs, implementing complex abstractions, applying type-level programming, or looking for idiomatic solutions to common problems.
-allowed-tools: Read, Write, Edit, Bash, Grep, Glob
+user-invocable: true
+allowed-tools: LSP, Read, Write, Edit, Bash, Grep, Glob
 ---
 
 # Rust Design Patterns and Advanced Patterns
 
 Comprehensive guide to idiomatic Rust patterns and advanced techniques.
+
+## Finding Patterns with LSP
+
+Before implementing a pattern, use LSP to find existing examples in the codebase:
+
+```
+# Find existing builder patterns
+LSP getWorkspaceSymbols: "builder"
+LSP findReferences: "Builder"
+-> See how builders are implemented
+
+# Find trait implementations
+LSP getWorkspaceSymbols: "trait"
+LSP findReferences: trait_name
+-> Count implementations, see patterns
+
+# Find pattern usage
+LSP getHover: on pattern instance
+-> See types, understand usage
+
+# Navigate to examples
+LSP goToDefinition: pattern_struct
+-> Read implementation details
+```
+
+### LSP-Assisted Pattern Discovery
+
+**Finding Builder Patterns:**
+```
+1. LSP getWorkspaceSymbols: "Builder"
+   -> Find existing builder structs
+
+2. LSP goToDefinition: SomeBuilder
+   LSP getDocumentSymbols: builder_file
+   -> See methods (with_*, build, etc.)
+
+3. LSP findReferences: "::builder()"
+   -> See how builders are created
+
+4. LSP getHover: on builder methods
+   -> See type transformations
+```
+
+**Finding Newtype Pattern:**
+```
+LSP getWorkspaceSymbols: "UserId"
+LSP goToDefinition: UserId
+-> See struct UserId(u64)
+
+LSP findReferences: UserId
+-> See where validation happens
+```
+
+**Finding Trait Patterns:**
+```
+LSP getWorkspaceSymbols: "trait"
+LSP findReferences: "Strategy"
+-> See all trait-based patterns
+
+LSP getHover: on impl block
+-> Understand trait bounds
+```
 
 ## Creational Patterns
 

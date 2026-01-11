@@ -1,6 +1,7 @@
 ---
 name: rust-performance
 description: Rust performance optimization. Use when optimizing code, reducing allocations, improving cache locality, profiling, or benchmarking.
+user-invocable: true
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob
 ---
 
@@ -15,7 +16,7 @@ allowed-tools: Read, Write, Edit, Bash, Grep, Glob
 ```bash
 # CPU profiling with flamegraph
 cargo install flamegraph
-cargo flamegraph --bin nebula -- <args>
+cargo flamegraph --bin paramdef -- <args>
 
 # Memory profiling
 cargo install cargo-bloat
@@ -23,7 +24,7 @@ cargo bloat --release --crates
 
 # DHAT for heap profiling
 cargo install cargo-valgrind
-cargo valgrind --bin nebula
+cargo valgrind --bin paramdef
 
 # Benchmarking
 cargo bench -p <crate>
@@ -260,8 +261,8 @@ fn sum_array(arr: &[f32]) -> f32 {
     arr.iter().sum()  // Compiler can auto-vectorize
 }
 
-// Explicit SIMD with portable-simd (NIGHTLY ONLY - not for Nebula)
-// Nebula uses stable Rust (MSRV 1.90), so prefer auto-vectorization above
+// Explicit SIMD with portable-simd (NIGHTLY ONLY - not for paramdef)
+// paramdef uses stable Rust (MSRV 1.90), so prefer auto-vectorization above
 // or use stable crates like `wide` for explicit SIMD
 #![feature(portable_simd)]
 use std::simd::*;
@@ -327,7 +328,7 @@ cargo bloat --release -n 20
 cargo rustc --release -- --emit asm
 ```
 
-## Nebula-Specific Performance
+## paramdef-Specific Performance
 
 - Use connection pooling for database access
 - Batch operations where possible

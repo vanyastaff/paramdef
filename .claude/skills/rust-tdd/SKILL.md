@@ -1,6 +1,7 @@
 ---
 name: rust-tdd
 description: Test-Driven Development for Rust. Use when creating new functionality, writing tests, or fixing bugs through the Red-Green-Refactor TDD cycle.
+user-invocable: true
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob
 ---
 
@@ -123,7 +124,7 @@ cargo fmt -p <crate> -- --check
 cargo test -p <crate> --all-features
 ```
 
-## Nebula-specific Patterns
+## paramdef-specific Patterns
 
 - Each crate has its own error type via `thiserror`
 - Use `#[tokio::test]` for async tests

@@ -1,6 +1,7 @@
 ---
 name: context7-docs
 description: Documentation lookup using Context7 MCP server. Use when needing up-to-date documentation for any library, crate, framework, or API. Always use this for Rust crates, npm packages, Python libraries, or any external dependency documentation.
+user-invocable: true
 allowed-tools: Read, Bash, Grep, Glob
 ---
 

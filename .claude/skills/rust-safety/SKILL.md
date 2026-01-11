@@ -1,6 +1,7 @@
 ---
 name: rust-safety
 description: Rust safety patterns and secure coding. Use when writing code that handles untrusted input, uses unsafe blocks, deals with memory safety, or requires security review.
+user-invocable: true
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob
 ---
 
@@ -364,7 +365,7 @@ cargo +nightly miri test
 - **Unbounded growth** - use bounded channels and collections
 - **File descriptor exhaustion** - close handles promptly
 
-## Nebula-Specific Safety
+## paramdef-Specific Safety
 
 - Never log credentials or secrets
 - Validate all external input at API boundaries

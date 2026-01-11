@@ -1,6 +1,7 @@
 ---
 name: rust-async
 description: Rust async/await patterns with Tokio. Use when writing async code, handling concurrency, managing tasks, working with channels, or debugging async issues.
+user-invocable: true
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob
 ---
 
@@ -483,7 +484,7 @@ async fn quick_sync(data: Arc<parking_lot::Mutex<Data>>) {
 }
 ```
 
-## Nebula-Specific Async Patterns
+## paramdef-Specific Async Patterns
 
 - Default timeout: 30s for operations
 - Database operations: 5s timeout
