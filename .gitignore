@@ -25,6 +25,7 @@ temp/
 *.tmp
 *.bak
 *.orig
+tmpclaude-*
 
 # Logs
 *.log
