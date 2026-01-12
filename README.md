@@ -929,7 +929,7 @@ See `docs/` directory for all 23 design documents covering every aspect of the s
 
 ## MSRV
 
-Minimum Supported Rust Version: **1.85**
+Minimum Supported Rust Version: **1.92**
 
 Uses Rust 2024 Edition.
 

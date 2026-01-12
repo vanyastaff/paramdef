@@ -24,7 +24,7 @@ retries = 2
 [profile.ci.junit]
 path = "target/nextest/ci/junit.xml"
 
-[profile.default.overrides]
+[[profile.default.overrides]]
 # Feature-gated tests may need more time
 filter = 'test(validation) | test(visibility)'
 slow-timeout = { period = "90s" }

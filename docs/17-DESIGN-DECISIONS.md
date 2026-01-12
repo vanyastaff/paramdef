@@ -887,7 +887,7 @@ pub struct ValidationConfig {
 }
 ```
 
-**Usage with async closures (Rust 1.85+):**
+**Usage with async closures (Rust 1.92+):**
 ```rust
 Text::builder("username")
     .validate(|v| { /* sync */ Ok(()) })

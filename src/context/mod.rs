@@ -418,10 +418,8 @@ impl Context {
         node.state_mut().mark_touched();
 
         #[cfg(feature = "events")]
-        if !was_touched {
-            if let Some(ref bus) = self.event_bus {
-                bus.emit(Event::touched(key));
-            }
+        if !was_touched && let Some(ref bus) = self.event_bus {
+            bus.emit(Event::touched(key));
         }
 
         Ok(())

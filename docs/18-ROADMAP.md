@@ -13,7 +13,7 @@ This roadmap provides a structured approach to implementing paramdef, organized 
 
 **Total Estimated Effort:** 8-12 weeks  
 **Team Size:** 1-2 developers  
-**Prerequisites:** Rust 1.85+, familiarity with Arc, trait objects
+**Prerequisites:** Rust 1.92+, familiarity with Arc, trait objects
 
 ---
 

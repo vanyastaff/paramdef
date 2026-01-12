@@ -117,13 +117,13 @@ impl HistoryManager {
         ctx: &mut Context,
     ) -> CommandResult {
         // Try to merge with the most recent command
-        if self.enable_merging {
-            if let Some(last_cmd) = self.undo_stack.back_mut() {
-                if last_cmd.can_merge_with(&cmd) && last_cmd.merge(&cmd) {
-                    // Merge successful, no need to add a new command
-                    return Ok(());
-                }
-            }
+        if self.enable_merging
+            && let Some(last_cmd) = self.undo_stack.back_mut()
+            && last_cmd.can_merge_with(&cmd)
+            && last_cmd.merge(&cmd)
+        {
+            // Merge successful, no need to add a new command
+            return Ok(());
         }
 
         // Execute the command

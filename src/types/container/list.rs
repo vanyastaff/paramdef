@@ -475,13 +475,11 @@ impl ListBuilder {
             .ok_or_else(|| crate::core::Error::missing_required("item_template"))?;
 
         // Validate min_items <= max_items
-        if let (Some(min), Some(max)) = (self.min_items, self.max_items) {
-            if min > max {
-                return Err(crate::core::Error::validation(
-                    "invalid_bounds",
-                    format!("min_items ({min}) cannot be greater than max_items ({max})"),
-                ));
-            }
+        if let (Some(min), Some(max)) = (self.min_items, self.max_items) && min > max {
+            return Err(crate::core::Error::validation(
+                "invalid_bounds",
+                format!("min_items ({min}) cannot be greater than max_items ({max})"),
+            ));
         }
 
         // Build children cache (contains item_template)

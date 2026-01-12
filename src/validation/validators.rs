@@ -95,16 +95,12 @@ impl Validator for Length {
             _ => return Ok(()),
         };
 
-        if let Some(min) = self.min {
-            if len < min {
-                return Err(Error::min_length(min, len).into());
-            }
+        if let Some(min) = self.min && len < min {
+            return Err(Error::min_length(min, len).into());
         }
 
-        if let Some(max) = self.max {
-            if len > max {
-                return Err(Error::max_length(max, len).into());
-            }
+        if let Some(max) = self.max && len > max {
+            return Err(Error::max_length(max, len).into());
         }
 
         Ok(())
@@ -239,14 +235,12 @@ impl Match {
 
 impl Validator for Match {
     fn validate(&self, value: &Value, ctx: &ValidationContext<'_>) -> ValidationResult {
-        if let Some(other) = ctx.get(&self.other_key) {
-            if value != other {
-                let message = self
-                    .message
-                    .clone()
-                    .unwrap_or_else(|| format!("Value must match {}", self.other_key).into());
-                return Err(Error::custom("match", message).into());
-            }
+        if let Some(other) = ctx.get(&self.other_key) && value != other {
+            let message = self
+                .message
+                .clone()
+                .unwrap_or_else(|| format!("Value must match {}", self.other_key).into());
+            return Err(Error::custom("match", message).into());
         }
         Ok(())
     }
@@ -416,10 +410,10 @@ impl<V: Validator> When<V> {
 impl<V: Validator> Validator for When<V> {
     fn validate(&self, value: &Value, ctx: &ValidationContext<'_>) -> ValidationResult {
         // Check if condition is met
-        if let Some(condition_value) = ctx.get(&self.condition_key) {
-            if condition_value == &self.expected_value {
-                return self.then_validator.validate(value, ctx);
-            }
+        if let Some(condition_value) = ctx.get(&self.condition_key)
+            && condition_value == &self.expected_value
+        {
+            return self.then_validator.validate(value, ctx);
         }
         Ok(())
     }

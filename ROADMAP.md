@@ -354,7 +354,7 @@ Stable API with full documentation.
 
 - Semantic versioning
 - Deprecation warnings before removal
-- MSRV policy (minimum 1.85)
+- MSRV policy (minimum 1.92)
 
 ---
 

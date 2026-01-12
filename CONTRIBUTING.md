@@ -6,7 +6,7 @@ Thank you for your interest in contributing to paramdef! This document provides 
 
 ### Prerequisites
 
-- Rust 1.85 or later (MSRV - Minimum Supported Rust Version)
+- Rust 1.92 or later (MSRV - Minimum Supported Rust Version)
 - `cargo-nextest` for running tests: `cargo install cargo-nextest`
 - `cargo-deny` for license checking: `cargo install cargo-deny`
 
@@ -108,7 +108,7 @@ All PRs must pass:
 - ✅ `cargo clippy --workspace --all-features -- -D warnings`
 - ✅ `cargo fmt --all -- --check`
 - ✅ `cargo doc --no-deps --all-features`
-- ✅ MSRV check: `cargo +1.85 check --workspace`
+- ✅ MSRV check: `cargo +1.92 check --workspace`
 
 ## Project Structure
 

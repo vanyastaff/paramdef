@@ -110,7 +110,7 @@ define_vector_subtype!(Position3D, 3, "3D position")
 ## Technical Requirements
 
 ### Rust Version
-- **MSRV:** 1.85 (enforced via `rust-toolchain.toml`)
+- **MSRV:** 1.92 (enforced via `rust-toolchain.toml`)
 - **Edition:** 2024
 - **Toolchain:** `rustfmt`, `clippy` required
 
@@ -179,7 +179,7 @@ No `BooleanSubtype` - use naming patterns:
 
 **Configured via:**
 - `rustfmt.toml` - Edition 2024, max_width 100, Unix newlines
-- `clippy.toml` - MSRV 1.85, strict linting, missing-docs enforcement
+- `clippy.toml` - MSRV 1.92, strict linting, missing-docs enforcement
 - `deny.toml` - License checking, security advisories
 
 **Requirements:**
@@ -217,7 +217,7 @@ cargo nextest run --workspace --all-features
 cargo doc --no-deps --all-features
 
 # Verify MSRV
-cargo +1.85 check --workspace
+cargo +1.92 check --workspace
 ```
 
 ### CI Pipeline
@@ -229,7 +229,7 @@ GitHub Actions runs:
 - `fmt` - format checking
 - `clippy` - linting with deny warnings
 - `doc` - documentation generation
-- `msrv` - Rust 1.85 compatibility
+- `msrv` - Rust 1.92 compatibility
 
 ### Commit Message Format
 
@@ -556,7 +556,7 @@ paramdef/
 ├── clippy.toml         # Clippy linting config
 ├── rustfmt.toml        # Code formatting config
 ├── deny.toml           # License/security checks
-├── rust-toolchain.toml # MSRV enforcement (1.85)
+├── rust-toolchain.toml # MSRV enforcement (1.92)
 └── Cargo.toml          # Package manifest
 ```
 

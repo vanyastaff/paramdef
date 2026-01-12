@@ -9,8 +9,8 @@ on:
 env:
   CARGO_TERM_COLOR: always
   RUSTFLAGS: -Dwarnings
-  # Edition 2024 requires Rust 1.85+
-  RUST_VERSION: "1.85"
+  # MSRV (Minimum Supported Rust Version)
+  RUST_VERSION: "1.92"
 
 jobs:
   check:
@@ -35,7 +35,10 @@ jobs:
         with:
           toolchain: ${{ env.RUST_VERSION }}
       - uses: Swatinem/rust-cache@v2
-      - run: cargo test --workspace
+      - uses: taiki-e/install-action@cargo-nextest
+      - run: cargo nextest run --workspace --all-features
+      # nextest doesn't run doctests
+      - run: cargo test --workspace --doc --all-features
 
   test-features:
     needs: [fmt, check]
@@ -46,11 +49,12 @@ jobs:
         with:
           toolchain: ${{ env.RUST_VERSION }}
       - uses: Swatinem/rust-cache@v2
-      - run: cargo test --workspace --no-default-features
-      - run: cargo test --workspace --features visibility
-      - run: cargo test --workspace --features validation
-      - run: cargo test --workspace --features serde
-      - run: cargo test --workspace --features full
+      - uses: taiki-e/install-action@cargo-nextest
+      - run: cargo nextest run --workspace --no-default-features
+      - run: cargo nextest run --workspace --features visibility
+      - run: cargo nextest run --workspace --features validation
+      - run: cargo nextest run --workspace --features serde
+      - run: cargo nextest run --workspace --features full
 
   fmt:
     runs-on: ubuntu-latest
