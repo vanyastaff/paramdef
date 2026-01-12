@@ -213,7 +213,7 @@ fn bench_context_operations(c: &mut Criterion) {
             }
         }
         b.iter(|| {
-            black_box(ctx.collect_dirty_values());
+            black_box(ctx.save_dirty_to_map());
         });
     });
 }

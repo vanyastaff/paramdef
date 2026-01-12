@@ -46,7 +46,7 @@
 //! ```
 
 // Core foundation types
-pub use crate::core::{Error, Flags, Key, Metadata, Result, StateFlags, Value};
+pub use crate::core::{Error, Flags, Key, Metadata, ObjectBuilder, Result, StateFlags, Value};
 
 // Node trait system
 pub use crate::types::traits::{Container, Decoration, GroupNode, Layout, Leaf, Node, ValueAccess};

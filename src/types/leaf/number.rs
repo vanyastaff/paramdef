@@ -87,6 +87,100 @@ impl Number<crate::subtype::GenericNumber> {
     pub fn float(key: impl Into<Key>) -> NumberBuilder<crate::subtype::GenericNumber> {
         NumberBuilder::new(key, crate::subtype::GenericNumber)
     }
+
+    /// Creates an opacity factor builder with default 1.0.
+    ///
+    /// Returns a builder configured with:
+    /// - Factor subtype
+    /// - Default value of 1.0 (fully opaque)
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use paramdef::types::leaf::Number;
+    ///
+    /// let opacity = Number::opacity("layer_opacity")
+    ///     .label("Layer Opacity")
+    ///     .build();
+    /// ```
+    pub fn opacity(key: impl Into<Key>) -> NumberBuilder<crate::subtype::Factor> {
+        NumberBuilder::new(key, crate::subtype::Factor).default(1.0)
+    }
+
+    /// Creates a count builder with default 0.
+    ///
+    /// Returns a builder configured with:
+    /// - Count subtype
+    /// - Default value of 0
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use paramdef::types::leaf::Number;
+    ///
+    /// let retries = Number::count("retry_count")
+    ///     .label("Retry Count")
+    ///     .build();
+    /// ```
+    pub fn count(key: impl Into<Key>) -> NumberBuilder<crate::subtype::Count> {
+        NumberBuilder::new(key, crate::subtype::Count).default(0.0)
+    }
+
+    /// Creates a year field builder.
+    ///
+    /// Returns a builder configured with:
+    /// - Year subtype
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use paramdef::types::leaf::Number;
+    ///
+    /// let year = Number::year("birth_year")
+    ///     .label("Birth Year")
+    ///     .build();
+    /// ```
+    pub fn year(key: impl Into<Key>) -> NumberBuilder<crate::subtype::Year> {
+        NumberBuilder::new(key, crate::subtype::Year)
+    }
+
+    /// Creates a percentage builder with default 100.
+    ///
+    /// Returns a builder configured with:
+    /// - Percentage subtype
+    /// - Default value of 100
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use paramdef::types::leaf::Number;
+    ///
+    /// let progress = Number::percentage_full("completion")
+    ///     .label("Completion Percentage")
+    ///     .build();
+    /// ```
+    pub fn percentage_full(key: impl Into<Key>) -> NumberBuilder<crate::subtype::Percentage> {
+        NumberBuilder::new(key, crate::subtype::Percentage).default(100.0)
+    }
+
+    /// Creates a rating builder with default 5.
+    ///
+    /// Returns a builder configured with:
+    /// - Rating subtype
+    /// - Default value of 5
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use paramdef::types::leaf::Number;
+    ///
+    /// let stars = Number::rating_max("user_rating")
+    ///     .label("User Rating")
+    ///     .build();
+    /// ```
+    pub fn rating_max(key: impl Into<Key>) -> NumberBuilder<crate::subtype::Rating> {
+        NumberBuilder::new(key, crate::subtype::Rating).default(5.0)
+    }
 }
 
 impl Number<crate::subtype::Percentage> {

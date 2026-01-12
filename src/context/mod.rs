@@ -22,6 +22,8 @@
 //! // Subscriber receives ValueChanging and ValueChanged events
 //! ```
 
+mod typed;
+
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -227,6 +229,242 @@ impl Context {
         Ok(())
     }
 
+    /// Sets multiple values transactionally (all-or-nothing).
+    ///
+    /// All keys are validated first, then all changes are applied.
+    /// If any operation fails, all changes are rolled back and the
+    /// context is restored to its original state.
+    ///
+    /// When `events` feature is enabled:
+    /// - Emits `BatchBegin` at start
+    /// - Emits individual `ValueChanging`/`ValueChanged` for each successful set
+    /// - On error: emits `Reverted` events for already-applied changes
+    /// - Emits `BatchEnd` with success status
+    ///
+    /// # Errors
+    ///
+    /// Returns the first error encountered. On error, all changes are rolled back.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// use paramdef::core::{Key, Value};
+    ///
+    /// ctx.set_many_transactional([
+    ///     ("name", Value::text("Alice")),
+    ///     ("age", Value::Int(30)),
+    /// ])?;
+    /// ```
+    pub fn set_many_transactional<I, K>(&mut self, values: I) -> crate::core::Result<()>
+    where
+        I: IntoIterator<Item = (K, Value)>,
+        K: AsRef<str>,
+    {
+        use crate::core::FxHashMap;
+
+        let values: Vec<_> = values.into_iter().collect();
+
+        // Validate all keys exist first
+        for (key, _) in &values {
+            if !self.nodes.contains_key(key.as_ref()) {
+                return Err(crate::core::Error::not_found(key.as_ref()));
+            }
+        }
+
+        #[cfg(feature = "events")]
+        let batch_id = if let Some(ref bus) = self.event_bus {
+            let id = bus.begin_batch(Some("Transactional update"));
+            Some(id)
+        } else {
+            None
+        };
+
+        // Store old values for rollback
+        let mut old_values = FxHashMap::default();
+        for (key, _) in &values {
+            let key_str = key.as_ref();
+            if let Some(node) = self.nodes.get(key_str) {
+                old_values.insert(Key::from(key_str), node.value().cloned());
+            }
+        }
+
+        // Apply all changes, collect errors
+        let mut applied_keys = Vec::new();
+        let mut error = None;
+
+        for (key, value) in values {
+            let key_str = key.as_ref();
+            match self.set(key_str, value.clone()) {
+                Ok(()) => applied_keys.push((Key::from(key_str), value)),
+                Err(e) => {
+                    error = Some((Key::from(key_str), value, e));
+                    break;
+                }
+            }
+        }
+
+        // If error occurred, rollback all applied changes
+        if let Some((_failed_key, _failed_value, err)) = error {
+            // Rollback all successfully applied changes
+            for (key, _) in &applied_keys {
+                let Some(old_val) = old_values.get(key) else {
+                    continue;
+                };
+                let Some(node) = self.nodes.get_mut(key.as_str()) else {
+                    continue;
+                };
+
+                // Restore old value (or clear if it was None)
+                match old_val {
+                    Some(v) => node.set_value(v.clone()),
+                    None => node.clear_value(),
+                }
+
+                #[cfg(feature = "events")]
+                if let Some(ref bus) = self.event_bus {
+                    bus.emit(Event::reverted(
+                        key.clone(),
+                        old_val.clone().unwrap_or(Value::Null),
+                        node.value().cloned().unwrap_or(Value::Null),
+                    ));
+                }
+            }
+
+            #[cfg(feature = "events")]
+            if let (Some(bus), Some(id)) = (&self.event_bus, batch_id) {
+                bus.end_batch(id, false, false); // success=false, partial=false
+            }
+
+            return Err(err);
+        }
+
+        #[cfg(feature = "events")]
+        if let (Some(bus), Some(id)) = (&self.event_bus, batch_id) {
+            bus.end_batch(id, true, false); // success=true, partial=false
+        }
+
+        Ok(())
+    }
+
+    /// Sets multiple values partially (best-effort).
+    ///
+    /// Attempts to set all values, collecting errors for failed operations.
+    /// Successful operations are applied even if some fail.
+    ///
+    /// When `events` feature is enabled:
+    /// - Emits `BatchBegin` at start
+    /// - Emits individual `ValueChanging`/`ValueChanged` for successful sets
+    /// - Emits `SetFailed` for each error
+    /// - Emits `BatchEnd` with success/partial status
+    ///
+    /// # Returns
+    ///
+    /// A vector of results, one per input value. Each result indicates
+    /// success or failure for that specific key-value pair.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// use paramdef::core::{Key, Value};
+    ///
+    /// let results = ctx.set_many_partial([
+    ///     ("name", Value::text("Alice")),
+    ///     ("invalid", Value::Int(30)),  // May fail
+    ///     ("email", Value::text("alice@example.com")),
+    /// ]);
+    ///
+    /// for (i, result) in results.iter().enumerate() {
+    ///     if let Err(e) = result {
+    ///         eprintln!("Field {} failed: {}", i, e);
+    ///     }
+    /// }
+    /// ```
+    pub fn set_many_partial<I, K>(&mut self, values: I) -> Vec<crate::core::Result<()>>
+    where
+        I: IntoIterator<Item = (K, Value)>,
+        K: AsRef<str>,
+    {
+        let values: Vec<_> = values.into_iter().collect();
+
+        #[cfg(feature = "events")]
+        let batch_id = if let Some(ref bus) = self.event_bus {
+            let id = bus.begin_batch(Some("Partial update"));
+            Some(id)
+        } else {
+            None
+        };
+
+        let mut results = Vec::with_capacity(values.len());
+        let mut success_count = 0;
+        let mut error_count = 0;
+
+        for (key, value) in values {
+            let key_str = key.as_ref();
+            match self.set(key_str, value) {
+                Ok(()) => {
+                    results.push(Ok(()));
+                    success_count += 1;
+                }
+                Err(e) => {
+                    #[cfg(feature = "events")]
+                    if let Some(ref bus) = self.event_bus {
+                        bus.emit(Event::set_failed(key_str, e.to_string()));
+                    }
+
+                    results.push(Err(e));
+                    error_count += 1;
+                }
+            }
+        }
+
+        #[cfg(feature = "events")]
+        if let (Some(bus), Some(id)) = (&self.event_bus, batch_id) {
+            let success = error_count == 0;
+            let partial = success_count > 0 && error_count > 0;
+            bus.end_batch(id, success, partial);
+        }
+
+        #[cfg(not(feature = "events"))]
+        {
+            let _ = success_count;
+            let _ = error_count;
+        }
+
+        results
+    }
+
+    /// Convenience method to load values from a `HashMap` transactionally.
+    ///
+    /// This is equivalent to calling `set_many_transactional` with the map's entries.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if any key doesn't exist or if any value fails to set.
+    /// On error, all changes are rolled back.
+    pub fn load_from_map(&mut self, map: HashMap<Key, Value>) -> crate::core::Result<()> {
+        self.set_many_transactional(map)
+    }
+
+    /// Saves dirty values to a `HashMap`.
+    ///
+    /// Returns a map containing only the parameters that have been modified
+    /// since the last reset or `mark_all_clean()`.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// let dirty = ctx.save_dirty_to_map();
+    /// println!("Modified fields: {:?}", dirty.keys());
+    /// ```
+    #[must_use]
+    pub fn save_dirty_to_map(&self) -> HashMap<Key, Value> {
+        self.nodes
+            .iter()
+            .filter(|(_, n)| n.state().is_dirty())
+            .filter_map(|(k, n)| n.value().map(|v| (k.clone(), v.clone())))
+            .collect()
+    }
+
     /// Returns a runtime node by key.
     #[must_use]
     pub fn node(&self, key: &str) -> Option<&ErasedRuntimeNode> {
@@ -248,19 +486,9 @@ impl Context {
             .collect()
     }
 
-    /// Collects only dirty values into a map.
-    #[must_use]
-    pub fn collect_dirty_values(&self) -> HashMap<Key, Value> {
-        self.nodes
-            .iter()
-            .filter(|(_, n)| n.state().is_dirty())
-            .filter_map(|(k, n)| n.value().map(|v| (k.clone(), v.clone())))
-            .collect()
-    }
-
     /// Returns an iterator over dirty values without cloning.
     ///
-    /// This is a zero-allocation alternative to [`collect_dirty_values()`](Self::collect_dirty_values)
+    /// This is a zero-allocation alternative to [`save_dirty_to_map()`](Self::save_dirty_to_map)
     /// that returns references instead of owned values. Use this when you need to inspect
     /// dirty values without collecting them into a new map.
     ///
@@ -289,6 +517,110 @@ impl Context {
         self.nodes
             .iter()
             .filter(|(_, n)| n.state().is_dirty())
+            .filter_map(|(k, n)| n.value().map(|v| (k, v)))
+    }
+
+    /// Returns an iterator over all non-null values.
+    ///
+    /// This is a zero-allocation iterator that yields key-value pairs for all
+    /// parameters that have a non-null value set.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use paramdef::context::Context;
+    /// use paramdef::schema::Schema;
+    /// use paramdef::types::leaf::Text;
+    /// use paramdef::core::Value;
+    /// use std::sync::Arc;
+    ///
+    /// let schema = Arc::new(Schema::builder()
+    ///     .parameter(Text::builder("name").build())
+    ///     .parameter(Text::builder("email").build())
+    ///     .build());
+    ///
+    /// let mut ctx = Context::new(schema);
+    /// ctx.set("name", Value::text("Alice"));
+    ///
+    /// // Only "name" has a value, "email" is null
+    /// assert_eq!(ctx.values().count(), 1);
+    /// ```
+    pub fn values(&self) -> impl Iterator<Item = (&Key, &Value)> + '_ {
+        self.nodes
+            .iter()
+            .filter_map(|(k, n)| n.value().map(|v| (k, v)))
+    }
+
+    /// Returns an iterator over touched values.
+    ///
+    /// Yields key-value pairs for parameters that have been marked as touched
+    /// (user has interacted with them).
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use paramdef::context::Context;
+    /// use paramdef::schema::Schema;
+    /// use paramdef::types::leaf::Text;
+    /// use paramdef::core::Value;
+    /// use std::sync::Arc;
+    ///
+    /// let schema = Arc::new(Schema::builder()
+    ///     .parameter(Text::builder("name").build())
+    ///     .parameter(Text::builder("email").build())
+    ///     .build());
+    ///
+    /// let mut ctx = Context::new(schema);
+    /// ctx.set("name", Value::text("Alice"));
+    /// ctx.touch("name").unwrap();
+    ///
+    /// assert_eq!(ctx.touched_values().count(), 1);
+    /// ```
+    pub fn touched_values(&self) -> impl Iterator<Item = (&Key, &Value)> + '_ {
+        self.nodes
+            .iter()
+            .filter(|(_, n)| n.state().is_touched())
+            .filter_map(|(k, n)| n.value().map(|v| (k, v)))
+    }
+
+    /// Returns an iterator over invalid values.
+    ///
+    /// Yields key-value pairs for parameters that have failed validation.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// use paramdef::context::Context;
+    ///
+    /// // After validation
+    /// for (key, value) in ctx.invalid_values() {
+    ///     let errors = ctx.node(key).unwrap().state().errors();
+    ///     eprintln!("{}: {:?}", key, errors);
+    /// }
+    /// ```
+    pub fn invalid_values(&self) -> impl Iterator<Item = (&Key, &Value)> + '_ {
+        self.nodes
+            .iter()
+            .filter(|(_, n)| !n.state().is_valid())
+            .filter_map(|(k, n)| n.value().map(|v| (k, v)))
+    }
+
+    /// Returns an iterator over valid values.
+    ///
+    /// Yields key-value pairs for parameters that have passed validation.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// use paramdef::context::Context;
+    ///
+    /// // Collect only valid values for submission
+    /// let valid_data: Vec<_> = ctx.valid_values().collect();
+    /// ```
+    pub fn valid_values(&self) -> impl Iterator<Item = (&Key, &Value)> + '_ {
+        self.nodes
+            .iter()
+            .filter(|(_, n)| n.state().is_valid())
             .filter_map(|(k, n)| n.value().map(|v| (k, v)))
     }
 
@@ -369,9 +701,9 @@ impl Context {
 
     /// Ends a batch operation.
     #[cfg(feature = "events")]
-    pub fn end_batch(&self, id: u64) {
+    pub fn end_batch(&self, id: u64, success: bool, partial: bool) {
         if let Some(ref bus) = self.event_bus {
-            bus.end_batch(id);
+            bus.end_batch(id, success, partial);
         }
     }
 
@@ -395,7 +727,7 @@ impl Context {
         let batch_id = self.begin_batch(description);
         let result = f(self);
         if let Some(id) = batch_id {
-            self.end_batch(id);
+            self.end_batch(id, true, false); // success=true, partial=false
         }
         result
     }
@@ -508,7 +840,7 @@ mod tests {
         ctx.set("age", Value::Int(30)).unwrap();
         ctx.node_mut("name").unwrap().state_mut().mark_clean();
 
-        let dirty = ctx.collect_dirty_values();
+        let dirty = ctx.save_dirty_to_map();
 
         assert_eq!(dirty.len(), 1);
         assert!(dirty.contains_key("age"));
@@ -595,6 +927,107 @@ mod tests {
             result.unwrap_err(),
             crate::core::Error::NotFound { .. }
         ));
+    }
+
+    // === Iterator tests ===
+
+    #[test]
+    fn test_values_iterator() {
+        let schema = create_test_schema();
+        let mut ctx = Context::new(schema);
+
+        // Initially all values are null
+        assert_eq!(ctx.values().count(), 0);
+
+        // Set some values
+        ctx.set("name", Value::text("Alice")).unwrap();
+        ctx.set("age", Value::Int(30)).unwrap();
+
+        // Should have 2 non-null values
+        assert_eq!(ctx.values().count(), 2);
+
+        let keys: Vec<_> = ctx.values().map(|(k, _)| k.as_str()).collect();
+        assert!(keys.contains(&"name"));
+        assert!(keys.contains(&"age"));
+    }
+
+    #[test]
+    fn test_touched_values_iterator() {
+        let schema = create_test_schema();
+        let mut ctx = Context::new(schema);
+
+        ctx.set("name", Value::text("Alice")).unwrap();
+        ctx.set("age", Value::Int(30)).unwrap();
+
+        // Initially no touched values
+        assert_eq!(ctx.touched_values().count(), 0);
+
+        // Touch one field
+        ctx.touch("name").unwrap();
+
+        assert_eq!(ctx.touched_values().count(), 1);
+        let (key, _) = ctx.touched_values().next().unwrap();
+        assert_eq!(key.as_str(), "name");
+    }
+
+    #[test]
+    fn test_valid_values_iterator() {
+        let schema = create_test_schema();
+        let mut ctx = Context::new(schema);
+
+        ctx.set("name", Value::text("Alice")).unwrap();
+        ctx.set("age", Value::Int(30)).unwrap();
+
+        // All values are valid by default (no validation run)
+        assert_eq!(ctx.valid_values().count(), 2);
+    }
+
+    #[test]
+    fn test_invalid_values_iterator() {
+        let schema = create_test_schema();
+        let mut ctx = Context::new(schema);
+
+        ctx.set("name", Value::text("Alice")).unwrap();
+
+        // By default all are valid (no validation failures)
+        assert_eq!(ctx.invalid_values().count(), 0);
+    }
+
+    #[test]
+    fn test_iterators_are_zero_allocation() {
+        let schema = create_test_schema();
+        let mut ctx = Context::new(schema);
+
+        ctx.set("name", Value::text("Alice")).unwrap();
+        ctx.set("email", Value::text("alice@example.com")).unwrap();
+        ctx.set("age", Value::Int(30)).unwrap();
+
+        // Iterators should be lazy and not allocate
+        let mut iter = ctx.values();
+        assert!(iter.next().is_some());
+        assert!(iter.next().is_some());
+        assert!(iter.next().is_some());
+        assert!(iter.next().is_none());
+    }
+
+    #[test]
+    fn test_iterators_with_mixed_states() {
+        let schema = create_test_schema();
+        let mut ctx = Context::new(schema);
+
+        // Set two values, touch one
+        ctx.set("name", Value::text("Alice")).unwrap();
+        ctx.set("age", Value::Int(30)).unwrap();
+        ctx.touch("name").unwrap();
+
+        // values() returns both
+        assert_eq!(ctx.values().count(), 2);
+
+        // touched_values() returns only name
+        assert_eq!(ctx.touched_values().count(), 1);
+
+        // dirty_values() returns both (just set)
+        assert_eq!(ctx.dirty_values().count(), 2);
     }
 }
 

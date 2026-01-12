@@ -34,7 +34,7 @@ fn main() {
     println!("After setting values:");
     println!("  Is dirty: {}", ctx.is_dirty());
 
-    let dirty = ctx.collect_dirty_values();
+    let dirty = ctx.save_dirty_to_map();
     println!("  Dirty fields: {:?}\n", dirty.keys().collect::<Vec<_>>());
 
     // Mark all clean
@@ -47,7 +47,7 @@ fn main() {
     println!("After modifying field1:");
     println!("  Is dirty: {}", ctx.is_dirty());
 
-    let dirty = ctx.collect_dirty_values();
+    let dirty = ctx.save_dirty_to_map();
     println!("  Dirty fields: {:?}\n", dirty.keys().collect::<Vec<_>>());
 
     // Clear a field
@@ -55,7 +55,7 @@ fn main() {
     println!("After clearing field2:");
     println!("  field2 value: {:?}", ctx.get("field2"));
 
-    let dirty = ctx.collect_dirty_values();
+    let dirty = ctx.save_dirty_to_map();
     println!("  Dirty fields: {:?}\n", dirty.keys().collect::<Vec<_>>());
 
     // Collect all values

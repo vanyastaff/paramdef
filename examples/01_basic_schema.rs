@@ -73,7 +73,7 @@ fn main() {
     ctx.set("age", Value::Int(26)).unwrap();
     println!("\nAfter modifying age:");
     println!("  Is dirty: {}", ctx.is_dirty());
-    let dirty = ctx.collect_dirty_values();
+    let dirty = ctx.save_dirty_to_map();
     println!("  Dirty fields: {:?}", dirty.keys().collect::<Vec<_>>());
 
     // 7. Reset context

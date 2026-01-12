@@ -8,13 +8,17 @@
 //! - [`Value`] - Main enum definition and constructors
 //! - [`convert`] - Type conversion methods (as_*, From impls)
 //! - [`ops`] - Utility operations
+//! - [`builder`] - Fluent builder API for complex objects
 //! - [`serde`] - Serialization support (feature-gated)
 
+mod builder;
 mod convert;
 mod ops;
 
 #[cfg(feature = "serde")]
 mod serde_support;
+
+pub use builder::ObjectBuilder;
 
 use std::sync::Arc;
 

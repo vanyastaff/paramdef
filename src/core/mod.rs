@@ -17,11 +17,11 @@ mod key;
 mod metadata;
 mod value;
 
-pub use error::{Error, Result};
+pub use error::{Error, Result, ValueKind};
 pub use flags::{Flags, StateFlags};
 pub use key::Key;
 pub use metadata::{Metadata, MetadataBuilder};
-pub use value::Value;
+pub use value::{ObjectBuilder, Value};
 
 /// Stack-optimized string for display text (labels, descriptions, messages).
 ///

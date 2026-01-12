@@ -4,6 +4,42 @@
 
 use thiserror::Error;
 
+/// Value type discriminator for error messages.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ValueKind {
+    /// Null value.
+    Null,
+    /// Boolean value.
+    Bool,
+    /// Integer value.
+    Int,
+    /// Float value.
+    Float,
+    /// Text value.
+    Text,
+    /// Array value.
+    Array,
+    /// Object value.
+    Object,
+    /// Binary value.
+    Binary,
+}
+
+impl std::fmt::Display for ValueKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Null => write!(f, "Null"),
+            Self::Bool => write!(f, "Bool"),
+            Self::Int => write!(f, "Int"),
+            Self::Float => write!(f, "Float"),
+            Self::Text => write!(f, "Text"),
+            Self::Array => write!(f, "Array"),
+            Self::Object => write!(f, "Object"),
+            Self::Binary => write!(f, "Binary"),
+        }
+    }
+}
+
 /// Result type alias using the paramdef [`enum@Error`] type.
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -11,12 +47,21 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[derive(Debug, Clone, Error)]
 pub enum Error {
     /// Type mismatch when accessing a value.
-    #[error("type mismatch: expected {expected}, got {actual}")]
+    #[error("type mismatch for key '{key}': expected {expected}, got {actual}")]
     TypeMismatch {
-        /// Expected type name.
-        expected: &'static str,
-        /// Actual type name.
-        actual: &'static str,
+        /// The key that had the type mismatch.
+        key: String,
+        /// Expected type kind.
+        expected: ValueKind,
+        /// Actual type kind.
+        actual: ValueKind,
+    },
+
+    /// Value is null when a non-null value was expected.
+    #[error("value for key '{key}' is null")]
+    NullValue {
+        /// The key with the null value.
+        key: String,
     },
 
     /// Validation failed for a parameter value.
@@ -96,8 +141,19 @@ impl Error {
     /// Creates a type mismatch error.
     #[must_use]
     #[track_caller]
-    pub const fn type_mismatch(expected: &'static str, actual: &'static str) -> Self {
-        Self::TypeMismatch { expected, actual }
+    pub fn type_mismatch(key: impl Into<String>, expected: ValueKind, actual: ValueKind) -> Self {
+        Self::TypeMismatch {
+            key: key.into(),
+            expected,
+            actual,
+        }
+    }
+
+    /// Creates a null value error.
+    #[must_use]
+    #[track_caller]
+    pub fn null_value(key: impl Into<String>) -> Self {
+        Self::NullValue { key: key.into() }
     }
 
     /// Creates a validation error.
@@ -215,12 +271,23 @@ mod tests {
 
     #[test]
     fn test_type_mismatch_error() {
-        let err = Error::type_mismatch("int", "text");
+        let err = Error::type_mismatch("my_field", ValueKind::Int, ValueKind::Text);
         assert!(matches!(err, Error::TypeMismatch { .. }));
 
         let msg = err.to_string();
-        assert!(msg.contains("int"));
-        assert!(msg.contains("text"));
+        assert!(msg.contains("my_field"));
+        assert!(msg.contains("Int"));
+        assert!(msg.contains("Text"));
+    }
+
+    #[test]
+    fn test_null_value_error() {
+        let err = Error::null_value("my_field");
+        assert!(matches!(err, Error::NullValue { .. }));
+
+        let msg = err.to_string();
+        assert!(msg.contains("my_field"));
+        assert!(msg.contains("null"));
     }
 
     #[test]
@@ -300,7 +367,8 @@ mod tests {
     fn test_error_display() {
         // All errors should implement Display via thiserror
         let errors = [
-            Error::type_mismatch("int", "text"),
+            Error::type_mismatch("field", ValueKind::Int, ValueKind::Text),
+            Error::null_value("field"),
             Error::validation("code", "message"),
             Error::missing_required("field"),
             Error::out_of_range(5.0, 0.0, 3.0),

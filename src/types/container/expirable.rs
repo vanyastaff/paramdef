@@ -339,7 +339,9 @@ impl ExpirableBuilder {
         }
 
         // Validate warning_threshold < ttl
-        if let Some(threshold) = self.options.warning_threshold && threshold >= self.options.ttl {
+        if let Some(threshold) = self.options.warning_threshold
+            && threshold >= self.options.ttl
+        {
             return Err(crate::core::Error::validation(
                 "invalid_threshold",
                 format!(

@@ -95,11 +95,15 @@ impl Validator for Length {
             _ => return Ok(()),
         };
 
-        if let Some(min) = self.min && len < min {
+        if let Some(min) = self.min
+            && len < min
+        {
             return Err(Error::min_length(min, len).into());
         }
 
-        if let Some(max) = self.max && len > max {
+        if let Some(max) = self.max
+            && len > max
+        {
             return Err(Error::max_length(max, len).into());
         }
 
@@ -235,7 +239,9 @@ impl Match {
 
 impl Validator for Match {
     fn validate(&self, value: &Value, ctx: &ValidationContext<'_>) -> ValidationResult {
-        if let Some(other) = ctx.get(&self.other_key) && value != other {
+        if let Some(other) = ctx.get(&self.other_key)
+            && value != other
+        {
             let message = self
                 .message
                 .clone()

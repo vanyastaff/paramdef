@@ -1,9 +1,37 @@
 //! Type conversion and accessor methods for Value.
 
 use super::{IndexMap, Key, Value};
+use crate::core::error::ValueKind;
 
 impl Value {
     // === Type checking methods ===
+
+    /// Returns the kind of this value.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use paramdef::core::{Value, ValueKind};
+    ///
+    /// assert_eq!(Value::Null.kind(), ValueKind::Null);
+    /// assert_eq!(Value::Bool(true).kind(), ValueKind::Bool);
+    /// assert_eq!(Value::Int(42).kind(), ValueKind::Int);
+    /// assert_eq!(Value::text("hello").kind(), ValueKind::Text);
+    /// ```
+    #[inline]
+    #[must_use]
+    pub const fn kind(&self) -> ValueKind {
+        match self {
+            Self::Null => ValueKind::Null,
+            Self::Bool(_) => ValueKind::Bool,
+            Self::Int(_) => ValueKind::Int,
+            Self::Float(_) => ValueKind::Float,
+            Self::Text(_) => ValueKind::Text,
+            Self::Array(_) => ValueKind::Array,
+            Self::Object(_) => ValueKind::Object,
+            Self::Binary(_) => ValueKind::Binary,
+        }
+    }
 
     /// Returns `true` if this is a `Null` value.
     #[inline]
@@ -215,6 +243,12 @@ impl<T: Into<Value>> From<Vec<T>> for Value {
     }
 }
 
+impl<T: Into<Value>, const N: usize> From<[T; N]> for Value {
+    fn from(arr: [T; N]) -> Self {
+        Self::array(arr.into_iter().map(Into::into))
+    }
+}
+
 impl<T: Into<Value>> From<Option<T>> for Value {
     fn from(v: Option<T>) -> Self {
         match v {
@@ -311,6 +345,18 @@ mod tests {
         let value: Value = vec![1i64, 2, 3].into();
         assert!(value.is_array());
         assert_eq!(value.as_array().map(|a| a.len()), Some(3));
+    }
+
+    #[test]
+    fn test_value_from_array() {
+        let value: Value = [1i64, 2, 3].into();
+        assert!(value.is_array());
+        assert_eq!(value.as_array().map(|a| a.len()), Some(3));
+
+        // Test with different types
+        let strings: Value = ["a", "b", "c"].into();
+        assert!(strings.is_array());
+        assert_eq!(strings.as_array().unwrap().len(), 3);
     }
 
     #[test]

@@ -59,6 +59,100 @@ impl Text<crate::subtype::Plain> {
     pub fn builder(key: impl Into<Key>) -> TextBuilder<crate::subtype::Plain> {
         TextBuilder::new(key)
     }
+
+    /// Creates a required email field builder with validation.
+    ///
+    /// Returns a builder configured with:
+    /// - `Email` subtype
+    /// - Required flag
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use paramdef::types::leaf::Text;
+    ///
+    /// let email = Text::required_email("contact")
+    ///     .label("Contact Email")
+    ///     .build();
+    /// ```
+    pub fn required_email(key: impl Into<Key>) -> TextBuilder<crate::subtype::Email> {
+        TextBuilder::new(key)
+            .subtype(crate::subtype::Email)
+            .required()
+    }
+
+    /// Creates a multiline text area builder.
+    ///
+    /// Returns a builder configured with:
+    /// - `MultiLine` subtype
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use paramdef::types::leaf::Text;
+    ///
+    /// let description = Text::textarea("description")
+    ///     .label("Description")
+    ///     .build();
+    /// ```
+    pub fn textarea(key: impl Into<Key>) -> TextBuilder<crate::subtype::MultiLine> {
+        TextBuilder::new(key).subtype(crate::subtype::MultiLine)
+    }
+
+    /// Creates a URL slug field builder.
+    ///
+    /// Returns a builder configured with:
+    /// - `Slug` subtype
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use paramdef::types::leaf::Text;
+    ///
+    /// let slug = Text::slug("url_slug")
+    ///     .label("URL Slug")
+    ///     .build();
+    /// ```
+    pub fn slug(key: impl Into<Key>) -> TextBuilder<crate::subtype::Slug> {
+        TextBuilder::new(key).subtype(crate::subtype::Slug)
+    }
+
+    /// Creates a phone number field builder.
+    ///
+    /// Returns a builder configured with:
+    /// - `PhoneNumber` subtype
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use paramdef::types::leaf::Text;
+    ///
+    /// let phone = Text::phone("contact_phone")
+    ///     .label("Phone Number")
+    ///     .build();
+    /// ```
+    pub fn phone(key: impl Into<Key>) -> TextBuilder<crate::subtype::PhoneNumber> {
+        TextBuilder::new(key).subtype(crate::subtype::PhoneNumber)
+    }
+
+    /// Creates a UUID field builder.
+    ///
+    /// Returns a builder configured with:
+    /// - `Uuid` subtype
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use paramdef::types::leaf::Text;
+    ///
+    /// let id = Text::uuid("resource_id")
+    ///     .label("Resource ID")
+    ///     .readonly()
+    ///     .build();
+    /// ```
+    pub fn uuid(key: impl Into<Key>) -> TextBuilder<crate::subtype::Uuid> {
+        TextBuilder::new(key).subtype(crate::subtype::Uuid)
+    }
 }
 
 // Convenience constructors for common subtypes

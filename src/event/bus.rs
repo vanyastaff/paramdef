@@ -166,12 +166,20 @@ impl EventBus {
     }
 
     /// Emits a `BatchEnd` event for the given batch ID.
-    pub fn end_batch(&self, id: u64) {
-        self.emit(Event::batch_end(id));
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The batch ID from `begin_batch()`
+    /// - `success`: Whether all operations in the batch succeeded
+    /// - `partial`: Whether some operations succeeded (only relevant when success=false)
+    pub fn end_batch(&self, id: u64, success: bool, partial: bool) {
+        self.emit(Event::batch_end(id, success, partial));
     }
 
     /// Executes a closure within a batch, automatically emitting
     /// `BatchBegin` and `BatchEnd` events.
+    ///
+    /// The batch is considered successful if the closure completes without panicking.
     ///
     /// # Example
     ///
@@ -187,7 +195,7 @@ impl EventBus {
     {
         let id = self.begin_batch(description);
         let result = f();
-        self.end_batch(id);
+        self.end_batch(id, true, false); // success=true, partial=false
         result
     }
 }
@@ -465,7 +473,7 @@ mod tests {
 
         assert!(matches!(e1, Event::BatchBegin { id: 0, .. }));
         assert!(matches!(e2, Event::Touched { .. }));
-        assert!(matches!(e3, Event::BatchEnd { id: 0 }));
+        assert!(matches!(e3, Event::BatchEnd { id: 0, .. }));
     }
 
     #[tokio::test]

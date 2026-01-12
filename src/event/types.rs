@@ -140,6 +140,34 @@ pub enum Event {
     BatchEnd {
         /// Identifier matching the `BatchBegin`.
         id: u64,
+        /// Whether the batch operation succeeded completely.
+        success: bool,
+        /// True if some operations succeeded and some failed (only relevant when success=false).
+        partial: bool,
+    },
+
+    /// Emitted when a set operation fails within a batch.
+    ///
+    /// This event is emitted during partial batch operations when an individual
+    /// value cannot be set due to an error.
+    SetFailed {
+        /// Key that failed to be set.
+        key: Key,
+        /// The error that occurred.
+        error: SmartStr,
+    },
+
+    /// Emitted when a value is reverted due to transaction rollback.
+    ///
+    /// This event is emitted during transactional batch operations when
+    /// an error causes all changes to be rolled back.
+    Reverted {
+        /// Key of the parameter that was reverted.
+        key: Key,
+        /// Original value before the batch operation.
+        old_value: Value,
+        /// Failed value that was attempted to be set.
+        failed_value: Value,
     },
 
     /// Emitted when the entire context is reset.
@@ -163,7 +191,9 @@ impl Event {
             | Self::Touched { key }
             | Self::Dirtied { key }
             | Self::Cleaned { key }
-            | Self::Reset { key } => Some(key),
+            | Self::Reset { key }
+            | Self::SetFailed { key, .. }
+            | Self::Reverted { key, .. } => Some(key),
             Self::BatchBegin { .. }
             | Self::BatchEnd { .. }
             | Self::ContextReset
@@ -203,7 +233,13 @@ impl Event {
     /// Returns `true` if this is a batch event.
     #[must_use]
     pub const fn is_batch_event(&self) -> bool {
-        matches!(self, Self::BatchBegin { .. } | Self::BatchEnd { .. })
+        matches!(
+            self,
+            Self::BatchBegin { .. }
+                | Self::BatchEnd { .. }
+                | Self::SetFailed { .. }
+                | Self::Reverted { .. }
+        )
     }
 
     // === Constructors ===
@@ -296,8 +332,31 @@ impl Event {
 
     /// Creates a `BatchEnd` event.
     #[must_use]
-    pub const fn batch_end(id: u64) -> Self {
-        Self::BatchEnd { id }
+    pub const fn batch_end(id: u64, success: bool, partial: bool) -> Self {
+        Self::BatchEnd {
+            id,
+            success,
+            partial,
+        }
+    }
+
+    /// Creates a `SetFailed` event.
+    #[must_use]
+    pub fn set_failed(key: impl Into<Key>, error: impl Into<SmartStr>) -> Self {
+        Self::SetFailed {
+            key: key.into(),
+            error: error.into(),
+        }
+    }
+
+    /// Creates a `Reverted` event.
+    #[must_use]
+    pub fn reverted(key: impl Into<Key>, old_value: Value, failed_value: Value) -> Self {
+        Self::Reverted {
+            key: key.into(),
+            old_value,
+            failed_value,
+        }
     }
 }
 
