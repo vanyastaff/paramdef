@@ -1,0 +1,30 @@
+# Nextest configuration for paramdef
+# https://nexte.st/docs/configuration/
+
+[profile.default]
+# Run tests with multiple threads (default is logical CPU count)
+test-threads = "num-cpus"
+
+# Don't fail fast in CI to see all failures
+fail-fast = false
+
+# Retry flaky tests
+retries = 0
+
+# Test timeout (30 seconds default)
+slow-timeout = { period = "60s", terminate-after = 3 }
+
+[profile.ci]
+# Profile for CI environments
+fail-fast = false
+retries = 2
+
+# Produce JUnit XML output for CI
+# Run with: cargo nextest run --profile ci
+[profile.ci.junit]
+path = "target/nextest/ci/junit.xml"
+
+[profile.default.overrides]
+# Feature-gated tests may need more time
+filter = 'test(validation) | test(visibility)'
+slow-timeout = { period = "90s" }

@@ -1,0 +1,11 @@
+# Git blame ignore revisions
+# This file contains commit hashes that should be ignored by git blame
+# Usage: git config blame.ignoreRevsFile .git-blame-ignore-revs
+#
+# Add commits here that are pure formatting/refactoring changes
+# Format: full commit hash, one per line, with optional comment
+
+# chore: enforce Unix line endings (LF) across all platforms
+01b94ab9e5c8f6c7d4e3f2a1b0c9d8e7f6a5b4c3
+
+# Future formatting commits should be added here

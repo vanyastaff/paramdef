@@ -46,6 +46,10 @@ tarpaulin-report.html
 # Benchmarks
 /target/criterion/
 
+# Nextest
+/target/nextest/
+.nextest/
+
 # Fuzzing
 /fuzz/artifacts/
 /fuzz/corpus/
