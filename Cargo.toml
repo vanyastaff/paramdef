@@ -47,7 +47,7 @@ regex = { version = "1.11", optional = true }
 [dev-dependencies]
 tokio = { version = "1.43", features = ["rt-multi-thread", "macros", "time"] }
 criterion = { version = "0.7", features = ["html_reports"] }
-codspeed-criterion-compat = "2.8"
+codspeed-criterion-compat = "4.2"
 
 [[bench]]
 name = "parameters"
