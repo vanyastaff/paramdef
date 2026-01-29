@@ -18,130 +18,167 @@ mod event_arc_value {
 
     #[test]
     fn test_event_value_changed_uses_arc() {
-        // Create context with event bus
-        let schema = Schema::builder()
-            .parameter(Text::builder("name").build())
-            .build();
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(async {
+            // Create context with event bus
+            let schema = Schema::builder()
+                .parameter(Text::builder("name").build())
+                .build();
 
-        let bus = EventBus::new(64);
-        let mut rx = bus.subscribe();
-        let mut ctx = Context::with_event_bus(Arc::new(schema), bus);
+            let bus = EventBus::new(64);
+            let mut rx = bus.subscribe();
+            let mut ctx = Context::with_event_bus(Arc::new(schema), bus);
 
-        // Set a value
-        ctx.set("name", Value::text("Alice")).unwrap();
+            // Set a value
+            ctx.set("name", Value::text("Alice")).unwrap();
 
-        // Receive the ValueChanged event
-        let event = rx.try_recv().ok().flatten();
+            // First event is ValueChanging - skip it
+            let _ = tokio::time::timeout(std::time::Duration::from_secs(1), rx.recv())
+                .await
+                .expect("Event receive timed out");
 
-        // Verify the event exists
-        assert!(event.is_some(), "Should receive ValueChanged event");
+            // Second event should be ValueChanged
+            let event = tokio::time::timeout(std::time::Duration::from_secs(1), rx.recv())
+                .await
+                .expect("Event receive timed out")
+                .ok();
 
-        if let Some(Event::ValueChanged { new_value, .. }) = event {
-            // The new_value is now Arc<Value>
-            // We can verify by checking Arc::strong_count works
-            let count = Arc::strong_count(&new_value);
-            assert!(count >= 1, "Arc strong count should be at least 1");
-        } else {
-            panic!("Expected ValueChanged event");
-        }
+            // Verify the event exists
+            assert!(event.is_some(), "Should receive ValueChanged event");
+
+            if let Some(Event::ValueChanged { new_value, .. }) = event {
+                // The new_value is now Arc<Value>
+                // We can verify by checking Arc::strong_count works
+                let count = Arc::strong_count(&new_value);
+                assert!(count >= 1, "Arc strong count should be at least 1");
+            } else {
+                panic!("Expected ValueChanged event, got: {:?}", event);
+            }
+        });
     }
 
     #[test]
     fn test_event_value_changing_uses_arc() {
-        // Similar test for ValueChanging event
-        let schema = Schema::builder()
-            .parameter(Text::builder("email").build())
-            .build();
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(async {
+            // Test that ValueChanging event uses Arc<Value>
+            let schema = Schema::builder()
+                .parameter(Text::builder("email").build())
+                .build();
 
-        let bus = EventBus::new(64);
-        let mut rx = bus.subscribe();
-        let mut ctx = Context::with_event_bus(Arc::new(schema), bus);
+            let bus = EventBus::new(64);
+            let mut rx = bus.subscribe();
+            let mut ctx = Context::with_event_bus(Arc::new(schema), bus);
 
-        // Set initial value
-        ctx.set("email", Value::text("old@example.com")).unwrap();
+            // Set initial value
+            ctx.set("email", Value::text("old@example.com")).unwrap();
 
-        // Clear the old events
-        while rx.try_recv().is_ok() {}
+            // First event should be ValueChanging (emitted BEFORE value changes)
+            let event = tokio::time::timeout(std::time::Duration::from_secs(1), rx.recv())
+                .await
+                .expect("Event receive timed out")
+                .ok();
 
-        // Set a new value (should emit ValueChanging)
-        ctx.set("email", Value::text("new@example.com")).unwrap();
+            assert!(event.is_some(), "Should receive ValueChanging event");
 
-        // Should receive ValueChanging event first
-        let event = rx.try_recv().ok().flatten();
-        assert!(event.is_some(), "Should receive ValueChanging event");
-
-        if let Some(Event::ValueChanging {
-            new_value,
-            old_value,
-            ..
-        }) = event
-        {
-            // Both should be Arc<Value>
-            let _new_count = Arc::strong_count(&new_value);
-            if let Some(old) = old_value {
-                let _old_count = Arc::strong_count(&old);
+            if let Some(Event::ValueChanging {
+                new_value,
+                old_value,
+                ..
+            }) = event
+            {
+                // Both should be Arc<Value>
+                let _new_count = Arc::strong_count(&new_value);
+                if let Some(ref old) = old_value {
+                    let _old_count = Arc::strong_count(old);
+                }
+                // Verify the values are correct
+                assert_eq!(*new_value, Value::text("old@example.com"));
+                assert_eq!(old_value, None); // First set has no old value
+            } else {
+                panic!("Expected ValueChanging event, got: {:?}", event);
             }
-        } else {
-            panic!("Expected ValueChanging event");
-        }
+        });
     }
 
     #[test]
     fn test_multiple_subscribers_share_arc() {
-        // Multiple subscribers should share the same Arc<Value>
-        // without cloning the underlying Value
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(async {
+            // Multiple subscribers should share the same Arc<Value>
+            // without cloning the underlying Value
 
-        let schema = Schema::builder()
-            .parameter(Text::builder("shared").build())
-            .build();
+            let schema = Schema::builder()
+                .parameter(Text::builder("shared").build())
+                .build();
 
-        let bus = EventBus::new(64);
-        let mut rx1 = bus.subscribe();
-        let mut rx2 = bus.subscribe();
-        let mut rx3 = bus.subscribe();
+            let bus = EventBus::new(64);
+            let mut rx1 = bus.subscribe();
+            let mut rx2 = bus.subscribe();
+            let mut rx3 = bus.subscribe();
 
-        let mut ctx = Context::with_event_bus(Arc::new(schema), bus);
+            let mut ctx = Context::with_event_bus(Arc::new(schema), bus);
 
-        // Set a value that will be broadcast to all 3 subscribers
-        ctx.set("shared", Value::text("broadcast")).unwrap();
+            // Set a value that will be broadcast to all 3 subscribers
+            ctx.set("shared", Value::text("broadcast")).unwrap();
 
-        // All subscribers should receive the event
-        // try_recv() returns Result<Option<Event>, RecvError>
-        let event1 = rx1.try_recv().ok().flatten();
-        let event2 = rx2.try_recv().ok().flatten();
-        let event3 = rx3.try_recv().ok().flatten();
+            // First event is ValueChanging - skip it for all subscribers
+            let _ = tokio::time::timeout(std::time::Duration::from_secs(1), rx1.recv())
+                .await
+                .expect("rx1 ValueChanging timed out");
+            let _ = tokio::time::timeout(std::time::Duration::from_secs(1), rx2.recv())
+                .await
+                .expect("rx2 ValueChanging timed out");
+            let _ = tokio::time::timeout(std::time::Duration::from_secs(1), rx3.recv())
+                .await
+                .expect("rx3 ValueChanging timed out");
 
-        assert!(event1.is_some());
-        assert!(event2.is_some());
-        assert!(event3.is_some());
+            // Second event should be ValueChanged - receive from all subscribers
+            let event1 = tokio::time::timeout(std::time::Duration::from_secs(1), rx1.recv())
+                .await
+                .expect("rx1 ValueChanged timed out")
+                .ok();
+            let event2 = tokio::time::timeout(std::time::Duration::from_secs(1), rx2.recv())
+                .await
+                .expect("rx2 ValueChanged timed out")
+                .ok();
+            let event3 = tokio::time::timeout(std::time::Duration::from_secs(1), rx3.recv())
+                .await
+                .expect("rx3 ValueChanged timed out")
+                .ok();
 
-        // Extract Arc<Value> from events
-        let v1 = if let Some(Event::ValueChanged { new_value, .. }) = event1 {
-            new_value
-        } else {
-            panic!("Expected ValueChanged event from rx1");
-        };
+            assert!(event1.is_some());
+            assert!(event2.is_some());
+            assert!(event3.is_some());
 
-        let v2 = if let Some(Event::ValueChanged { new_value, .. }) = event2 {
-            new_value
-        } else {
-            panic!("Expected ValueChanged event from rx2");
-        };
+            // Extract Arc<Value> from events
+            let v1 = if let Some(Event::ValueChanged { new_value, .. }) = event1 {
+                new_value
+            } else {
+                panic!("Expected ValueChanged event from rx1, got: {:?}", event1);
+            };
 
-        let v3 = if let Some(Event::ValueChanged { new_value, .. }) = event3 {
-            new_value
-        } else {
-            panic!("Expected ValueChanged event from rx3");
-        };
+            let v2 = if let Some(Event::ValueChanged { new_value, .. }) = event2 {
+                new_value
+            } else {
+                panic!("Expected ValueChanged event from rx2, got: {:?}", event2);
+            };
 
-        // All three should point to the same Arc
-        // Strong count should be at least 3 (one for each subscriber)
-        let count = Arc::strong_count(&v1);
-        assert!(count >= 3, "Arc should be shared, count: {}", count);
+            let v3 = if let Some(Event::ValueChanged { new_value, .. }) = event3 {
+                new_value
+            } else {
+                panic!("Expected ValueChanged event from rx3, got: {:?}", event3);
+            };
 
-        // Verify they're actually the same Arc by comparing pointers
-        assert!(Arc::ptr_eq(&v1, &v2));
-        assert!(Arc::ptr_eq(&v2, &v3));
+            // All three should point to the same Arc
+            // Strong count should be at least 3 (one for each subscriber)
+            let count = Arc::strong_count(&v1);
+            assert!(count >= 3, "Arc should be shared, count: {}", count);
+
+            // Verify they're actually the same Arc by comparing pointers
+            assert!(Arc::ptr_eq(&v1, &v2));
+            assert!(Arc::ptr_eq(&v2, &v3));
+        });
     }
 }
 
