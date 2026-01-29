@@ -78,7 +78,6 @@ pub struct Panel {
     flags: Flags,
     children: Vec<Arc<dyn Node>>,
     display_type: PanelDisplayType,
-    collapsed: bool,
     #[cfg(feature = "visibility")]
     visibility: Option<crate::expr::Rule>,
 }
@@ -90,8 +89,7 @@ impl fmt::Debug for Panel {
             .field("metadata", &self.metadata)
             .field("flags", &self.flags)
             .field("child_count", &self.children.len())
-            .field("display_type", &self.display_type)
-            .field("collapsed", &self.collapsed);
+            .field("display_type", &self.display_type);
 
         #[cfg(feature = "visibility")]
         debug.field("visibility", &self.visibility);
@@ -145,14 +143,6 @@ impl Node for Panel {
 impl Layout for Panel {
     fn children(&self) -> &[Arc<dyn Node>] {
         &self.children
-    }
-
-    fn is_collapsed(&self) -> bool {
-        self.collapsed
-    }
-
-    fn set_collapsed(&mut self, collapsed: bool) {
-        self.collapsed = collapsed;
     }
 }
 
@@ -283,7 +273,32 @@ impl PanelBuilder {
         self
     }
 
-    /// Sets whether the panel is initially collapsed.
+    /// Sets the initial collapsed state hint for this panel.
+    ///
+    /// **Important**: This is an initial UI state hint that should be used
+    /// during Context initialization. The actual runtime collapsed state
+    /// is managed by `Context::ui_state()`, not in the Panel schema itself.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use paramdef::types::group::Panel;
+    /// use paramdef::schema::Schema;
+    /// use paramdef::context::Context;
+    /// use std::sync::Arc;
+    ///
+    /// // Set initial state hint during panel construction
+    /// let panel = Panel::builder("settings")
+    ///     .collapsed(true)  // Hint: initially collapsed
+    ///     .build();
+    ///
+    /// let schema = Arc::new(Schema::builder().parameter(panel).build());
+    /// let mut ctx = Context::new(schema);
+    ///
+    /// // Runtime state is managed through Context
+    /// ctx.set_panel_collapsed("settings", false);  // Now expanded
+    /// assert!(!ctx.is_panel_collapsed(&"settings".into()));
+    /// ```
     #[must_use]
     pub fn collapsed(mut self, collapsed: bool) -> Self {
         self.collapsed = collapsed;
@@ -316,7 +331,6 @@ impl PanelBuilder {
             flags: self.flags,
             children: self.children,
             display_type: self.display_type,
-            collapsed: self.collapsed,
             #[cfg(feature = "visibility")]
             visibility: self.visibility,
         }
@@ -377,16 +391,29 @@ mod tests {
     }
 
     #[test]
-    fn test_panel_collapsed() {
-        let mut panel = Panel::builder("p")
+    fn test_panel_collapsed_moved_to_context() {
+        // Collapsed state is now managed by Context/UiStateManager
+        // This test verifies Panel no longer has mutable state
+        use crate::context::Context;
+        use crate::schema::Schema;
+        use std::sync::Arc;
+
+        let panel = Panel::builder("p")
             .display_type(PanelDisplayType::Collapsible)
-            .collapsed(true)
+            .collapsed(true) // This is now just an initial state hint
             .build();
 
-        assert!(panel.is_collapsed());
+        // Panel itself has no collapsed state
+        // State is managed through Context
+        let schema = Arc::new(Schema::builder().parameter(panel).build());
+        let mut ctx = Context::new(schema);
 
-        panel.set_collapsed(false);
-        assert!(!panel.is_collapsed());
+        // Set collapsed state via Context
+        ctx.set_panel_collapsed("p", true);
+        assert!(ctx.is_panel_collapsed(&"p".into()));
+
+        ctx.set_panel_collapsed("p", false);
+        assert!(!ctx.is_panel_collapsed(&"p".into()));
     }
 
     #[test]

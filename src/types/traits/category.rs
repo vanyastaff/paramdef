@@ -50,24 +50,29 @@ pub trait GroupNode: Node {
 /// This is a schema-only trait; runtime value access is provided by
 /// `RuntimeParameter<T>` or `Context`.
 ///
+/// UI state (like collapsed/expanded) is managed through `Context::ui_state()`,
+/// not stored in the schema itself, maintaining immutability invariants.
+///
 /// # Example
 ///
 /// ```
 /// use paramdef::types::traits::Layout;
 /// use paramdef::types::group::Panel;
+/// use paramdef::context::Context;
+/// use paramdef::schema::Schema;
+/// use std::sync::Arc;
 ///
 /// let panel = Panel::builder("advanced").build();
-/// assert!(!panel.is_collapsed());
+/// let schema = Arc::new(Schema::builder().parameter(panel).build());
+/// let mut ctx = Context::new(schema);
+///
+/// // UI state managed through Context, not Panel
+/// ctx.set_panel_collapsed("advanced", true);
+/// assert!(ctx.is_panel_collapsed(&"advanced".into()));
 /// ```
 pub trait Layout: Node {
     /// Returns all child nodes.
     fn children(&self) -> &[Arc<dyn Node>];
-
-    /// Returns the layout's UI state (collapsed, expanded, etc.).
-    fn is_collapsed(&self) -> bool;
-
-    /// Sets the collapsed state.
-    fn set_collapsed(&mut self, collapsed: bool);
 }
 
 // =============================================================================

@@ -108,7 +108,7 @@ Each task follows: `- [ ] T### [Markers] Description`
 - ✅ Panel UI state managed in Context
 - ✅ Backward compatibility via deprecation warnings
 
-### T008 [US1] [TEST] Write Panel immutability verification tests
+### T008 [US1] [TEST] Write Panel immutability verification tests ✅
 **TDD Red Phase**: Verify Panel is truly immutable
 - Test: `test_panel_schema_is_immutable()` - verify no mutable fields
 - Test: `test_panel_runtime_state_in_context()` - verify state in Context
@@ -117,29 +117,30 @@ Each task follows: `- [ ] T### [Markers] Description`
 - Expected: Tests fail (Panel still has collapsed field)
 - File: `tests/immutability_tests.rs`
 
-### T009 [US1] [CRITICAL] Remove Panel::collapsed field
+### T009 [US1] [CRITICAL] Remove Panel::collapsed field ✅
 **TDD Green Phase**: Fix schema immutability
 - Remove `collapsed: bool` field from Panel struct
 - Remove `collapsed()` getter method
 - Update Panel Debug impl (remove collapsed field)
 - File: `src/types/group/panel.rs`
 
-### T010 [US1] Update PanelBuilder to use initial state hint
+### T010 [US1] Update PanelBuilder to use initial state hint ✅
 - Modify `PanelBuilder::collapsed()` to store hint (not mutate schema)
 - Pass collapsed hint to Context during initialization (via metadata or separate mechanism)
 - Document that `.collapsed()` is an initial UI state hint, not schema state
 - File: `src/types/group/panel.rs`
 
-### T011 [US1] [TEST] Write Layout trait tests for set_collapsed deprecation
+### T011 [US1] [TEST] Write Layout trait tests for set_collapsed deprecation ✅
 **TDD Red Phase**: Verify set_collapsed is gone
 - Test: `test_layout_trait_no_set_collapsed()` - verify method removed from trait
 - Test: `test_panel_set_collapsed_via_context()` - verify Context API works
 - Expected: Compilation fails if set_collapsed still exists on trait
 - File: `tests/immutability_tests.rs`
 
-### T012 [US1] Remove set_collapsed from Layout trait
+### T012 [US1] Remove set_collapsed from Layout trait ✅
 **TDD Green Phase**: Remove mutable method from trait
 - Remove `set_collapsed(&mut self, collapsed: bool)` from Layout trait
+- Remove `is_collapsed(&mut self)` from Layout trait
 - Remove implementation from Panel
 - File: `src/types/traits/category.rs`
 
