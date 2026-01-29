@@ -360,11 +360,16 @@ impl Event {
     }
 }
 
-/// A validation error with code and message.
+/// A validation error with code, message, and field path.
 ///
 /// Designed to be lightweight and cloneable for event broadcasting.
+/// Includes the full path to the field for nested object errors.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ValidationError {
+    /// Full path to the field (e.g., "user.address.city" for nested objects).
+    pub path: SmartStr,
+    /// Field name (last segment of path, e.g., "city").
+    pub field: SmartStr,
     /// Error code for programmatic handling (e.g., `required`, `min_length`).
     pub code: SmartStr,
     /// Human-readable error message.
@@ -372,55 +377,106 @@ pub struct ValidationError {
 }
 
 impl ValidationError {
-    /// Creates a new validation error.
+    /// Creates a new validation error with full path information.
+    ///
+    /// # Arguments
+    ///
+    /// * `path` - Full path to the field (e.g., "user.address.city")
+    /// * `field` - Field name (e.g., "city")
+    /// * `code` - Error code for programmatic handling
+    /// * `message` - Human-readable error message
     #[must_use]
-    pub fn new(code: impl Into<SmartStr>, message: impl Into<SmartStr>) -> Self {
+    pub fn new(
+        path: impl Into<SmartStr>,
+        field: impl Into<SmartStr>,
+        code: impl Into<SmartStr>,
+        message: impl Into<SmartStr>,
+    ) -> Self {
         Self {
+            path: path.into(),
+            field: field.into(),
             code: code.into(),
             message: message.into(),
         }
     }
 
-    /// Creates a "required" validation error.
+    /// Creates a validation error for a top-level field (path = field).
+    ///
+    /// Convenience method when the field is not nested.
     #[must_use]
-    pub fn required() -> Self {
-        Self::new("required", "This field is required")
+    pub fn simple(
+        field: impl Into<SmartStr>,
+        code: impl Into<SmartStr>,
+        message: impl Into<SmartStr>,
+    ) -> Self {
+        let field = field.into();
+        Self {
+            path: field.clone(),
+            field,
+            code: code.into(),
+            message: message.into(),
+        }
     }
 
-    /// Creates a `min_length` validation error.
+    /// Creates a "required" validation error for a field.
     #[must_use]
-    pub fn min_length(min: usize, actual: usize) -> Self {
-        Self::new(
-            "min_length",
-            format!("Minimum length is {min}, got {actual}"),
-        )
+    pub fn required(field: impl Into<SmartStr>) -> Self {
+        Self::simple(field, "required", "This field is required")
     }
 
-    /// Creates a `max_length` validation error.
+    /// Returns the full path to the field.
     #[must_use]
-    pub fn max_length(max: usize, actual: usize) -> Self {
-        Self::new(
-            "max_length",
-            format!("Maximum length is {max}, got {actual}"),
-        )
+    pub fn path(&self) -> &str {
+        &self.path
+    }
+
+    /// Returns the field name.
+    #[must_use]
+    pub fn field(&self) -> &str {
+        &self.field
+    }
+
+    /// Returns the error code.
+    #[must_use]
+    pub fn code(&self) -> &str {
+        &self.code
+    }
+
+    /// Returns the error message.
+    #[must_use]
+    pub fn message(&self) -> &str {
+        &self.message
+    }
+
+    /// Creates a `min_length` validation error for a field.
+    #[must_use]
+    pub fn min_length(field: impl Into<SmartStr>, min: usize) -> Self {
+        Self::simple(field, "min_length", format!("Minimum length is {min}"))
+    }
+
+    /// Creates a `max_length` validation error for a field.
+    #[must_use]
+    pub fn max_length(field: impl Into<SmartStr>, max: usize) -> Self {
+        Self::simple(field, "max_length", format!("Maximum length is {max}"))
     }
 
     /// Creates a "min" validation error for numeric values.
     #[must_use]
-    pub fn min_value(min: f64, actual: f64) -> Self {
-        Self::new("min", format!("Minimum value is {min}, got {actual}"))
+    pub fn min_value(field: impl Into<SmartStr>, min: f64) -> Self {
+        Self::simple(field, "min", format!("Minimum value is {min}"))
     }
 
     /// Creates a "max" validation error for numeric values.
     #[must_use]
-    pub fn max_value(max: f64, actual: f64) -> Self {
-        Self::new("max", format!("Maximum value is {max}, got {actual}"))
+    pub fn max_value(field: impl Into<SmartStr>, max: f64) -> Self {
+        Self::simple(field, "max", format!("Maximum value is {max}"))
     }
 
     /// Creates a "pattern" validation error.
     #[must_use]
-    pub fn pattern(pattern: &str) -> Self {
-        Self::new(
+    pub fn pattern(field: impl Into<SmartStr>, pattern: &str) -> Self {
+        Self::simple(
+            field,
             "pattern",
             format!("Value does not match pattern: {pattern}"),
         )
@@ -428,8 +484,12 @@ impl ValidationError {
 
     /// Creates a custom validation error.
     #[must_use]
-    pub fn custom(code: impl Into<SmartStr>, message: impl Into<SmartStr>) -> Self {
-        Self::new(code, message)
+    pub fn custom(
+        field: impl Into<SmartStr>,
+        code: impl Into<SmartStr>,
+        message: impl Into<SmartStr>,
+    ) -> Self {
+        Self::simple(field, code, message)
     }
 }
 
