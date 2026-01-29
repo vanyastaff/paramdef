@@ -87,7 +87,6 @@ mod event_arc_value {
     }
 
     #[test]
-    #[test]
     fn test_multiple_subscribers_share_arc() {
         // Multiple subscribers should share the same Arc<Value>
         // without cloning the underlying Value
