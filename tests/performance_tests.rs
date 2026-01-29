@@ -87,7 +87,6 @@ mod event_arc_value {
     }
 
     #[test]
-
     #[test]
     fn test_multiple_subscribers_share_arc() {
         // Multiple subscribers should share the same Arc<Value>
@@ -151,41 +150,111 @@ mod event_arc_value {
 #[cfg(test)]
 mod rollback_storage {
     use super::*;
+    use paramdef::context::rollback::RollbackStorage;
+    use paramdef::core::Key;
 
     #[test]
-    #[ignore = "T056 not yet implemented"]
     fn test_rollback_storage_small_uses_stack() {
         // Test that small transactions (1-8 fields) use stack buffer
-        // This test will fail until T056 is implemented
-        unimplemented!("RollbackStorage not yet implemented");
+        let mut storage = RollbackStorage::new();
+
+        // Store up to 8 values
+        for i in 0..8 {
+            let key = Key::from(format!("field{}", i));
+            storage.store(key, Some(Value::Int(i)));
+        }
+
+        // Should still be Small variant
+        assert!(
+            storage.is_small(),
+            "Storage with 8 items should use Small variant"
+        );
+        assert_eq!(storage.len(), 8);
     }
 
     #[test]
-    #[ignore = "T056 not yet implemented"]
     fn test_rollback_storage_large_uses_heap() {
         // Test that large transactions (>8 fields) use heap
-        unimplemented!("RollbackStorage not yet implemented");
+        let mut storage = RollbackStorage::new();
+
+        // Store 9 values (triggers upgrade)
+        for i in 0..9 {
+            let key = Key::from(format!("field{}", i));
+            storage.store(key, Some(Value::Int(i)));
+        }
+
+        // Should be Large variant now
+        assert!(
+            storage.is_large(),
+            "Storage with 9 items should use Large variant"
+        );
+        assert_eq!(storage.len(), 9);
     }
 
     #[test]
-    #[ignore = "T056 not yet implemented"]
     fn test_rollback_storage_upgrade_small_to_large() {
         // Test automatic upgrade from Small to Large variant
-        unimplemented!("RollbackStorage not yet implemented");
+        let mut storage = RollbackStorage::new();
+
+        // Add 8 items (stays Small)
+        for i in 0..8 {
+            let key = Key::from(format!("field{}", i));
+            storage.store(key, Some(Value::Int(i)));
+        }
+        assert!(storage.is_small());
+
+        // Add 9th item (triggers upgrade)
+        storage.store("field8".into(), Some(Value::Int(8)));
+        assert!(storage.is_large());
+
+        // All 9 items should still be accessible
+        assert_eq!(storage.len(), 9);
     }
 
     #[test]
-    #[ignore = "T056 not yet implemented"]
     fn test_rollback_storage_iter() {
         // Test iterator over stored values
-        unimplemented!("RollbackStorage not yet implemented");
+        let mut storage = RollbackStorage::new();
+
+        storage.store("a".into(), Some(Value::Int(1)));
+        storage.store("b".into(), Some(Value::Int(2)));
+        storage.store("c".into(), None);
+
+        let items: Vec<_> = storage.iter().collect();
+        assert_eq!(items.len(), 3);
+
+        // Check that all keys are present
+        let keys: Vec<&Key> = items.iter().map(|(k, _)| *k).collect();
+        assert!(keys.iter().any(|k| k.as_str() == "a"));
+        assert!(keys.iter().any(|k| k.as_str() == "b"));
+        assert!(keys.iter().any(|k| k.as_str() == "c"));
     }
 
     #[test]
-    #[ignore = "T056 not yet implemented"]
     fn test_rollback_storage_clear() {
         // Test clear operation
-        unimplemented!("RollbackStorage not yet implemented");
+        let mut storage = RollbackStorage::new();
+
+        storage.store("key1".into(), Some(Value::Int(1)));
+        storage.store("key2".into(), Some(Value::Int(2)));
+        assert_eq!(storage.len(), 2);
+
+        storage.clear();
+        assert_eq!(storage.len(), 0);
+        assert!(storage.is_empty());
+    }
+
+    #[test]
+    fn test_rollback_storage_with_capacity() {
+        // Test creating storage with known capacity
+        let mut storage = RollbackStorage::with_capacity(10);
+
+        // Should start as Large variant for capacity > 8
+        assert!(storage.is_large());
+
+        // Small capacity should start as Small
+        let small_storage = RollbackStorage::with_capacity(5);
+        assert!(small_storage.is_small());
     }
 }
 

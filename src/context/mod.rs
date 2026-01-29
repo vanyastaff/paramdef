@@ -22,6 +22,7 @@
 //! // Subscriber receives ValueChanging and ValueChanged events
 //! ```
 
+pub mod rollback;
 mod typed;
 mod ui_state;
 
