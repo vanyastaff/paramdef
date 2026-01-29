@@ -215,6 +215,86 @@ impl Context {
         self.nodes.get(key).and_then(|n| n.value())
     }
 
+    /// Gets a text value by key, returning a default if not found or wrong type.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use paramdef::prelude::*;
+    ///
+    /// let schema = Schema::builder()
+    ///     .node(Text::builder("name").default("Alice").build())
+    ///     .build();
+    /// let ctx = Context::from_schema(schema);
+    ///
+    /// assert_eq!(ctx.get_text_or("name", "Unknown"), "Alice");
+    /// assert_eq!(ctx.get_text_or("missing", "Unknown"), "Unknown");
+    /// ```
+    #[must_use]
+    pub fn get_text_or<'a>(&'a self, key: &str, default: &'a str) -> &'a str {
+        self.get(key).and_then(|v| v.as_text()).unwrap_or(default)
+    }
+
+    /// Gets an integer value by key, returning a default if not found or wrong type.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use paramdef::prelude::*;
+    ///
+    /// let schema = Schema::builder()
+    ///     .node(Number::builder("count").default(42.0).build())
+    ///     .build();
+    /// let ctx = Context::from_schema(schema);
+    ///
+    /// assert_eq!(ctx.get_int_or("count", 0), 42);
+    /// assert_eq!(ctx.get_int_or("missing", 99), 99);
+    /// ```
+    #[must_use]
+    pub fn get_int_or(&self, key: &str, default: i64) -> i64 {
+        self.get(key).and_then(|v| v.as_int()).unwrap_or(default)
+    }
+
+    /// Gets a boolean value by key, returning a default if not found or wrong type.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use paramdef::prelude::*;
+    ///
+    /// let schema = Schema::builder()
+    ///     .node(Boolean::builder("enabled").default(true).build())
+    ///     .build();
+    /// let ctx = Context::from_schema(schema);
+    ///
+    /// assert_eq!(ctx.get_bool_or("enabled", false), true);
+    /// assert_eq!(ctx.get_bool_or("missing", false), false);
+    /// ```
+    #[must_use]
+    pub fn get_bool_or(&self, key: &str, default: bool) -> bool {
+        self.get(key).and_then(|v| v.as_bool()).unwrap_or(default)
+    }
+
+    /// Gets a float value by key, returning a default if not found or wrong type.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use paramdef::prelude::*;
+    ///
+    /// let schema = Schema::builder()
+    ///     .node(Number::builder("pi").default(3.14159).build())
+    ///     .build();
+    /// let ctx = Context::from_schema(schema);
+    ///
+    /// assert_eq!(ctx.get_float_or("pi", 0.0), 3.14159);
+    /// assert_eq!(ctx.get_float_or("missing", 1.0), 1.0);
+    /// ```
+    #[must_use]
+    pub fn get_float_or(&self, key: &str, default: f64) -> f64 {
+        self.get(key).and_then(|v| v.as_f64()).unwrap_or(default)
+    }
+
     /// Sets a value by key.
     ///
     /// # Errors

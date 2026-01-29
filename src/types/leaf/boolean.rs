@@ -26,6 +26,8 @@ pub struct Boolean {
     default: Option<bool>,
     #[cfg(feature = "visibility")]
     visibility: Option<crate::expr::Rule>,
+    #[cfg(feature = "validation")]
+    rules: crate::validation::Rules,
 }
 
 impl Boolean {
@@ -68,6 +70,13 @@ impl Boolean {
     pub fn flags(&self) -> Flags {
         self.flags
     }
+
+    /// Returns the validation rules.
+    #[cfg(feature = "validation")]
+    #[must_use]
+    pub fn rules(&self) -> &crate::validation::Rules {
+        &self.rules
+    }
 }
 
 impl Node for Boolean {
@@ -109,6 +118,8 @@ pub struct BooleanBuilder {
     default: Option<bool>,
     #[cfg(feature = "visibility")]
     visibility: Option<crate::expr::Rule>,
+    #[cfg(feature = "validation")]
+    rules: crate::validation::Rules,
 }
 
 impl BooleanBuilder {
@@ -123,6 +134,8 @@ impl BooleanBuilder {
             default: None,
             #[cfg(feature = "visibility")]
             visibility: None,
+            #[cfg(feature = "validation")]
+            rules: crate::validation::Rules::new(),
         }
     }
 
@@ -185,6 +198,24 @@ impl BooleanBuilder {
         self
     }
 
+    /// Adds a validation rule requiring the field to have a value.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use paramdef::types::leaf::Boolean;
+    ///
+    /// let field = Boolean::builder("terms_accepted")
+    ///     .validate_required()
+    ///     .build();
+    /// ```
+    #[cfg(feature = "validation")]
+    #[must_use]
+    pub fn validate_required(mut self) -> Self {
+        self.rules.push(crate::validation::Rule::required());
+        self
+    }
+
     /// Builds the boolean parameter.
     #[must_use]
     pub fn build(self) -> Boolean {
@@ -206,6 +237,8 @@ impl BooleanBuilder {
             default: self.default,
             #[cfg(feature = "visibility")]
             visibility: self.visibility,
+            #[cfg(feature = "validation")]
+            rules: self.rules,
         }
     }
 }

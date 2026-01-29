@@ -32,6 +32,8 @@ pub struct Text<S: TextSubtype = crate::subtype::Plain> {
     default: Option<SmartStr>,
     #[cfg(feature = "visibility")]
     visibility: Option<crate::expr::Rule>,
+    #[cfg(feature = "validation")]
+    rules: crate::validation::Rules,
 }
 
 impl<S: TextSubtype> Text<S> {
@@ -51,6 +53,13 @@ impl<S: TextSubtype> Text<S> {
     #[must_use]
     pub fn flags(&self) -> Flags {
         self.flags
+    }
+
+    /// Returns the validation rules.
+    #[cfg(feature = "validation")]
+    #[must_use]
+    pub fn rules(&self) -> &crate::validation::Rules {
+        &self.rules
     }
 }
 
@@ -267,6 +276,8 @@ pub struct TextBuilder<S: TextSubtype = crate::subtype::Plain> {
     default: Option<SmartStr>,
     #[cfg(feature = "visibility")]
     visibility: Option<crate::expr::Rule>,
+    #[cfg(feature = "validation")]
+    rules: crate::validation::Rules,
 }
 
 impl TextBuilder<crate::subtype::Plain> {
@@ -282,6 +293,8 @@ impl TextBuilder<crate::subtype::Plain> {
             default: None,
             #[cfg(feature = "visibility")]
             visibility: None,
+            #[cfg(feature = "validation")]
+            rules: crate::validation::Rules::new(),
         }
     }
 }
@@ -299,6 +312,8 @@ impl<S: TextSubtype> TextBuilder<S> {
             default: self.default,
             #[cfg(feature = "visibility")]
             visibility: self.visibility,
+            #[cfg(feature = "validation")]
+            rules: self.rules,
         }
     }
 
@@ -368,6 +383,78 @@ impl<S: TextSubtype> TextBuilder<S> {
         self
     }
 
+    /// Adds a validation rule requiring the field to have a value.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use paramdef::types::leaf::Text;
+    ///
+    /// let field = Text::builder("name")
+    ///     .validate_required()
+    ///     .build();
+    /// ```
+    #[cfg(feature = "validation")]
+    #[must_use]
+    pub fn validate_required(mut self) -> Self {
+        self.rules.push(crate::validation::Rule::required());
+        self
+    }
+
+    /// Adds a validation rule for email format.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use paramdef::types::leaf::Text;
+    ///
+    /// let field = Text::builder("email")
+    ///     .validate_email()
+    ///     .build();
+    /// ```
+    #[cfg(feature = "validation")]
+    #[must_use]
+    pub fn validate_email(mut self) -> Self {
+        self.rules.push(crate::validation::Rule::email());
+        self
+    }
+
+    /// Adds a validation rule for minimum string length.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use paramdef::types::leaf::Text;
+    ///
+    /// let field = Text::builder("username")
+    ///     .validate_min_length(3)
+    ///     .build();
+    /// ```
+    #[cfg(feature = "validation")]
+    #[must_use]
+    pub fn validate_min_length(mut self, min: usize) -> Self {
+        self.rules.push(crate::validation::Rule::min_length(min));
+        self
+    }
+
+    /// Adds a validation rule for maximum string length.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use paramdef::types::leaf::Text;
+    ///
+    /// let field = Text::builder("bio")
+    ///     .validate_max_length(500)
+    ///     .build();
+    /// ```
+    #[cfg(feature = "validation")]
+    #[must_use]
+    pub fn validate_max_length(mut self, max: usize) -> Self {
+        self.rules.push(crate::validation::Rule::max_length(max));
+        self
+    }
+
     /// Builds the text parameter.
     #[must_use]
     pub fn build(self) -> Text<S> {
@@ -390,6 +477,8 @@ impl<S: TextSubtype> TextBuilder<S> {
             default: self.default,
             #[cfg(feature = "visibility")]
             visibility: self.visibility,
+            #[cfg(feature = "validation")]
+            rules: self.rules,
         }
     }
 }

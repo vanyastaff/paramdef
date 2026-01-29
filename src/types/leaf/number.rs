@@ -35,6 +35,8 @@ pub struct Number<S: NumberSubtype> {
     default: Option<f64>,
     #[cfg(feature = "visibility")]
     visibility: Option<crate::expr::Rule>,
+    #[cfg(feature = "validation")]
+    rules: crate::validation::Rules,
 }
 
 impl<S: NumberSubtype> Number<S> {
@@ -67,6 +69,13 @@ impl<S: NumberSubtype> Number<S> {
     #[must_use]
     pub fn flags(&self) -> Flags {
         self.flags
+    }
+
+    /// Returns the validation rules.
+    #[cfg(feature = "validation")]
+    #[must_use]
+    pub fn rules(&self) -> &crate::validation::Rules {
+        &self.rules
     }
 }
 
@@ -271,6 +280,8 @@ pub struct NumberBuilder<S: NumberSubtype> {
     default: Option<f64>,
     #[cfg(feature = "visibility")]
     visibility: Option<crate::expr::Rule>,
+    #[cfg(feature = "validation")]
+    rules: crate::validation::Rules,
 }
 
 impl<S: NumberSubtype> NumberBuilder<S> {
@@ -287,6 +298,8 @@ impl<S: NumberSubtype> NumberBuilder<S> {
             default: None,
             #[cfg(feature = "visibility")]
             visibility: None,
+            #[cfg(feature = "validation")]
+            rules: crate::validation::Rules::new(),
         }
     }
 
@@ -356,6 +369,60 @@ impl<S: NumberSubtype> NumberBuilder<S> {
         self
     }
 
+    /// Adds a validation rule requiring the field to have a value.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use paramdef::types::leaf::Number;
+    ///
+    /// let field = Number::builder("age")
+    ///     .validate_required()
+    ///     .build();
+    /// ```
+    #[cfg(feature = "validation")]
+    #[must_use]
+    pub fn validate_required(mut self) -> Self {
+        self.rules.push(crate::validation::Rule::required());
+        self
+    }
+
+    /// Adds a validation rule for minimum numeric value.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use paramdef::types::leaf::Number;
+    ///
+    /// let field = Number::builder("age")
+    ///     .validate_min(0.0)
+    ///     .build();
+    /// ```
+    #[cfg(feature = "validation")]
+    #[must_use]
+    pub fn validate_min(mut self, min: f64) -> Self {
+        self.rules.push(crate::validation::Rule::min(min));
+        self
+    }
+
+    /// Adds a validation rule for maximum numeric value.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use paramdef::types::leaf::Number;
+    ///
+    /// let field = Number::builder("percentage")
+    ///     .validate_max(100.0)
+    ///     .build();
+    /// ```
+    #[cfg(feature = "validation")]
+    #[must_use]
+    pub fn validate_max(mut self, max: f64) -> Self {
+        self.rules.push(crate::validation::Rule::max(max));
+        self
+    }
+
     /// Builds the number parameter.
     #[must_use]
     pub fn build(self) -> Number<S> {
@@ -379,6 +446,8 @@ impl<S: NumberSubtype> NumberBuilder<S> {
             default: self.default,
             #[cfg(feature = "visibility")]
             visibility: self.visibility,
+            #[cfg(feature = "validation")]
+            rules: self.rules,
         }
     }
 }
