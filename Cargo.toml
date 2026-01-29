@@ -73,6 +73,18 @@ harness = false
 name = "containers"
 harness = false
 
+[[bench]]
+name = "event_cloning"
+harness = false
+
+[[bench]]
+name = "transactional"
+harness = false
+
+[[bench]]
+name = "throughput"
+harness = false
+
 [[example]]
 name = "11_json_schema_export"
 required-features = ["serde"]

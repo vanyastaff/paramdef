@@ -122,11 +122,7 @@ criterion_group!(
     bench_bulk_operations_with_events
 );
 
-#[cfg(feature = "events")]
-criterion_main!(event_benches);
-
-// Dummy main for when events feature is not enabled
 #[cfg(not(feature = "events"))]
-fn main() {
-    println!("Event benchmarks require the 'events' feature");
-}
+criterion_group!(event_benches,);
+
+criterion_main!(event_benches);
