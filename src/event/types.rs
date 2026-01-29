@@ -524,7 +524,7 @@ mod tests {
 
     #[test]
     fn test_event_categories() {
-        assert!(Event::value_changed("k", None, Value::Bool(true)).is_value_event());
+        assert!(Event::value_changed("k", None, Arc::new(Value::Bool(true))).is_value_event());
         assert!(Event::touched("k").is_state_event());
         assert!(Event::valid("k").is_validation_event());
         assert!(Event::batch_begin(1, None::<&str>).is_batch_event());

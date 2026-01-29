@@ -343,6 +343,7 @@ impl std::error::Error for RecvError {}
 mod tests {
     use super::*;
     use crate::core::Value;
+    use std::sync::Arc;
 
     #[test]
     fn test_event_bus_new() {
@@ -511,7 +512,11 @@ mod tests {
 
         // Emit more events than capacity
         for i in 0..10 {
-            bus.emit(Event::value_changed(format!("key{i}"), None, Value::Int(i)));
+            bus.emit(Event::value_changed(
+                format!("key{i}"),
+                None,
+                Arc::new(Value::Int(i)),
+            ));
         }
 
         // First recv should report lag
