@@ -34,6 +34,29 @@ impl Boolean {
         BooleanBuilder::new(key)
     }
 
+    /// Creates a required boolean field with a label (1-liner convenience).
+    ///
+    /// This is a shorthand that combines builder construction, label, and required flag.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use paramdef::types::leaf::Boolean;
+    ///
+    /// // Before (4 lines):
+    /// let accept = Boolean::builder("accept_terms")
+    ///     .label("Accept Terms")
+    ///     .required()
+    ///     .build();
+    ///
+    /// // After (1 line):
+    /// let accept = Boolean::required("accept_terms", "Accept Terms");
+    /// ```
+    #[must_use]
+    pub fn required(key: impl Into<Key>, label: impl Into<crate::core::SmartStr>) -> Boolean {
+        Boolean::builder(key).label(label.into()).required().build()
+    }
+
     /// Returns the default value, if set.
     #[must_use]
     pub fn default_bool(&self) -> Option<bool> {

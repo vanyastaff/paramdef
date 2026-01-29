@@ -60,6 +60,32 @@ impl Text<crate::subtype::Plain> {
         TextBuilder::new(key)
     }
 
+    /// Creates a required text field with a label (1-liner convenience).
+    ///
+    /// This is a shorthand that combines builder construction, label, and required flag.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use paramdef::types::leaf::Text;
+    ///
+    /// // Before (4 lines):
+    /// let name = Text::builder("name")
+    ///     .label("Full Name")
+    ///     .required()
+    ///     .build();
+    ///
+    /// // After (1 line):
+    /// let name = Text::required("name", "Full Name");
+    /// ```
+    #[must_use]
+    pub fn required(
+        key: impl Into<Key>,
+        label: impl Into<crate::core::SmartStr>,
+    ) -> Text<crate::subtype::Plain> {
+        Text::builder(key).label(label.into()).required().build()
+    }
+
     /// Creates a required email field builder with validation.
     ///
     /// Returns a builder configured with:

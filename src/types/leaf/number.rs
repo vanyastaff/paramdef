@@ -78,6 +78,32 @@ impl Number<crate::subtype::GenericNumber> {
         NumberBuilder::new(key, crate::subtype::GenericNumber)
     }
 
+    /// Creates a required number field with a label (1-liner convenience).
+    ///
+    /// This is a shorthand that combines builder construction, label, and required flag.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use paramdef::types::leaf::Number;
+    ///
+    /// // Before (4 lines):
+    /// let age = Number::builder("age")
+    ///     .label("Age")
+    ///     .required()
+    ///     .build();
+    ///
+    /// // After (1 line):
+    /// let age = Number::required("age", "Age");
+    /// ```
+    #[must_use]
+    pub fn required(
+        key: impl Into<Key>,
+        label: impl Into<crate::core::SmartStr>,
+    ) -> Number<crate::subtype::GenericNumber> {
+        Number::builder(key).label(label.into()).required().build()
+    }
+
     /// Creates an integer number parameter builder.
     pub fn integer(key: impl Into<Key>) -> NumberBuilder<crate::subtype::GenericNumber> {
         NumberBuilder::new(key, crate::subtype::GenericNumber)

@@ -111,6 +111,32 @@ impl Context {
         }
     }
 
+    /// Creates a new context from a schema, automatically wrapping it in Arc.
+    ///
+    /// This is a convenience constructor that wraps the schema in `Arc` for you.
+    /// Use this when you don't need to share the schema across multiple contexts.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use paramdef::context::Context;
+    /// use paramdef::schema::Schema;
+    /// use paramdef::types::leaf::Text;
+    /// use paramdef::core::Value;
+    ///
+    /// let schema = Schema::builder()
+    ///     .parameter(Text::builder("name").build())
+    ///     .build();
+    ///
+    /// // Convenience: no need to wrap in Arc manually
+    /// let mut ctx = Context::from_schema(schema);
+    /// ctx.set("name", Value::text("Alice")).unwrap();
+    /// ```
+    #[must_use]
+    pub fn from_schema(schema: Schema) -> Self {
+        Self::new(Arc::new(schema))
+    }
+
     /// Creates a new context with an event bus.
     ///
     /// All value and state changes will be broadcast to subscribers.
