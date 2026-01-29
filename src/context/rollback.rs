@@ -39,8 +39,8 @@ pub enum RollbackStorage {
     /// Uses a fixed-size array on the stack to avoid heap allocations
     /// for the common case of small transactional updates.
     Small {
-        /// Stack-allocated buffer of (Key, Option<Value>) pairs.
-        /// Option<Value> allows storing None to indicate field was cleared.
+        /// Stack-allocated buffer of `(Key, Option<Value>)` pairs.
+        /// `Option<Value>` allows storing None to indicate field was cleared.
         buffer: [(Key, Option<Value>); 8],
         /// Number of items currently stored.
         count: usize,

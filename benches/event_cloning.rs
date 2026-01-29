@@ -123,6 +123,11 @@ criterion_group!(
 );
 
 #[cfg(not(feature = "events"))]
-criterion_group!(event_benches,);
+fn bench_noop(c: &mut Criterion) {
+    c.bench_function("noop", |b| b.iter(|| {}));
+}
+
+#[cfg(not(feature = "events"))]
+criterion_group!(event_benches, bench_noop);
 
 criterion_main!(event_benches);

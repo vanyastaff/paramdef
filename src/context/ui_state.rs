@@ -285,7 +285,7 @@ impl UiStateManager {
 // Serialization support (feature-gated)
 #[cfg(feature = "serde")]
 mod serde_support {
-    use super::{FxHashMap, Key, PanelState, UiStateManager};
+    use super::UiStateManager;
     use serde::{Deserialize, Deserializer, Serialize, Serializer};
     use std::collections::HashMap;
 
@@ -333,7 +333,7 @@ mod serde_support {
 
 #[cfg(test)]
 mod tests {
-    use super::{FxHashMap, Key, PanelState, UiStateManager};
+    use super::UiStateManager;
 
     #[test]
     fn test_ui_state_creation_and_defaults() {
