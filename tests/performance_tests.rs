@@ -156,7 +156,7 @@ mod rollback_storage {
     #[test]
     fn test_rollback_storage_small_uses_stack() {
         // Test that small transactions (1-8 fields) use stack buffer
-        let mut storage = RollbackStorage::new();
+        let storage = RollbackStorage::new();
 
         // Store up to 8 values
         for i in 0..8 {
@@ -175,7 +175,7 @@ mod rollback_storage {
     #[test]
     fn test_rollback_storage_large_uses_heap() {
         // Test that large transactions (>8 fields) use heap
-        let mut storage = RollbackStorage::new();
+        let storage = RollbackStorage::new();
 
         // Store 9 values (triggers upgrade)
         for i in 0..9 {
@@ -194,7 +194,7 @@ mod rollback_storage {
     #[test]
     fn test_rollback_storage_upgrade_small_to_large() {
         // Test automatic upgrade from Small to Large variant
-        let mut storage = RollbackStorage::new();
+        let storage = RollbackStorage::new();
 
         // Add 8 items (stays Small)
         for i in 0..8 {
@@ -214,7 +214,7 @@ mod rollback_storage {
     #[test]
     fn test_rollback_storage_iter() {
         // Test iterator over stored values
-        let mut storage = RollbackStorage::new();
+        let storage = RollbackStorage::new();
 
         storage.store("a".into(), Some(Value::Int(1)));
         storage.store("b".into(), Some(Value::Int(2)));
@@ -233,7 +233,7 @@ mod rollback_storage {
     #[test]
     fn test_rollback_storage_clear() {
         // Test clear operation
-        let mut storage = RollbackStorage::new();
+        let storage = RollbackStorage::new();
 
         storage.store("key1".into(), Some(Value::Int(1)));
         storage.store("key2".into(), Some(Value::Int(2)));
@@ -247,7 +247,7 @@ mod rollback_storage {
     #[test]
     fn test_rollback_storage_with_capacity() {
         // Test creating storage with known capacity
-        let mut storage = RollbackStorage::with_capacity(10);
+        let storage = RollbackStorage::with_capacity(10);
 
         // Should start as Large variant for capacity > 8
         assert!(storage.is_large());
