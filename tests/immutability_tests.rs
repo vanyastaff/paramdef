@@ -167,3 +167,111 @@ fn test_panel_set_collapsed_via_context() {
     // let mut panel_ref = ...;
     // panel_ref.set_collapsed(true);  // ERROR: no such method
 }
+
+// =============================================================================
+// T020: Comprehensive Immutability Integration Tests
+// =============================================================================
+
+/// Test that a schema can be shared across 10 contexts without Arc<Mutex>.
+///
+/// This demonstrates that schema immutability enables safe concurrent access
+/// with just Arc, no Mutex needed.
+#[test]
+fn test_schema_shareable_across_10_contexts() {
+    use paramdef::types::leaf::Number;
+
+    let schema = Arc::new(
+        Schema::builder()
+            .parameter(
+                Panel::builder("settings")
+                    .child(Text::builder("name").build())
+                    .child(Number::builder("age").build())
+                    .build(),
+            )
+            .parameter(Text::builder("username").build())
+            .parameter(Number::builder("port").build())
+            .build(),
+    );
+
+    // Create 10 contexts sharing the same schema
+    let contexts: Vec<_> = (0..10).map(|_| Context::new(Arc::clone(&schema))).collect();
+
+    // Each context has independent state
+    assert_eq!(contexts.len(), 10);
+    for ctx in &contexts {
+        assert_eq!(ctx.len(), 3); // 3 parameters in schema
+        assert!(!ctx.is_panel_collapsed(&"settings".into()));
+    }
+}
+
+/// Test that Arc<Schema> requires no Mutex for concurrent access.
+///
+/// This verifies that schema immutability makes it naturally thread-safe.
+#[test]
+fn test_arc_schema_no_mutex_needed() {
+    let schema = Arc::new(
+        Schema::builder()
+            .parameter(Panel::builder("panel1").build())
+            .parameter(Text::builder("field1").build())
+            .build(),
+    );
+
+    // Spawn 5 threads that all read from the same schema
+    let handles: Vec<_> = (0..5)
+        .map(|_| {
+            let schema_clone = Arc::clone(&schema);
+            std::thread::spawn(move || {
+                // Read operations on schema - no mutex needed
+                let param = schema_clone.get("panel1");
+                assert!(param.is_some());
+
+                let field = schema_clone.get("field1");
+                assert!(field.is_some());
+
+                schema_clone.len()
+            })
+        })
+        .collect();
+
+    // All threads complete successfully
+    for handle in handles {
+        let len = handle.join().unwrap();
+        assert_eq!(len, 2);
+    }
+}
+
+/// Test that Context UI state is independent of schema.
+///
+/// Verifies architectural invariant: schema (immutable) + context (mutable) separation.
+#[test]
+fn test_context_ui_state_independent_of_schema() {
+    let panel1 = Panel::builder("panel1").build();
+    let panel2 = Panel::builder("panel2").build();
+
+    let schema = Arc::new(
+        Schema::builder()
+            .parameter(panel1)
+            .parameter(panel2)
+            .build(),
+    );
+
+    let mut ctx1 = Context::new(Arc::clone(&schema));
+    let mut ctx2 = Context::new(Arc::clone(&schema));
+
+    // Set different UI states in each context
+    ctx1.set_panel_collapsed("panel1", true);
+    ctx1.set_panel_collapsed("panel2", false);
+
+    ctx2.set_panel_collapsed("panel1", false);
+    ctx2.set_panel_collapsed("panel2", true);
+
+    // Verify states are independent
+    assert!(ctx1.is_panel_collapsed(&"panel1".into()));
+    assert!(!ctx1.is_panel_collapsed(&"panel2".into()));
+
+    assert!(!ctx2.is_panel_collapsed(&"panel1".into()));
+    assert!(ctx2.is_panel_collapsed(&"panel2".into()));
+
+    // Schema is unchanged
+    assert_eq!(schema.len(), 2);
+}

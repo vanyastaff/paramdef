@@ -15,10 +15,11 @@
 //!
 //! ```
 //! use paramdef::context::UiStateManager;
+//! use paramdef::core::Key;
 //!
 //! let mut ui_state = UiStateManager::new();
 //! ui_state.set_panel_collapsed("settings", true);
-//! assert!(ui_state.is_panel_collapsed("settings"));
+//! assert!(ui_state.is_panel_collapsed(&Key::from("settings")));
 //! ```
 
 use crate::core::Key;
@@ -126,10 +127,11 @@ impl UiStateManager {
     ///
     /// ```
     /// use paramdef::context::UiStateManager;
+    /// use paramdef::core::Key;
     ///
     /// let mut ui_state = UiStateManager::new();
     /// ui_state.set_panel_collapsed("settings", true);
-    /// assert!(ui_state.is_panel_collapsed("settings"));
+    /// assert!(ui_state.is_panel_collapsed(&Key::from("settings")));
     /// ```
     pub fn set_panel_collapsed(&mut self, key: impl Into<Key>, collapsed: bool) {
         let key = key.into();
@@ -150,12 +152,13 @@ impl UiStateManager {
     ///
     /// ```
     /// use paramdef::context::UiStateManager;
+    /// use paramdef::core::Key;
     ///
     /// let mut ui_state = UiStateManager::new();
-    /// assert!(!ui_state.is_panel_collapsed("settings")); // Default: expanded
+    /// assert!(!ui_state.is_panel_collapsed(&Key::from("settings"))); // Default: expanded
     ///
     /// ui_state.set_panel_collapsed("settings", true);
-    /// assert!(ui_state.is_panel_collapsed("settings"));
+    /// assert!(ui_state.is_panel_collapsed(&Key::from("settings")));
     /// ```
     pub fn is_panel_collapsed(&self, key: &Key) -> bool {
         self.panel_states
@@ -233,6 +236,7 @@ impl UiStateManager {
     /// ui_state.set_panel_collapsed("panel2", false);
     /// assert_eq!(ui_state.len(), 2);
     /// ```
+    #[must_use]
     pub fn len(&self) -> usize {
         self.panel_states.len()
     }
@@ -250,6 +254,7 @@ impl UiStateManager {
     /// ui_state.set_panel_collapsed("settings", true);
     /// assert!(!ui_state.is_empty());
     /// ```
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.panel_states.is_empty()
     }
@@ -280,7 +285,7 @@ impl UiStateManager {
 // Serialization support (feature-gated)
 #[cfg(feature = "serde")]
 mod serde_support {
-    use super::*;
+    use super::{FxHashMap, Key, PanelState, UiStateManager};
     use serde::{Deserialize, Deserializer, Serialize, Serializer};
     use std::collections::HashMap;
 
@@ -328,7 +333,7 @@ mod serde_support {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{FxHashMap, Key, PanelState, UiStateManager};
 
     #[test]
     fn test_ui_state_creation_and_defaults() {

@@ -67,7 +67,27 @@ pub trait Visibility {
 
     /// Sets the visibility rule.
     ///
-    /// This is typically used by builders, not at runtime.
+    /// **Deprecated**: Visibility rules should be set during construction via builder methods.
+    /// Schema types should be immutable after construction to maintain architectural invariants.
+    ///
+    /// Use `.visible_when(rule)` on the builder instead:
+    ///
+    /// ```ignore
+    /// // ❌ Old way (deprecated):
+    /// let mut node = Text::builder("field").build();
+    /// node.set_visibility_rule(Some(rule));
+    ///
+    /// // ✅ New way:
+    /// let node = Text::builder("field")
+    ///     .visible_when(rule)
+    ///     .build();
+    /// ```
+    ///
+    /// This method will be removed in version 0.5.0.
+    #[deprecated(
+        since = "0.4.0",
+        note = "Set visibility via builder. Use .visible_when() during construction. Schema should be immutable after build()."
+    )]
     fn set_visibility_rule(&mut self, rule: Option<Rule>);
 
     /// Evaluates whether the node is currently visible in the given context.
