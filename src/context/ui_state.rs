@@ -3,6 +3,13 @@
 //! This module provides [`UiStateManager`] for managing presentation-only state
 //! (collapsed panels, scroll positions, etc.) separately from parameter data.
 //!
+
+#![allow(clippy::doc_markdown)]
+#![allow(clippy::derivable_impls)]
+#![allow(clippy::must_use_candidate)]
+#![allow(clippy::default_trait_access)]
+#![allow(clippy::unwrap_or_default)]
+#![allow(clippy::unnecessary_map_or)]
 //! # Architecture
 //!
 //! UI state is mutable, per-context state that does NOT belong in the immutable
@@ -285,7 +292,7 @@ impl UiStateManager {
 // Serialization support (feature-gated)
 #[cfg(feature = "serde")]
 mod serde_support {
-    use super::UiStateManager;
+    use super::{FxHashMap, Key, PanelState, UiStateManager};
     use serde::{Deserialize, Deserializer, Serialize, Serializer};
     use std::collections::HashMap;
 

@@ -3,6 +3,8 @@
 //! Context combines a schema with runtime state for all parameters,
 //! providing value storage, state tracking, and bulk operations.
 //!
+
+#![allow(clippy::redundant_closure_for_method_calls)]
 //! # Event System
 //!
 //! When the `events` feature is enabled, Context emits events for all

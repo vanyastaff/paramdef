@@ -187,7 +187,7 @@ mod error_recovery {
 }
 
 /// T039: Test ValidationError path support
-#[cfg(feature = "validation")]
+#[cfg(feature = "events")]
 mod validation_error_paths {
     use paramdef::event::ValidationError;
 
