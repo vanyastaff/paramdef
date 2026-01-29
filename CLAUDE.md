@@ -754,3 +754,10 @@ With Rust's type safety and zero-cost abstractions.
 **Last Updated:** 2026-01-11  
 **Maintained By:** paramdef team  
 **License:** MIT OR Apache-2.0
+
+## Active Technologies
+- Rust 1.92 (MSRV enforced via rust-toolchain.toml) + smartstring 1.0, thiserror 2.0, bitflags 2.6, rustc-hash 2.1, indexmap 2.7 (002-code-quality-improvements)
+- In-memory (Context with FxHashMap), no external storage (002-code-quality-improvements)
+
+## Recent Changes
+- 002-code-quality-improvements: Added Rust 1.92 (MSRV enforced via rust-toolchain.toml) + smartstring 1.0, thiserror 2.0, bitflags 2.6, rustc-hash 2.1, indexmap 2.7

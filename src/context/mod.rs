@@ -23,6 +23,7 @@
 //! ```
 
 mod typed;
+mod ui_state;
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -31,6 +32,8 @@ use crate::core::{FxHashMap, Key, Value};
 use crate::runtime::ErasedRuntimeNode;
 use crate::schema::Schema;
 use rustc_hash::FxBuildHasher;
+
+pub use ui_state::{PanelState, UiStateManager};
 
 #[cfg(feature = "events")]
 use crate::event::{Event, EventBus};
@@ -59,16 +62,30 @@ use crate::event::{Event, EventBus};
 /// ctx.set("username", Value::text("alice"));
 /// assert_eq!(ctx.get("username").and_then(|v| v.as_text()), Some("alice"));
 /// ```
-#[derive(Debug)]
 pub struct Context {
     /// Shared schema definition.
     schema: Arc<Schema>,
     /// Runtime nodes indexed by key.
     /// Uses `FxHashMap` for ~2x faster lookups with small keys.
     nodes: FxHashMap<Key, ErasedRuntimeNode>,
+    /// UI presentation state (panel collapsed states, etc.).
+    /// Separate from immutable schema to maintain architectural invariants.
+    ui_state: UiStateManager,
     /// Event bus for broadcasting changes (when `events` feature is enabled).
     #[cfg(feature = "events")]
     event_bus: Option<EventBus>,
+}
+
+impl std::fmt::Debug for Context {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut dbg = f.debug_struct("Context");
+        dbg.field("schema", &self.schema)
+            .field("nodes", &self.nodes.len())
+            .field("ui_state", &self.ui_state);
+        #[cfg(feature = "events")]
+        dbg.field("event_bus", &self.event_bus.is_some());
+        dbg.finish()
+    }
 }
 
 impl Context {
@@ -88,6 +105,7 @@ impl Context {
         Self {
             schema,
             nodes,
+            ui_state: UiStateManager::new(),
             #[cfg(feature = "events")]
             event_bus: None,
         }
@@ -109,9 +127,19 @@ impl Context {
     #[cfg(feature = "events")]
     #[must_use]
     pub fn with_event_bus(schema: Arc<Schema>, event_bus: EventBus) -> Self {
-        let mut ctx = Self::new(schema);
-        ctx.event_bus = Some(event_bus);
-        ctx
+        let mut nodes = FxHashMap::with_capacity_and_hasher(schema.len(), FxBuildHasher);
+
+        for node in schema.iter() {
+            let key = node.key().clone();
+            nodes.insert(key, ErasedRuntimeNode::from_arc(Arc::clone(node)));
+        }
+
+        Self {
+            schema,
+            nodes,
+            ui_state: UiStateManager::new(),
+            event_bus: Some(event_bus),
+        }
     }
 
     /// Returns a reference to the event bus, if configured.
@@ -756,6 +784,91 @@ impl Context {
 
         Ok(())
     }
+
+    // === UI State Management ===
+
+    /// Returns a reference to the UI state manager.
+    ///
+    /// The UI state manager handles presentation state like panel collapsed states,
+    /// separate from the immutable schema.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use paramdef::context::Context;
+    /// use paramdef::schema::Schema;
+    /// use std::sync::Arc;
+    ///
+    /// let schema = Arc::new(Schema::builder().build());
+    /// let ctx = Context::new(schema);
+    ///
+    /// let ui_state = ctx.ui_state();
+    /// assert!(ui_state.is_empty());
+    /// ```
+    #[must_use]
+    pub fn ui_state(&self) -> &UiStateManager {
+        &self.ui_state
+    }
+
+    /// Returns a mutable reference to the UI state manager.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use paramdef::context::Context;
+    /// use paramdef::schema::Schema;
+    /// use std::sync::Arc;
+    ///
+    /// let schema = Arc::new(Schema::builder().build());
+    /// let mut ctx = Context::new(schema);
+    ///
+    /// ctx.ui_state_mut().set_panel_collapsed("settings", true);
+    /// ```
+    #[must_use]
+    pub fn ui_state_mut(&mut self) -> &mut UiStateManager {
+        &mut self.ui_state
+    }
+
+    /// Checks if a panel is collapsed.
+    ///
+    /// Returns `false` if the panel has no state tracked (default is expanded).
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use paramdef::context::Context;
+    /// use paramdef::schema::Schema;
+    /// use paramdef::core::Key;
+    /// use std::sync::Arc;
+    ///
+    /// let schema = Arc::new(Schema::builder().build());
+    /// let ctx = Context::new(schema);
+    ///
+    /// assert!(!ctx.is_panel_collapsed(&Key::from("settings")));
+    /// ```
+    #[must_use]
+    pub fn is_panel_collapsed(&self, key: &Key) -> bool {
+        self.ui_state.is_panel_collapsed(key)
+    }
+
+    /// Sets the collapsed state of a panel.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use paramdef::context::Context;
+    /// use paramdef::schema::Schema;
+    /// use std::sync::Arc;
+    ///
+    /// let schema = Arc::new(Schema::builder().build());
+    /// let mut ctx = Context::new(schema);
+    ///
+    /// ctx.set_panel_collapsed("settings", true);
+    /// assert!(ctx.is_panel_collapsed(&"settings".into()));
+    /// ```
+    pub fn set_panel_collapsed(&mut self, key: impl Into<Key>, collapsed: bool) {
+        self.ui_state.set_panel_collapsed(key, collapsed);
+    }
 }
 
 #[cfg(test)]
@@ -833,7 +946,7 @@ mod tests {
     }
 
     #[test]
-    fn test_context_collect_dirty_values() {
+    fn test_context_save_dirty_to_map() {
         let schema = create_test_schema();
         let mut ctx = Context::new(schema);
         ctx.set("name", Value::text("Alice")).unwrap();
