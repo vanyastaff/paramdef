@@ -50,12 +50,17 @@ impl ValidationOutcome {
     }
 
     /// Converts to event system's `ValidationError` type.
+    ///
+    /// Note: This creates simple errors where path = field = "unknown" since
+    /// validation errors at this level don't track field context.
     #[cfg(feature = "events")]
     #[must_use]
     pub fn to_event_errors(&self) -> Arc<[crate::event::ValidationError]> {
         self.errors
             .iter()
-            .map(|e| crate::event::ValidationError::new(e.code.clone(), e.message.clone()))
+            .map(|e| {
+                crate::event::ValidationError::simple("unknown", e.code.clone(), e.message.clone())
+            })
             .collect()
     }
 }

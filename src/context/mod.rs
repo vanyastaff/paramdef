@@ -223,9 +223,10 @@ impl Context {
     /// use paramdef::prelude::*;
     ///
     /// let schema = Schema::builder()
-    ///     .node(Text::builder("name").default("Alice").build())
+    ///     .parameter(Text::builder("name").build())
     ///     .build();
-    /// let ctx = Context::from_schema(schema);
+    /// let mut ctx = Context::from_schema(schema);
+    /// ctx.set("name", Value::text("Alice")).unwrap();
     ///
     /// assert_eq!(ctx.get_text_or("name", "Unknown"), "Alice");
     /// assert_eq!(ctx.get_text_or("missing", "Unknown"), "Unknown");
@@ -243,9 +244,10 @@ impl Context {
     /// use paramdef::prelude::*;
     ///
     /// let schema = Schema::builder()
-    ///     .node(Number::builder("count").default(42.0).build())
+    ///     .parameter(Number::builder("count").build())
     ///     .build();
-    /// let ctx = Context::from_schema(schema);
+    /// let mut ctx = Context::from_schema(schema);
+    /// ctx.set("count", Value::Int(42)).unwrap();
     ///
     /// assert_eq!(ctx.get_int_or("count", 0), 42);
     /// assert_eq!(ctx.get_int_or("missing", 99), 99);
@@ -263,9 +265,10 @@ impl Context {
     /// use paramdef::prelude::*;
     ///
     /// let schema = Schema::builder()
-    ///     .node(Boolean::builder("enabled").default(true).build())
+    ///     .parameter(Boolean::builder("enabled").build())
     ///     .build();
-    /// let ctx = Context::from_schema(schema);
+    /// let mut ctx = Context::from_schema(schema);
+    /// ctx.set("enabled", Value::Bool(true)).unwrap();
     ///
     /// assert_eq!(ctx.get_bool_or("enabled", false), true);
     /// assert_eq!(ctx.get_bool_or("missing", false), false);
@@ -283,9 +286,10 @@ impl Context {
     /// use paramdef::prelude::*;
     ///
     /// let schema = Schema::builder()
-    ///     .node(Number::builder("pi").default(3.14159).build())
+    ///     .parameter(Number::builder("pi").build())
     ///     .build();
-    /// let ctx = Context::from_schema(schema);
+    /// let mut ctx = Context::from_schema(schema);
+    /// ctx.set("pi", Value::Float(3.14159)).unwrap();
     ///
     /// assert_eq!(ctx.get_float_or("pi", 0.0), 3.14159);
     /// assert_eq!(ctx.get_float_or("missing", 1.0), 1.0);

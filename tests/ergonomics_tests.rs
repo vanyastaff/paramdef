@@ -114,10 +114,11 @@ mod error_recovery {
     #[test]
     fn test_context_get_text_or_with_existing_value() {
         let schema = Schema::builder()
-            .node(Text::builder("name").default("Alice").build())
+            .parameter(Text::builder("name").build())
             .build();
 
-        let ctx = Context::from_schema(schema);
+        let mut ctx = Context::from_schema(schema);
+        ctx.set("name", Value::text("Alice")).unwrap();
 
         let name = ctx.get_text_or("name", "Unknown");
         assert_eq!(name, "Alice");
@@ -135,7 +136,7 @@ mod error_recovery {
     #[test]
     fn test_context_get_text_or_with_wrong_type() {
         let schema = Schema::builder()
-            .node(Number::builder("count").default(42.0).build())
+            .parameter(Number::builder("count").default(42.0).build())
             .build();
 
         let ctx = Context::from_schema(schema);
@@ -148,10 +149,11 @@ mod error_recovery {
     #[test]
     fn test_context_get_int_or() {
         let schema = Schema::builder()
-            .node(Number::builder("count").default(42.0).build())
+            .parameter(Number::builder("count").build())
             .build();
 
-        let ctx = Context::from_schema(schema);
+        let mut ctx = Context::from_schema(schema);
+        ctx.set("count", Value::Int(42)).unwrap();
 
         assert_eq!(ctx.get_int_or("count", 0), 42);
         assert_eq!(ctx.get_int_or("missing", 99), 99);
@@ -160,10 +162,11 @@ mod error_recovery {
     #[test]
     fn test_context_get_bool_or() {
         let schema = Schema::builder()
-            .node(Boolean::builder("enabled").default(true).build())
+            .parameter(Boolean::builder("enabled").build())
             .build();
 
-        let ctx = Context::from_schema(schema);
+        let mut ctx = Context::from_schema(schema);
+        ctx.set("enabled", Value::Bool(true)).unwrap();
 
         assert_eq!(ctx.get_bool_or("enabled", false), true);
         assert_eq!(ctx.get_bool_or("missing", false), false);
@@ -172,10 +175,11 @@ mod error_recovery {
     #[test]
     fn test_context_get_float_or() {
         let schema = Schema::builder()
-            .node(Number::builder("pi").default(3.14159).build())
+            .parameter(Number::builder("pi").build())
             .build();
 
-        let ctx = Context::from_schema(schema);
+        let mut ctx = Context::from_schema(schema);
+        ctx.set("pi", Value::Float(3.14159)).unwrap();
 
         assert_eq!(ctx.get_float_or("pi", 0.0), 3.14159);
         assert_eq!(ctx.get_float_or("missing", 1.0), 1.0);
@@ -189,12 +193,7 @@ mod validation_error_paths {
 
     #[test]
     fn test_validation_error_with_path() {
-        let err = ValidationError::new(
-            "address.city".into(),
-            "city".into(),
-            "required".into(),
-            "City is required".into(),
-        );
+        let err = ValidationError::new("address.city", "city", "required", "City is required");
 
         assert_eq!(err.path(), "address.city");
         assert_eq!(err.field(), "city");
@@ -202,11 +201,7 @@ mod validation_error_paths {
 
     #[test]
     fn test_validation_error_simple_top_level() {
-        let err = ValidationError::simple(
-            "email".into(),
-            "email".into(),
-            "Invalid email format".into(),
-        );
+        let err = ValidationError::simple("email", "email", "Invalid email format");
 
         assert_eq!(err.path(), "email");
         assert_eq!(err.field(), "email");
@@ -215,10 +210,10 @@ mod validation_error_paths {
     #[test]
     fn test_validation_error_nested_object_path() {
         let err = ValidationError::new(
-            "user.profile.bio".into(),
-            "bio".into(),
-            "max_length".into(),
-            "Bio exceeds 500 characters".into(),
+            "user.profile.bio",
+            "bio",
+            "max_length",
+            "Bio exceeds 500 characters",
         );
 
         assert_eq!(err.path(), "user.profile.bio");
@@ -253,7 +248,7 @@ mod object_builder {
             ("active", Arc::new(Boolean::builder("active").build())),
         ];
 
-        let obj = Object::builder("user").fields(fields).build();
+        let obj = Object::builder("user").fields(fields).build().unwrap();
 
         assert_eq!(obj.children().len(), 3);
     }
@@ -264,7 +259,7 @@ mod object_builder {
 
         let fields: Vec<(&str, Arc<dyn Node>)> = vec![];
 
-        let obj = Object::builder("empty").fields(fields).build();
+        let obj = Object::builder("empty").fields(fields).build().unwrap();
 
         assert_eq!(obj.children().len(), 0);
     }
@@ -288,7 +283,7 @@ mod object_builder {
             ),
         ];
 
-        let obj = Object::builder("mixed").fields(fields).build();
+        let obj = Object::builder("mixed").fields(fields).build().unwrap();
 
         assert_eq!(obj.children().len(), 3);
     }
@@ -327,16 +322,16 @@ mod value_builder {
     fn test_value_builder_multiple_fields_chained() {
         let value = Value::build_object()
             .field("name", Value::text("Bob"))
-            .field("age", Value::number(30.0))
-            .field("active", Value::boolean(true))
+            .field("age", Value::Float(30.0))
+            .field("active", Value::Bool(true))
             .build();
 
         match value {
             Value::Object(map) => {
                 assert_eq!(map.len(), 3);
                 assert_eq!(map.get(&Key::from("name")), Some(&Value::text("Bob")));
-                assert_eq!(map.get(&Key::from("age")), Some(&Value::number(30.0)));
-                assert_eq!(map.get(&Key::from("active")), Some(&Value::boolean(true)));
+                assert_eq!(map.get(&Key::from("age")), Some(&Value::Float(30.0)));
+                assert_eq!(map.get(&Key::from("active")), Some(&Value::Bool(true)));
             }
             _ => panic!("Expected Object variant"),
         }
@@ -347,16 +342,16 @@ mod value_builder {
         use indexmap::IndexMap;
 
         let mut bulk = IndexMap::new();
-        bulk.insert(Key::from("x"), Value::number(1.0));
-        bulk.insert(Key::from("y"), Value::number(2.0));
+        bulk.insert(Key::from("x"), Value::Float(1.0));
+        bulk.insert(Key::from("y"), Value::Float(2.0));
 
         let value = Value::build_object().fields(bulk).build();
 
         match value {
             Value::Object(map) => {
                 assert_eq!(map.len(), 2);
-                assert_eq!(map.get(&Key::from("x")), Some(&Value::number(1.0)));
-                assert_eq!(map.get(&Key::from("y")), Some(&Value::number(2.0)));
+                assert_eq!(map.get(&Key::from("x")), Some(&Value::Float(1.0)));
+                assert_eq!(map.get(&Key::from("y")), Some(&Value::Float(2.0)));
             }
             _ => panic!("Expected Object variant"),
         }
@@ -367,7 +362,7 @@ mod value_builder {
         let include_age = true;
         let value = Value::build_object()
             .field("name", Value::text("Charlie"))
-            .field_if(include_age, "age", Value::number(25.0))
+            .field_if(include_age, "age", Value::Float(25.0))
             .build();
 
         match value {
@@ -382,7 +377,7 @@ mod value_builder {
         let include_age = false;
         let value = Value::build_object()
             .field("name", Value::text("Charlie"))
-            .field_if(include_age, "age", Value::number(25.0))
+            .field_if(include_age, "age", Value::Float(25.0))
             .build();
 
         match value {

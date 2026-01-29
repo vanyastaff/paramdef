@@ -516,13 +516,13 @@ mod tests {
 
     #[test]
     fn test_validation_error_constructors() {
-        let err = ValidationError::required();
+        let err = ValidationError::required("test_field");
         assert_eq!(err.code.as_str(), "required");
+        assert_eq!(err.field.as_str(), "test_field");
 
-        let err = ValidationError::min_length(5, 3);
+        let err = ValidationError::min_length("username", 5);
         assert_eq!(err.code.as_str(), "min_length");
         assert!(err.message.contains("5"));
-        assert!(err.message.contains("3"));
     }
 
     #[test]
@@ -530,7 +530,7 @@ mod tests {
         let e = Event::value_changing("key", None, Value::Int(42));
         assert!(matches!(e, Event::ValueChanging { .. }));
 
-        let e = Event::validated("key", false, vec![ValidationError::required()]);
+        let e = Event::validated("key", false, vec![ValidationError::required("key")]);
         if let Event::Validated { errors, .. } = e {
             assert_eq!(errors.len(), 1);
         }
@@ -545,7 +545,7 @@ mod tests {
 
     #[test]
     fn test_event_clone() {
-        let event = Event::validated("key", false, vec![ValidationError::required()]);
+        let event = Event::validated("key", false, vec![ValidationError::required("key")]);
         let cloned = event.clone();
 
         // Arc should be shared, not deep cloned

@@ -172,12 +172,12 @@ impl ObjectBuilder {
     /// # Examples
     ///
     /// ```
-    /// use paramdef::core::Value;
+    /// use paramdef::core::{Value, Key};
     /// use indexmap::IndexMap;
     ///
-    /// let mut fields = IndexMap::new();
-    /// fields.insert("x".into(), Value::number(1.0));
-    /// fields.insert("y".into(), Value::number(2.0));
+    /// let mut fields = IndexMap::<Key, Value>::new();
+    /// fields.insert("x".into(), Value::Float(1.0));
+    /// fields.insert("y".into(), Value::Float(2.0));
     ///
     /// let point = Value::build_object()
     ///     .fields(fields)
@@ -202,15 +202,16 @@ impl ObjectBuilder {
     /// # Examples
     ///
     /// ```
-    /// use paramdef::core::Value;
+    /// use paramdef::core::{Value, Key};
     ///
     /// let include_age = true;
     /// let user = Value::build_object()
     ///     .text("name", "Charlie")
-    ///     .field_if(include_age, "age", Value::number(25.0))
+    ///     .field_if(include_age, "age", Value::Float(25.0))
     ///     .build();
     ///
-    /// assert!(user.as_object().unwrap().contains_key(&"age".into()));
+    /// let age_key: Key = "age".into();
+    /// assert!(user.as_object().unwrap().contains_key(&age_key));
     /// ```
     #[must_use]
     pub fn field_if(mut self, condition: bool, key: impl Into<Key>, value: Value) -> Self {
