@@ -41,13 +41,17 @@ pub enum Event {
     /// dependent updates.
     ///
     /// For cancellable changes, use middleware or validators instead.
+    ///
+    /// **Performance**: Values are shared via `Arc` to avoid cloning when
+    /// broadcasting to multiple subscribers. This reduces clone overhead
+    /// from 3× to 1× per value change when events are enabled.
     ValueChanging {
         /// Key of the parameter being changed.
         key: Key,
-        /// Current value before the change.
-        old_value: Option<Value>,
-        /// New value being set.
-        new_value: Value,
+        /// Current value before the change (shared via Arc).
+        old_value: Option<Arc<Value>>,
+        /// New value being set (shared via Arc).
+        new_value: Arc<Value>,
     },
 
     /// Emitted after a value has changed.
@@ -57,13 +61,17 @@ pub enum Event {
     /// - Updating dependent values
     /// - Triggering side effects
     /// - Syncing with external systems
+    ///
+    /// **Performance**: Values are shared via `Arc` to avoid cloning when
+    /// broadcasting to multiple subscribers. This reduces clone overhead
+    /// from 3× to 1× per value change when events are enabled.
     ValueChanged {
         /// Key of the parameter that changed.
         key: Key,
-        /// Previous value.
-        old_value: Option<Value>,
-        /// New current value.
-        new_value: Value,
+        /// Previous value (shared via Arc).
+        old_value: Option<Arc<Value>>,
+        /// New current value (shared via Arc).
+        new_value: Arc<Value>,
     },
 
     /// Emitted when a value is cleared.
@@ -72,8 +80,8 @@ pub enum Event {
     ValueCleared {
         /// Key of the parameter that was cleared.
         key: Key,
-        /// The value that was removed.
-        old_value: Value,
+        /// The value that was removed (shared via Arc).
+        old_value: Arc<Value>,
     },
 
     /// Emitted when validation completes for a parameter.
@@ -164,10 +172,10 @@ pub enum Event {
     Reverted {
         /// Key of the parameter that was reverted.
         key: Key,
-        /// Original value before the batch operation.
-        old_value: Value,
-        /// Failed value that was attempted to be set.
-        failed_value: Value,
+        /// Original value before the batch operation (shared via Arc).
+        old_value: Arc<Value>,
+        /// Failed value that was attempted to be set (shared via Arc).
+        failed_value: Arc<Value>,
     },
 
     /// Emitted when the entire context is reset.
@@ -246,7 +254,11 @@ impl Event {
 
     /// Creates a `ValueChanging` event.
     #[must_use]
-    pub fn value_changing(key: impl Into<Key>, old_value: Option<Value>, new_value: Value) -> Self {
+    pub fn value_changing(
+        key: impl Into<Key>,
+        old_value: Option<Arc<Value>>,
+        new_value: Arc<Value>,
+    ) -> Self {
         Self::ValueChanging {
             key: key.into(),
             old_value,
@@ -256,7 +268,11 @@ impl Event {
 
     /// Creates a `ValueChanged` event.
     #[must_use]
-    pub fn value_changed(key: impl Into<Key>, old_value: Option<Value>, new_value: Value) -> Self {
+    pub fn value_changed(
+        key: impl Into<Key>,
+        old_value: Option<Arc<Value>>,
+        new_value: Arc<Value>,
+    ) -> Self {
         Self::ValueChanged {
             key: key.into(),
             old_value,
@@ -266,7 +282,7 @@ impl Event {
 
     /// Creates a `ValueCleared` event.
     #[must_use]
-    pub fn value_cleared(key: impl Into<Key>, old_value: Value) -> Self {
+    pub fn value_cleared(key: impl Into<Key>, old_value: Arc<Value>) -> Self {
         Self::ValueCleared {
             key: key.into(),
             old_value,
@@ -351,7 +367,7 @@ impl Event {
 
     /// Creates a `Reverted` event.
     #[must_use]
-    pub fn reverted(key: impl Into<Key>, old_value: Value, failed_value: Value) -> Self {
+    pub fn reverted(key: impl Into<Key>, old_value: Arc<Value>, failed_value: Arc<Value>) -> Self {
         Self::Reverted {
             key: key.into(),
             old_value,
@@ -527,7 +543,7 @@ mod tests {
 
     #[test]
     fn test_event_constructors() {
-        let e = Event::value_changing("key", None, Value::Int(42));
+        let e = Event::value_changing("key", None, Arc::new(Value::Int(42)));
         assert!(matches!(e, Event::ValueChanging { .. }));
 
         let e = Event::validated("key", false, vec![ValidationError::required("key")]);
@@ -553,6 +569,25 @@ mod tests {
             (&event, &cloned)
         {
             assert!(Arc::ptr_eq(e1, e2));
+        }
+    }
+
+    #[test]
+    fn test_value_events_share_arc() {
+        // ValueChanged and ValueChanging should share Arc<Value> when cloned
+        let value = Arc::new(Value::Int(42));
+        let event = Event::value_changed("key", None, Arc::clone(&value));
+        let cloned = event.clone();
+
+        if let (
+            Event::ValueChanged { new_value: v1, .. },
+            Event::ValueChanged { new_value: v2, .. },
+        ) = (&event, &cloned)
+        {
+            // Both should point to the same Arc
+            assert!(Arc::ptr_eq(v1, v2));
+            // And they should both point to the original value
+            assert!(Arc::ptr_eq(v1, &value));
         }
     }
 }

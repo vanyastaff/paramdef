@@ -318,16 +318,30 @@ impl Context {
         let old_value = node.value().cloned();
 
         #[cfg(feature = "events")]
+        let value_arc = Arc::new(value.clone());
+
+        #[cfg(feature = "events")]
         if let Some(ref bus) = self.event_bus {
-            bus.emit(Event::value_changing(key, old_value.clone(), value.clone()));
+            let old_arc = old_value.clone().map(Arc::new);
+            bus.emit(Event::value_changing(
+                key,
+                old_arc.clone(),
+                Arc::clone(&value_arc),
+            ));
         }
 
         let was_dirty = node.state().is_dirty();
+
+        #[cfg(feature = "events")]
+        node.set_value((*value_arc).clone());
+
+        #[cfg(not(feature = "events"))]
         node.set_value(value.clone());
 
         #[cfg(feature = "events")]
         if let Some(ref bus) = self.event_bus {
-            bus.emit(Event::value_changed(key, old_value, value));
+            let old_arc = old_value.map(Arc::new);
+            bus.emit(Event::value_changed(key, old_arc, value_arc));
 
             // Emit Dirtied if this is the first dirty state
             if !was_dirty && node.state().is_dirty() {
@@ -361,7 +375,7 @@ impl Context {
 
         #[cfg(feature = "events")]
         if let (Some(bus), Some(old)) = (&self.event_bus, old_value) {
-            bus.emit(Event::value_cleared(key, old));
+            bus.emit(Event::value_cleared(key, Arc::new(old)));
         }
 
         Ok(())
@@ -462,8 +476,8 @@ impl Context {
                 if let Some(ref bus) = self.event_bus {
                     bus.emit(Event::reverted(
                         key.clone(),
-                        old_val.clone().unwrap_or(Value::Null),
-                        node.value().cloned().unwrap_or(Value::Null),
+                        Arc::new(old_val.clone().unwrap_or(Value::Null)),
+                        Arc::new(node.value().cloned().unwrap_or(Value::Null)),
                     ));
                 }
             }
