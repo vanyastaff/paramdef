@@ -304,8 +304,11 @@ impl Default for RollbackStorage {
 pub enum RollbackStorageIter<'a> {
     /// Iterator over Small variant buffer.
     Small {
+        /// Reference to the stack-allocated buffer.
         buffer: &'a [(Key, Option<Value>); 8],
+        /// Number of valid items in the buffer.
         count: usize,
+        /// Current iteration position.
         index: usize,
     },
     /// Iterator over Large variant HashMap.

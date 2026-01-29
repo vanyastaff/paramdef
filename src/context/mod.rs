@@ -413,7 +413,7 @@ impl Context {
         I: IntoIterator<Item = (K, Value)>,
         K: AsRef<str>,
     {
-        use crate::core::FxHashMap;
+        use crate::context::rollback::RollbackStorage;
 
         let values: Vec<_> = values.into_iter().collect();
 
@@ -432,12 +432,12 @@ impl Context {
             None
         };
 
-        // Store old values for rollback
-        let mut old_values = FxHashMap::default();
+        // Store old values for rollback (optimized for ≤8 fields)
+        let mut rollback = RollbackStorage::with_capacity(values.len());
         for (key, _) in &values {
             let key_str = key.as_ref();
             if let Some(node) = self.nodes.get(key_str) {
-                old_values.insert(Key::from(key_str), node.value().cloned());
+                rollback.store(Key::from(key_str), node.value().cloned());
             }
         }
 
@@ -459,10 +459,7 @@ impl Context {
         // If error occurred, rollback all applied changes
         if let Some((_failed_key, _failed_value, err)) = error {
             // Rollback all successfully applied changes
-            for (key, _) in &applied_keys {
-                let Some(old_val) = old_values.get(key) else {
-                    continue;
-                };
+            for (key, old_val) in rollback.iter() {
                 let Some(node) = self.nodes.get_mut(key.as_str()) else {
                     continue;
                 };
@@ -675,8 +672,18 @@ impl Context {
 
     /// Returns an iterator over all non-null values.
     ///
-    /// This is a zero-allocation iterator that yields key-value pairs for all
-    /// parameters that have a non-null value set.
+    /// This is a zero-copy, zero-allocation iterator that yields key-value pairs
+    /// for all parameters that have a non-null value set. Values are returned as
+    /// references, avoiding clones.
+    ///
+    /// # Performance
+    ///
+    /// - **Zero allocations**: Iterator is lazy and stack-allocated
+    /// - **Zero copies**: Returns `&Value` references, not owned values
+    /// - **Efficient**: Filters null values without materializing intermediate collections
+    ///
+    /// Use this instead of [`collect_values()`](Self::collect_values) when you only
+    /// need to inspect values without owning them.
     ///
     /// # Example
     ///
@@ -694,6 +701,11 @@ impl Context {
     ///
     /// let mut ctx = Context::new(schema);
     /// ctx.set("name", Value::text("Alice"));
+    ///
+    /// // Zero-copy iteration - values are not cloned
+    /// for (key, value) in ctx.values() {
+    ///     println!("{}: {:?}", key, value); // No clones, just references
+    /// }
     ///
     /// // Only "name" has a value, "email" is null
     /// assert_eq!(ctx.values().count(), 1);
@@ -825,6 +837,44 @@ impl Context {
     /// Returns an iterator over all keys.
     pub fn keys(&self) -> impl Iterator<Item = &Key> {
         self.nodes.keys()
+    }
+
+    /// Gets multiple values by keys in a single call.
+    ///
+    /// Returns a vector of `Option<&Value>` where `None` indicates either
+    /// the key doesn't exist or the value is null. The results are returned
+    /// in the same order as the input keys.
+    ///
+    /// This is more efficient than calling `get()` multiple times when you
+    /// need to fetch many values, as it avoids repeated function call overhead.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use paramdef::context::Context;
+    /// use paramdef::schema::Schema;
+    /// use paramdef::types::leaf::{Text, Number};
+    /// use paramdef::core::Value;
+    /// use std::sync::Arc;
+    ///
+    /// let schema = Arc::new(Schema::builder()
+    ///     .parameter(Text::builder("name").build())
+    ///     .parameter(Text::builder("email").build())
+    ///     .parameter(Number::builder("age").build())
+    ///     .build());
+    ///
+    /// let mut ctx = Context::new(schema);
+    /// ctx.set("name", Value::text("Alice")).unwrap();
+    /// ctx.set("age", Value::Int(30)).unwrap();
+    ///
+    /// let values = ctx.get_many(&["name", "email", "age"]);
+    /// assert!(values[0].is_some()); // name exists
+    /// assert!(values[1].is_none());  // email is null
+    /// assert!(values[2].is_some()); // age exists
+    /// ```
+    #[must_use]
+    pub fn get_many<K: AsRef<str>>(&self, keys: &[K]) -> Vec<Option<&Value>> {
+        keys.iter().map(|k| self.get(k.as_ref())).collect()
     }
 
     // === Batch Operations (events feature) ===
@@ -1249,6 +1299,46 @@ mod tests {
     }
 
     #[test]
+    fn test_context_values_zero_copy() {
+        let schema = create_test_schema();
+        let mut ctx = Context::new(schema);
+
+        ctx.set("name", Value::text("Alice")).unwrap();
+        ctx.set("email", Value::text("alice@example.com")).unwrap();
+        ctx.set("age", Value::Int(30)).unwrap();
+
+        // Verify values() returns references, not clones
+        let collected: Vec<_> = ctx.values().collect();
+
+        // Check that we got references
+        assert_eq!(collected.len(), 3);
+
+        // Verify we can use the references multiple times (proving they're &Value)
+        for (key, value) in &collected {
+            match key.as_str() {
+                "name" => assert_eq!(value.as_text(), Some("Alice")),
+                "email" => assert_eq!(value.as_text(), Some("alice@example.com")),
+                "age" => assert_eq!(value.as_int(), Some(30)),
+                _ => panic!("Unexpected key: {}", key),
+            }
+        }
+
+        // Verify original context still has values (not moved)
+        assert_eq!(ctx.get("name").and_then(|v| v.as_text()), Some("Alice"));
+        assert_eq!(
+            ctx.get("email").and_then(|v| v.as_text()),
+            Some("alice@example.com")
+        );
+        assert_eq!(ctx.get("age").and_then(|v| v.as_int()), Some(30));
+
+        // Verify iterator can be used multiple times (lazy, no clone)
+        let count1 = ctx.values().count();
+        let count2 = ctx.values().count();
+        assert_eq!(count1, count2);
+        assert_eq!(count1, 3);
+    }
+
+    #[test]
     fn test_iterators_with_mixed_states() {
         let schema = create_test_schema();
         let mut ctx = Context::new(schema);
@@ -1266,6 +1356,201 @@ mod tests {
 
         // dirty_values() returns both (just set)
         assert_eq!(ctx.dirty_values().count(), 2);
+    }
+
+    #[test]
+    fn test_set_many_transactional_success() {
+        let schema = create_test_schema();
+        let mut ctx = Context::new(schema);
+
+        // Transactionally set multiple values
+        let result = ctx.set_many_transactional([
+            ("name", Value::text("Alice")),
+            ("email", Value::text("alice@example.com")),
+            ("age", Value::Int(30)),
+        ]);
+
+        assert!(result.is_ok());
+        assert_eq!(ctx.get("name").and_then(|v| v.as_text()), Some("Alice"));
+        assert_eq!(
+            ctx.get("email").and_then(|v| v.as_text()),
+            Some("alice@example.com")
+        );
+        assert_eq!(ctx.get("age").and_then(|v| v.as_int()), Some(30));
+    }
+
+    #[test]
+    fn test_set_many_transactional_rollback_on_unknown_key() {
+        let schema = create_test_schema();
+        let mut ctx = Context::new(schema);
+
+        // Set initial values
+        ctx.set("name", Value::text("Bob")).unwrap();
+        ctx.set("email", Value::text("bob@example.com")).unwrap();
+
+        // Try to set multiple values with one unknown key
+        let result = ctx.set_many_transactional([
+            ("name", Value::text("Alice")),
+            ("unknown", Value::text("fail")), // This should fail
+            ("email", Value::text("alice@example.com")),
+        ]);
+
+        // Transaction should fail
+        assert!(result.is_err());
+        assert!(matches!(
+            result.unwrap_err(),
+            crate::core::Error::NotFound { .. }
+        ));
+
+        // All values should be rolled back to original state
+        assert_eq!(ctx.get("name").and_then(|v| v.as_text()), Some("Bob"));
+        assert_eq!(
+            ctx.get("email").and_then(|v| v.as_text()),
+            Some("bob@example.com")
+        );
+    }
+
+    #[test]
+    fn test_set_many_transactional_small_rollback_storage() {
+        let schema = create_test_schema();
+        let mut ctx = Context::new(schema);
+
+        // Set 3 values (within Small storage capacity of 8)
+        ctx.set("name", Value::text("Original")).unwrap();
+        ctx.set("email", Value::text("original@example.com"))
+            .unwrap();
+        ctx.set("age", Value::Int(25)).unwrap();
+
+        // Try transactional update with all 3 (should use Small variant)
+        let result = ctx.set_many_transactional([
+            ("name", Value::text("New")),
+            ("email", Value::text("new@example.com")),
+            ("age", Value::Int(30)),
+        ]);
+
+        assert!(result.is_ok());
+        assert_eq!(ctx.get("name").and_then(|v| v.as_text()), Some("New"));
+    }
+
+    #[test]
+    fn test_set_many_partial_success() {
+        let schema = create_test_schema();
+        let mut ctx = Context::new(schema);
+
+        let results = ctx.set_many_partial([
+            ("name", Value::text("Alice")),
+            ("email", Value::text("alice@example.com")),
+            ("age", Value::Int(30)),
+        ]);
+
+        assert_eq!(results.len(), 3);
+        assert!(results[0].is_ok());
+        assert!(results[1].is_ok());
+        assert!(results[2].is_ok());
+    }
+
+    #[test]
+    fn test_set_many_partial_with_errors() {
+        let schema = create_test_schema();
+        let mut ctx = Context::new(schema);
+
+        let results = ctx.set_many_partial([
+            ("name", Value::text("Alice")),
+            ("unknown", Value::text("fail")), // This should fail
+            ("email", Value::text("alice@example.com")),
+        ]);
+
+        assert_eq!(results.len(), 3);
+        assert!(results[0].is_ok());
+        assert!(results[1].is_err()); // unknown key
+        assert!(results[2].is_ok());
+
+        // Successful values should be set
+        assert_eq!(ctx.get("name").and_then(|v| v.as_text()), Some("Alice"));
+        assert_eq!(
+            ctx.get("email").and_then(|v| v.as_text()),
+            Some("alice@example.com")
+        );
+    }
+
+    #[test]
+    fn test_get_many_basic() {
+        let schema = create_test_schema();
+        let mut ctx = Context::new(schema);
+
+        ctx.set("name", Value::text("Alice")).unwrap();
+        ctx.set("age", Value::Int(30)).unwrap();
+        // email is left as null
+
+        let values = ctx.get_many(&["name", "email", "age"]);
+
+        assert_eq!(values.len(), 3);
+        assert!(values[0].is_some());
+        assert_eq!(values[0].unwrap().as_text(), Some("Alice"));
+        assert!(values[1].is_none()); // email is null
+        assert!(values[2].is_some());
+        assert_eq!(values[2].unwrap().as_int(), Some(30));
+    }
+
+    #[test]
+    fn test_get_many_empty() {
+        let schema = create_test_schema();
+        let ctx = Context::new(schema);
+
+        let values = ctx.get_many::<&str>(&[]);
+        assert_eq!(values.len(), 0);
+    }
+
+    #[test]
+    fn test_get_many_unknown_keys() {
+        let schema = create_test_schema();
+        let mut ctx = Context::new(schema);
+
+        ctx.set("name", Value::text("Alice")).unwrap();
+
+        let values = ctx.get_many(&["name", "unknown", "also_unknown"]);
+
+        assert_eq!(values.len(), 3);
+        assert!(values[0].is_some());
+        assert!(values[1].is_none()); // unknown key returns None
+        assert!(values[2].is_none()); // unknown key returns None
+    }
+
+    #[test]
+    fn test_get_many_preserves_order() {
+        let schema = create_test_schema();
+        let mut ctx = Context::new(schema);
+
+        ctx.set("name", Value::text("Alice")).unwrap();
+        ctx.set("email", Value::text("alice@example.com")).unwrap();
+        ctx.set("age", Value::Int(30)).unwrap();
+
+        // Request in specific order
+        let values = ctx.get_many(&["age", "name", "email"]);
+
+        assert_eq!(values.len(), 3);
+        assert_eq!(values[0].unwrap().as_int(), Some(30)); // age first
+        assert_eq!(values[1].unwrap().as_text(), Some("Alice")); // name second
+        assert_eq!(values[2].unwrap().as_text(), Some("alice@example.com")); // email third
+    }
+
+    #[test]
+    fn test_get_many_with_duplicates() {
+        let schema = create_test_schema();
+        let mut ctx = Context::new(schema);
+
+        ctx.set("name", Value::text("Alice")).unwrap();
+
+        // Request same key multiple times
+        let values = ctx.get_many(&["name", "name", "name"]);
+
+        assert_eq!(values.len(), 3);
+        assert!(values[0].is_some());
+        assert!(values[1].is_some());
+        assert!(values[2].is_some());
+        assert_eq!(values[0].unwrap().as_text(), Some("Alice"));
+        assert_eq!(values[1].unwrap().as_text(), Some("Alice"));
+        assert_eq!(values[2].unwrap().as_text(), Some("Alice"));
     }
 }
 
