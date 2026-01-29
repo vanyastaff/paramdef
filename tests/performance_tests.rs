@@ -262,6 +262,7 @@ mod rollback_storage {
 /// Tests for Context::set_many_transactional (T057)
 #[cfg(test)]
 mod transactional_updates {
+    #[allow(unused_imports)]
     use super::*;
 
     #[test]
@@ -296,6 +297,7 @@ mod transactional_updates {
 /// Tests for Context::get_many (T059)
 #[cfg(test)]
 mod bulk_getters {
+    #[allow(unused_imports)]
     use super::*;
 
     #[test]
@@ -330,7 +332,9 @@ mod bulk_getters {
 /// Tests for zero-copy values() iterator (T061)
 #[cfg(test)]
 mod zero_copy_iteration {
+    #[allow(unused_imports)]
     use super::*;
+    #[allow(unused_imports)]
     use paramdef::core::Key;
 
     #[test]
