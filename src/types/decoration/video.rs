@@ -159,8 +159,8 @@ impl VideoOptions {
 ///
 /// # Example
 ///
-/// ```ignore
-/// use paramdef::decoration::{Video, VideoSource};
+/// ```
+/// use paramdef::types::decoration::{Video, VideoSource};
 ///
 /// // YouTube video
 /// let tutorial = Video::youtube("intro", "dQw4w9WgXcQ")
@@ -171,7 +171,7 @@ impl VideoOptions {
 ///     .source(VideoSource::url("https://example.com/video.mp4"))
 ///     .autoplay(true)
 ///     .muted(true)
-///     .loop_video(true)
+///     .looping(true)
 ///     .build();
 ///
 /// // Vimeo video with poster

@@ -15,9 +15,9 @@ use crate::types::traits::{Decoration, Node};
 ///
 /// # Example
 ///
-/// ```ignore
-/// use paramdef::decoration::Link;
-/// use paramdef::node::LinkType;
+/// ```
+/// use paramdef::types::decoration::Link;
+/// use paramdef::types::kind::LinkType;
 ///
 /// // Documentation link
 /// let docs = Link::documentation("api_docs", "API Reference")

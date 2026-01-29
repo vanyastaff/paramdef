@@ -101,8 +101,8 @@ pub struct ProgressOptions {
 ///
 /// # Example
 ///
-/// ```ignore
-/// use paramdef::decoration::{Progress, ProgressStyle, ProgressSource};
+/// ```
+/// use paramdef::types::decoration::{Progress, ProgressStyle, ProgressSource};
 ///
 /// // Simple progress bar with static value
 /// let loading = Progress::bar("loading", 0.75)

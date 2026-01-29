@@ -16,9 +16,9 @@ use crate::types::traits::{Decoration, Node};
 ///
 /// # Example
 ///
-/// ```ignore
-/// use paramdef::decoration::Notice;
-/// use paramdef::node::NoticeType;
+/// ```
+/// use paramdef::types::decoration::Notice;
+/// use paramdef::types::kind::NoticeType;
 ///
 /// // Info message
 /// let info = Notice::info("welcome", "Configure your settings below.");

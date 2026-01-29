@@ -46,20 +46,17 @@ impl GroupLayout {
 ///
 /// # Example
 ///
-/// ```ignore
-/// use paramdef::group::{Group, Panel};
+/// ```
+/// use paramdef::types::group::{Group, Panel};
 /// use paramdef::types::leaf::{Text, Number};
 ///
 /// let config = Group::builder("settings")
 ///     .label("Settings")
 ///     .child(Panel::builder("general")
 ///         .child(Text::builder("name").build())
-///         .child(Number::int("port").build())
+///         .child(Number::port("port").build())
 ///         .build())
 ///     .build();
-///
-/// // Collect all values
-/// let values = config.collect_values();
 /// ```
 #[derive(Clone)]
 pub struct Group {

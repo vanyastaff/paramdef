@@ -71,8 +71,8 @@ impl ImageAlignment {
 ///
 /// # Example
 ///
-/// ```ignore
-/// use paramdef::decoration::{Image, ImageSource, ImageAlignment};
+/// ```
+/// use paramdef::types::decoration::{Image, ImageSource, ImageAlignment};
 ///
 /// // Image from URL
 /// let screenshot = Image::builder("step1")

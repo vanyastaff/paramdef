@@ -16,9 +16,9 @@ use crate::types::traits::{Decoration, Node};
 ///
 /// # Example
 ///
-/// ```ignore
-/// use paramdef::decoration::Separator;
-/// use paramdef::node::SeparatorStyle;
+/// ```
+/// use paramdef::types::decoration::Separator;
+/// use paramdef::types::kind::SeparatorStyle;
 ///
 /// // Simple thin separator
 /// let thin = Separator::thin("sep1");

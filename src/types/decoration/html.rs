@@ -45,9 +45,9 @@ pub enum SanitizeLevel {
 ///
 /// # Example
 ///
-/// ```ignore
-/// use paramdef::decoration::Html;
-/// use paramdef::decoration::SanitizeLevel;
+/// ```
+/// use paramdef::types::decoration::Html;
+/// use paramdef::types::decoration::SanitizeLevel;
 ///
 /// // Simple formatted content
 /// let formatted = Html::new("intro", "<p>Welcome to <strong>MyApp</strong>!</p>");

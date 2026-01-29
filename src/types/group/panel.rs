@@ -60,15 +60,15 @@ impl PanelDisplayType {
 ///
 /// # Example
 ///
-/// ```ignore
-/// use paramdef::group::{Panel, Notice};
+/// ```
+/// use paramdef::types::group::{Panel, PanelDisplayType};
 /// use paramdef::types::leaf::{Text, Number};
 ///
 /// let database = Panel::builder("database")
 ///     .label("Database Settings")
 ///     .display_type(PanelDisplayType::Collapsible)
 ///     .child(Text::builder("host").required().build())
-///     .child(Number::int("port").default(5432).build())
+///     .child(Number::port("port").default(5432.0).build())
 ///     .child(Text::builder("database").required().build())
 ///     .build();
 /// ```

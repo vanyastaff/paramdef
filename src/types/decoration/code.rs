@@ -15,8 +15,8 @@ use crate::types::traits::{Decoration, Node};
 ///
 /// # Example
 ///
-/// ```ignore
-/// use paramdef::decoration::Code;
+/// ```
+/// use paramdef::types::decoration::Code;
 ///
 /// // JSON example
 /// let json = Code::builder("example_json")
