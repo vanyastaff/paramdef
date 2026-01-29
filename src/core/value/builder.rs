@@ -165,6 +165,61 @@ impl ObjectBuilder {
         self
     }
 
+    /// Adds multiple fields at once from an iterator.
+    ///
+    /// This is a convenience method for bulk field addition.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use paramdef::core::Value;
+    /// use indexmap::IndexMap;
+    ///
+    /// let mut fields = IndexMap::new();
+    /// fields.insert("x".into(), Value::number(1.0));
+    /// fields.insert("y".into(), Value::number(2.0));
+    ///
+    /// let point = Value::build_object()
+    ///     .fields(fields)
+    ///     .build();
+    /// ```
+    #[must_use]
+    pub fn fields<I, K>(mut self, fields: I) -> Self
+    where
+        I: IntoIterator<Item = (K, Value)>,
+        K: Into<Key>,
+    {
+        for (key, value) in fields {
+            self.map.insert(key.into(), value);
+        }
+        self
+    }
+
+    /// Conditionally adds a field if the condition is true.
+    ///
+    /// This is useful for building objects with optional fields based on runtime conditions.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use paramdef::core::Value;
+    ///
+    /// let include_age = true;
+    /// let user = Value::build_object()
+    ///     .text("name", "Charlie")
+    ///     .field_if(include_age, "age", Value::number(25.0))
+    ///     .build();
+    ///
+    /// assert!(user.as_object().unwrap().contains_key(&"age".into()));
+    /// ```
+    #[must_use]
+    pub fn field_if(mut self, condition: bool, key: impl Into<Key>, value: Value) -> Self {
+        if condition {
+            self.map.insert(key.into(), value);
+        }
+        self
+    }
+
     /// Builds the final `Value::Object`.
     ///
     /// Consumes the builder and returns the constructed object.

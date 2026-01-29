@@ -403,6 +403,43 @@ impl ObjectBuilder {
         self
     }
 
+    /// Adds multiple fields at once from an iterator.
+    ///
+    /// This is a convenience method for bulk field addition.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use paramdef::types::container::Object;
+    /// use paramdef::types::leaf::{Text, Number, Boolean};
+    /// use paramdef::types::Node;
+    /// use std::sync::Arc;
+    ///
+    /// let fields = vec![
+    ///     ("name", Arc::new(Text::builder("name").build()) as Arc<dyn Node>),
+    ///     ("age", Arc::new(Number::builder("age").build()) as Arc<dyn Node>),
+    ///     ("active", Arc::new(Boolean::builder("active").build()) as Arc<dyn Node>),
+    /// ];
+    ///
+    /// let obj = Object::builder("user")
+    ///     .fields(fields)
+    ///     .build()
+    ///     .unwrap();
+    ///
+    /// assert_eq!(obj.fields().len(), 3);
+    /// ```
+    #[must_use]
+    pub fn fields<I, K>(mut self, fields: I) -> Self
+    where
+        I: IntoIterator<Item = (K, Arc<dyn Node>)>,
+        K: Into<Key>,
+    {
+        for (key, node) in fields {
+            self.fields.push((key.into(), node));
+        }
+        self
+    }
+
     /// Makes this object extensible, allowing additional properties.
     ///
     /// The value template defines what type of values can be added

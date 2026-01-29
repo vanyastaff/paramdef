@@ -294,13 +294,13 @@ mod object_builder {
     }
 }
 
-/// T044: Test ValueBuilder
+/// T044: Test ValueBuilder (using existing ObjectBuilder API)
 mod value_builder {
     use paramdef::core::{Key, Value};
 
     #[test]
     fn test_value_builder_empty_object() {
-        let value = Value::object().build();
+        let value = Value::build_object().build();
 
         match value {
             Value::Object(map) => assert_eq!(map.len(), 0),
@@ -310,7 +310,9 @@ mod value_builder {
 
     #[test]
     fn test_value_builder_single_field() {
-        let value = Value::object().field("name", Value::text("Alice")).build();
+        let value = Value::build_object()
+            .field("name", Value::text("Alice"))
+            .build();
 
         match value {
             Value::Object(map) => {
@@ -323,7 +325,7 @@ mod value_builder {
 
     #[test]
     fn test_value_builder_multiple_fields_chained() {
-        let value = Value::object()
+        let value = Value::build_object()
             .field("name", Value::text("Bob"))
             .field("age", Value::number(30.0))
             .field("active", Value::boolean(true))
@@ -348,7 +350,7 @@ mod value_builder {
         bulk.insert(Key::from("x"), Value::number(1.0));
         bulk.insert(Key::from("y"), Value::number(2.0));
 
-        let value = Value::object().fields(bulk).build();
+        let value = Value::build_object().fields(bulk).build();
 
         match value {
             Value::Object(map) => {
@@ -363,7 +365,7 @@ mod value_builder {
     #[test]
     fn test_value_builder_field_if_conditional() {
         let include_age = true;
-        let value = Value::object()
+        let value = Value::build_object()
             .field("name", Value::text("Charlie"))
             .field_if(include_age, "age", Value::number(25.0))
             .build();
@@ -378,7 +380,7 @@ mod value_builder {
 
         // Test with condition false
         let include_age = false;
-        let value = Value::object()
+        let value = Value::build_object()
             .field("name", Value::text("Charlie"))
             .field_if(include_age, "age", Value::number(25.0))
             .build();
@@ -394,12 +396,12 @@ mod value_builder {
 
     #[test]
     fn test_value_builder_nested_objects() {
-        let address = Value::object()
+        let address = Value::build_object()
             .field("street", Value::text("123 Main St"))
             .field("city", Value::text("Springfield"))
             .build();
 
-        let user = Value::object()
+        let user = Value::build_object()
             .field("name", Value::text("Dave"))
             .field("address", address)
             .build();
